@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../services/bible_progress_service.dart';
+import '../../services/coverage_ledger_service.dart';
 import '../../services/reference_parser.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/bible_progress_page.dart';
@@ -19,6 +19,7 @@ class BibleLibraryGrid extends StatefulWidget {
   final bool showTitle;
   final bool isLoading;
   final VibrationService vibrationService;
+  final CoverageLedgerService? coverageLedgerService;
 
   const BibleLibraryGrid({
     super.key,
@@ -28,6 +29,7 @@ class BibleLibraryGrid extends StatefulWidget {
     this.showTitle = true,
     this.isLoading = false,
     this.vibrationService = const VibrationService(),
+    this.coverageLedgerService,
   });
 
   @override
@@ -35,20 +37,19 @@ class BibleLibraryGrid extends StatefulWidget {
 }
 
 class _BibleLibraryGridState extends State<BibleLibraryGrid> {
-  late final BibleProgressService _bibleProgressService;
+  late final CoverageLedgerService _coverageService;
   late Stream<Map<String, Set<int>>> _completedStream;
 
   @override
   void initState() {
     super.initState();
-    _bibleProgressService = BibleProgressService(firestore: widget.firestore);
+    _coverageService = widget.coverageLedgerService ??
+        CoverageLedgerService(firestore: widget.firestore);
     final user = widget.auth.currentUser;
     if (user != null) {
       _completedStream = widget.initialCompletedByBook != null
           ? Stream.value(widget.initialCompletedByBook!)
-          : Stream.fromFuture(
-              _bibleProgressService.completedChaptersByBook(user.uid),
-            );
+          : _coverageService.watchBookCoverage(user.uid);
     } else {
       _completedStream = Stream.value({});
     }
@@ -79,6 +80,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                           firestore: widget.firestore,
                           auth: widget.auth,
                           vibrationService: widget.vibrationService,
+                          coverageLedgerService: _coverageService,
                         ),
                       ),
                     );

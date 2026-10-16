@@ -8,9 +8,8 @@ import '../../theme/app_theme.dart';
 
 import '../../models/group.dart';
 import '../../models/group_member_progress.dart';
-import '../../models/group_schedule.dart';
-import '../../models/reading_plan.dart';
 import '../../models/reading_plan_progress.dart';
+import '../../services/active_reading_aggregator.dart';
 import '../../services/catch_up_engine.dart';
 import '../../services/error_logger.dart';
 import '../../services/nudge_service.dart';
@@ -45,6 +44,7 @@ class PlansHub extends StatefulWidget {
   final UserPreferencesService userPreferencesService;
   final VibrationService vibrationService;
   final DateTime Function() dateProvider;
+  final ActiveReadingAggregator? activeReadingAggregator;
 
   const PlansHub({
     super.key,
@@ -55,91 +55,28 @@ class PlansHub extends StatefulWidget {
     required this.userPreferencesService,
     required this.vibrationService,
     required this.dateProvider,
+    this.activeReadingAggregator,
   });
 
   @override
   State<PlansHub> createState() => PlansHubState();
 }
 
-class _PersonalRow {
-  final ReadingPlan plan;
-  final UserPlanProgress progress;
-  final CatchUpStatus status;
-  final PlanLifecycle state;
-
-  /// The reader Finished this plan (ADR-0010): closed as done, with unread
-  /// readings left unmarked. Kept apart from [state], which stays what the
-  /// readings say, so "every reading marked" is never inferred from the list.
-  final bool finished;
-  const _PersonalRow(
-    this.plan,
-    this.progress,
-    this.status,
-    this.state, {
-    this.finished = false,
-  });
-
-  _PersonalRow withFinished(bool finished) =>
-      _PersonalRow(plan, progress, status, state, finished: finished);
-
-  String get pinKey => 'plan:${plan.id}';
-}
-
-class _GroupRow {
-  final Group group;
-  final List<GroupSchedule> schedule;
-  final List<GroupMemberProgressData> readers;
-  final CatchUpStatus status;
-  final PlanLifecycle state;
-
-  /// The reader's completed dates under [schedule] (`YYYY-MM-DD`), carried so
-  /// adjust pace can run its arithmetic without re-reading progress.
-  final Set<String> completedDateIds;
-
-  /// The reader Finished their participation in this Shared plan (ADR-0010).
-  final bool finished;
-
-  /// The reader follows their own pace overlay instead of the Group schedule.
-  final bool ownPace;
-  const _GroupRow(
-    this.group,
-    this.schedule,
-    this.readers,
-    this.status,
-    this.state, {
-    this.completedDateIds = const {},
-    this.finished = false,
-    this.ownPace = false,
-  });
-
-  _GroupRow withFinished(bool finished) => _GroupRow(
-        group,
-        schedule,
-        readers,
-        status,
-        state,
-        completedDateIds: completedDateIds,
-        finished: finished,
-        ownPace: ownPace,
-      );
-
-  String get pinKey => 'group:${group.id}';
-}
-
 class PlansHubState extends State<PlansHub> {
   bool _loading = true;
-  List<_PersonalRow> _personal = [];
-  List<_PersonalRow> _archived = [];
+  List<ActivePersonalReading> _personal = [];
+  List<ActivePersonalReading> _archived = [];
   List<Group> _archivedGroups = [];
   int _trashedCount = 0;
-  List<_GroupRow> _groups = [];
+  List<ActiveGroupReading> _groups = [];
   String? _pinnedReadingId;
+
+  late final ActiveReadingAggregator _aggregator;
 
   /// Whether the Archived section lists every row, not just the first few.
   bool _showAllArchived = false;
 
   final Set<StreamSubscription<dynamic>> _watchSubs = {};
-  final Set<StreamSubscription<dynamic>> _groupWatchSubs = {};
   Timer? _reloadTimer;
   bool _watchStarted = false;
   bool _loadInFlight = false;
@@ -148,6 +85,15 @@ class PlansHubState extends State<PlansHub> {
   @override
   void initState() {
     super.initState();
+    _aggregator = widget.activeReadingAggregator ??
+        ActiveReadingAggregator(
+          readingPlanService: widget.readingPlanService,
+          groupService: widget.groupService,
+          paceService: PlanPaceService(firestore: widget.firestore),
+          userPreferencesService: widget.userPreferencesService,
+          dateProvider: widget.dateProvider,
+          firestore: widget.firestore,
+        );
     _load().whenComplete(() {
       if (mounted) _startWatching();
     });
@@ -177,58 +123,15 @@ class PlansHubState extends State<PlansHub> {
         ErrorLogger.log(e, st);
       }
 
-      // Personal plans.
-      final progresses =
-          await widget.readingPlanService.getActivePlans(uid).first.timeout(
-                const Duration(seconds: 5),
-                onTimeout: () => const <UserPlanProgress>[],
-              );
-      final personal = <_PersonalRow>[];
-      for (final progress in progresses) {
-        final plan = await widget.readingPlanService.getPlanById(
-          progress.planId,
-          userId: uid,
-        );
-        if (plan == null) continue;
-        final status = CatchUpEngine.forPersonalPlan(
-          plan,
-          progress,
-          today: today,
-        );
-        personal.add(
-          _PersonalRow(
-            plan,
-            progress,
-            status,
-            status.lifecycleAt(today),
-            finished: progress.finishedAt != null,
-          ),
-        );
-      }
+      // Active readings (personal plans + group schedules) via deep aggregator
+      final snapshot = await _aggregator.fetch(
+        uid,
+        today: today,
+        pinnedReadingId: pinned,
+      );
 
-      // Left (archived) personal plans — kept so a reader can restore,
-      // trash or permanently delete them from the hub (#811, #776).
-      final archivedProgress =
-          await widget.readingPlanService.getArchivedPlans(uid).first.timeout(
-                const Duration(seconds: 5),
-                onTimeout: () => const <UserPlanProgress>[],
-              );
-      final archived = <_PersonalRow>[];
-      for (final progress in archivedProgress) {
-        final plan = await widget.readingPlanService.getPlanById(
-          progress.planId,
-          userId: uid,
-        );
-        if (plan == null) continue;
-        final status = CatchUpEngine.forPersonalPlan(
-          plan,
-          progress,
-          today: today,
-        );
-        archived.add(
-          _PersonalRow(plan, progress, status, status.lifecycleAt(today)),
-        );
-      }
+      // Left (archived) personal plans via aggregator
+      final archived = await _aggregator.fetchArchivedPlans(uid, today: today);
 
       // Archived groups (#776): owned-and-archived, or participation the
       // reader shelved. Both return via the Archive rows below.
@@ -262,80 +165,13 @@ class PlansHubState extends State<PlansHub> {
         ErrorLogger.log(e, st);
       }
 
-      // Group readings (the user's groups).
-      final groups = await widget.groupService.groupsForUser(uid).first.timeout(
-            const Duration(seconds: 5),
-            onTimeout: () => const <Group>[],
-          );
-      var finishedGroupIds = const <String>{};
-      try {
-        finishedGroupIds =
-            await widget.groupService.finishedGroupIdsForUser(uid);
-      } catch (e, st) {
-        ErrorLogger.log(e, st);
-      }
-      final groupRows = <_GroupRow>[];
-      final paceService = PlanPaceService(firestore: widget.firestore);
-      for (final group in groups) {
-        final results = await Future.wait([
-          widget.groupService.schedule(group.id).first.timeout(
-                const Duration(seconds: 3),
-                onTimeout: () => const <GroupSchedule>[],
-              ),
-          widget.groupService.userProgressForGroup(group.id, uid).first.timeout(
-                const Duration(seconds: 3),
-                onTimeout: () => const <String, int>{},
-              ),
-          widget.groupService
-              .memberDailyCompletion(group.id, date: today)
-              .first
-              .timeout(
-                const Duration(seconds: 3),
-                onTimeout: () => const <GroupMemberProgressData>[],
-              ),
-          paceService.getSharedPlanOverlay(uid, group.id).timeout(
-                const Duration(seconds: 3),
-                onTimeout: () => null,
-              ),
-        ]);
-        // The reader's own pace overlay, when they adjusted pace (ADR-0007),
-        // replaces the Group's dates in their view.
-        final overlay = results[3] as List<GroupSchedule>?;
-        final schedule = overlay ?? results[0] as List<GroupSchedule>;
-        final progressMap = results[1] as Map<String, int>;
-        final members = results[2] as List<GroupMemberProgressData>;
-        final completed = progressMap.entries
-            .where((e) => e.value > 0)
-            .map((e) => e.key)
-            .toSet();
-        final status = CatchUpEngine.forGroupSchedule(
-          schedule,
-          completed,
-          today: today,
-        );
-        final readers =
-            members.where((m) => m.completion >= 1.0).toList(growable: false);
-        groupRows.add(
-          _GroupRow(
-            group,
-            schedule,
-            readers,
-            status,
-            status.lifecycleAt(today),
-            completedDateIds: completed,
-            finished: finishedGroupIds.contains(group.id),
-            ownPace: overlay != null,
-          ),
-        );
-      }
-
       if (mounted) {
         setState(() {
-          _personal = personal;
+          _personal = snapshot.personalPlans;
           _archived = archived;
           _archivedGroups = archivedGroups;
           _trashedCount = trashedCount;
-          _groups = groupRows;
+          _groups = snapshot.groupReadings;
           _pinnedReadingId = pinned;
           _loading = false;
         });
@@ -358,57 +194,27 @@ class PlansHubState extends State<PlansHub> {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
 
-    _listen(widget.readingPlanService.getActivePlans(uid));
+    _watchSubs.add(
+      _aggregator
+          .watch(
+            uid,
+            dateProvider: widget.dateProvider,
+            pinnedReadingId: _pinnedReadingId,
+          )
+          .listen(
+            (_) => _scheduleReload(),
+            onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+          ),
+    );
+
     _listen(widget.readingPlanService.getArchivedPlans(uid));
     _listen(widget.readingPlanService.getDeletedPlans(uid));
-    _listen(widget.userPreferencesService.streamPreferences(uid));
-    _watchGroups(uid);
+    _listen(widget.groupService.getDeletedGroups(uid));
   }
 
   void _listen(Stream<dynamic> stream) {
     var first = true;
     _watchSubs.add(stream.listen(
-      (_) {
-        if (first) {
-          first = false;
-          return;
-        }
-        _scheduleReload();
-      },
-      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-    ));
-  }
-
-  void _watchGroups(String uid) {
-    var first = true;
-    _watchSubs.add(widget.groupService.groupsForUser(uid).listen(
-      (groups) {
-        if (first) {
-          first = false;
-          return;
-        }
-        for (final subscription in _groupWatchSubs) {
-          subscription.cancel();
-        }
-        _groupWatchSubs.clear();
-        for (final group in groups) {
-          _listenGroup(widget.groupService.schedule(group.id));
-          _listenGroup(widget.groupService.userProgressForGroup(group.id, uid));
-          _listenGroup(widget.groupService.memberDailyCompletion(
-            group.id,
-            date: widget.dateProvider(),
-          ));
-        }
-        _scheduleReload();
-      },
-      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-    ));
-    _listen(widget.groupService.getDeletedGroups(uid));
-  }
-
-  void _listenGroup(Stream<dynamic> stream) {
-    var first = true;
-    _groupWatchSubs.add(stream.listen(
       (_) {
         if (first) {
           first = false;
@@ -434,9 +240,6 @@ class PlansHubState extends State<PlansHub> {
   void dispose() {
     _reloadTimer?.cancel();
     for (final subscription in _watchSubs) {
-      subscription.cancel();
-    }
-    for (final subscription in _groupWatchSubs) {
       subscription.cancel();
     }
     super.dispose();
@@ -476,7 +279,7 @@ class PlansHubState extends State<PlansHub> {
     }
   }
 
-  Future<void> _editPlan(_PersonalRow row) async {
+  Future<void> _editPlan(ActivePersonalReading row) async {
     widget.vibrationService.lightImpact();
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -494,7 +297,7 @@ class PlansHubState extends State<PlansHub> {
 
   /// Adjust pace on a personal plan (#810): the three options run against
   /// the plan's dated schedule, and the chosen one is persisted in place.
-  Future<void> _adjustPersonalPace(_PersonalRow row) async {
+  Future<void> _adjustPersonalPace(ActivePersonalReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     final applied = await adjustPersonalPace(
@@ -512,7 +315,7 @@ class PlansHubState extends State<PlansHub> {
   /// Adjust pace on a Shared plan (#810): the arithmetic runs on the Group's
   /// schedule, but the outcome is stored as the reader's own overlay — the
   /// Group's schedule and the other members' progress are never written.
-  Future<void> _adjustSharedPace(_GroupRow row) async {
+  Future<void> _adjustSharedPace(ActiveGroupReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     final applied = await adjustSharedPace(
@@ -531,7 +334,7 @@ class PlansHubState extends State<PlansHub> {
 
   /// Archives a plan straight away — it is fully reversible, so an Undo
   /// snackbar stands in for a confirmation step.
-  Future<void> _archivePlan(_PersonalRow row) async {
+  Future<void> _archivePlan(ActivePersonalReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
@@ -561,7 +364,7 @@ class PlansHubState extends State<PlansHub> {
     }
   }
 
-  void _setPersonalFinished(_PersonalRow row, bool finished) {
+  void _setPersonalFinished(ActivePersonalReading row, bool finished) {
     final i = _personal.indexWhere((r) => r.plan.id == row.plan.id);
     if (i < 0) return;
     setState(
@@ -569,7 +372,7 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  void _setGroupFinished(_GroupRow row, bool finished) {
+  void _setGroupFinished(ActiveGroupReading row, bool finished) {
     final i = _groups.indexWhere((r) => r.group.id == row.group.id);
     if (i < 0) return;
     setState(() => _groups = [..._groups]..[i] = row.withFinished(finished));
@@ -578,7 +381,7 @@ class PlansHubState extends State<PlansHub> {
   /// Finishes an ended plan straight away (ADR-0010) — it is fully
   /// reversible, so an Undo snackbar stands in for a confirmation step. The
   /// plan moves to Finished at once and rolls back if the write fails.
-  Future<void> _finishPlan(_PersonalRow row) async {
+  Future<void> _finishPlan(ActivePersonalReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
@@ -612,7 +415,7 @@ class PlansHubState extends State<PlansHub> {
   }
 
   /// Restores a finished plan to where it was — ended, same readings marked.
-  Future<void> _unfinishPlan(_PersonalRow row) async {
+  Future<void> _unfinishPlan(ActivePersonalReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
@@ -641,7 +444,7 @@ class PlansHubState extends State<PlansHub> {
 
   /// Finishes the reader's own participation in an ended Shared plan
   /// (ADR-0010). The Group schedule and the other members carry on.
-  Future<void> _finishGroup(_GroupRow row) async {
+  Future<void> _finishGroup(ActiveGroupReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
@@ -679,7 +482,7 @@ class PlansHubState extends State<PlansHub> {
 
   /// Restores a finished Shared plan — it returns with the Group's current
   /// dates, which may have moved since the reader finished.
-  Future<void> _unfinishGroup(_GroupRow row) async {
+  Future<void> _unfinishGroup(ActiveGroupReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
@@ -710,7 +513,7 @@ class PlansHubState extends State<PlansHub> {
   }
 
   /// Restores a left plan to active — it reappears in "On your own".
-  Future<void> _restorePlan(_PersonalRow row) async {
+  Future<void> _restorePlan(ActivePersonalReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
@@ -848,7 +651,7 @@ class PlansHubState extends State<PlansHub> {
 
   /// Moves a plan to the Recently Deleted hub (#776): recoverable for 30
   /// days, restorable to the state it had — archived or active.
-  Future<void> _trashPlan(_PersonalRow row) async {
+  Future<void> _trashPlan(ActivePersonalReading row) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
@@ -874,7 +677,7 @@ class PlansHubState extends State<PlansHub> {
   }
 
   /// Asks before moving the plan to the trash — recoverable for 30 days.
-  void _confirmTrashPlan(_PersonalRow row) {
+  void _confirmTrashPlan(ActivePersonalReading row) {
     showDialog(
       context: context,
       barrierColor: AppColors.of(context).scrim,
@@ -904,7 +707,7 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  void _continuePlan(_PersonalRow row) {
+  void _continuePlan(ActivePersonalReading row) {
     widget.vibrationService.lightImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -919,7 +722,7 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  void _manageGroup(_GroupRow row) {
+  void _manageGroup(ActiveGroupReading row) {
     widget.vibrationService.lightImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -934,7 +737,7 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  void _reviewGroup(_GroupRow row) {
+  void _reviewGroup(ActiveGroupReading row) {
     widget.vibrationService.lightImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -1076,7 +879,7 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  Widget _personalCard(BuildContext context, _PersonalRow row) {
+  Widget _personalCard(BuildContext context, ActivePersonalReading row) {
     final pinned = _pinnedReadingId == row.pinKey;
     return _PlanCardShell(
       pinned: pinned,
@@ -1146,7 +949,7 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  Widget _groupCard(BuildContext context, _GroupRow row) {
+  Widget _groupCard(BuildContext context, ActiveGroupReading row) {
     final pinned = _pinnedReadingId == row.pinKey;
     final colorScheme = Theme.of(context).colorScheme;
     final members = row.group.memberCount;
@@ -1348,8 +1151,8 @@ class PlansHubState extends State<PlansHub> {
 
   Widget _finishedSection(
     BuildContext context,
-    List<_PersonalRow> personalDone,
-    List<_GroupRow> groupDone,
+    List<ActivePersonalReading> personalDone,
+    List<ActiveGroupReading> groupDone,
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -1598,7 +1401,7 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  Widget _archivedRow(BuildContext context, _PersonalRow row) {
+  Widget _archivedRow(BuildContext context, ActivePersonalReading row) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(

@@ -12,6 +12,7 @@ import '../models/circle_member.dart';
 import '../models/group_invite.dart';
 import '../models/group_member_role.dart';
 import '../models/notification_preferences.dart';
+import 'circle_service.dart';
 import 'error_logger.dart';
 import 'group_collections.dart';
 import 'join_code_service.dart';
@@ -39,12 +40,16 @@ class GroupService {
   /// Manages per-group join codes.
   final JoinCodeService joinCodeService;
 
+  /// Service managing Circle derivation across shared groups.
+  final CircleService circleService;
+
   /// Creates a [GroupService] using [FirebaseFirestore.instance] by default.
   GroupService({
     FirebaseFirestore? firestore,
     NotificationService? notificationService,
     ReadThroughCoordinator? readThroughCoordinator,
     JoinCodeService? joinCodeService,
+    CircleService? circleService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         notificationService = notificationService ??
             NotificationService(
@@ -55,7 +60,9 @@ class GroupService {
               firestore: firestore ?? FirebaseFirestore.instance,
             ),
         joinCodeService = joinCodeService ??
-            JoinCodeService(firestore: firestore ?? FirebaseFirestore.instance);
+            JoinCodeService(firestore: firestore ?? FirebaseFirestore.instance),
+        circleService = circleService ??
+            CircleService(firestore: firestore ?? FirebaseFirestore.instance);
 
   static Future<void> _safeLog(Object e, StackTrace? st) async {
     try {
@@ -1259,184 +1266,30 @@ class GroupService {
   /// Everyone [uid] shares at least one Group with — their Circle, derived
   /// from Group membership at read time (ADR-0003). Never stored: there is
   /// no circle collection. Pending join requests confer nothing.
-  Future<Set<String>> circleMemberIds(String uid) async {
-    final memberships = await firestore
-        .collectionGroup(GroupCollections.members)
-        .where('uid', isEqualTo: uid)
-        .get();
-    final groupIds = memberships.docs
-        .map((doc) => doc.reference.parent.parent?.id)
-        .whereType<String>()
-        .toSet();
+  Future<Set<String>> circleMemberIds(String uid) =>
+      circleService.fetchCircleMemberIds(uid);
 
-    final circle = <String>{};
-    for (final groupId in groupIds) {
-      final members = await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.members)
-          .get();
-      for (final member in members.docs) {
-        final id = (member.data()['uid'] as String?) ?? member.id;
-        if (id != uid) circle.add(id);
-      }
-    }
-    return circle;
-  }
+  /// Backward-compatible alias for [circleMemberIds].
+  Future<Set<String>> fetchCircleMemberIds(String uid) =>
+      circleService.fetchCircleMemberIds(uid);
 
   /// Live stream of the reader's Circle (ADR-0003): the co-members of every
   /// Group [uid] belongs to, deduplicated by uid. A person in two shared
   /// Groups appears once, carrying both Group ids. The reader is excluded —
   /// Circle is who you read *with*; the reader renders their own row. No
   /// Groups yields an empty list, not an error.
-  Stream<List<CircleMember>> circleMembers(String uid) {
-    final memberships = firestore
-        .collectionGroup(GroupCollections.members)
-        .where('uid', isEqualTo: uid)
-        .snapshots();
+  Stream<List<CircleMember>> circleMembers(String uid) =>
+      circleService.watchCircleMembers(uid);
 
-    return Stream<List<CircleMember>>.multi((controller) {
-      final groupSubs =
-          <String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>{};
-      final perGroup = <String, List<CircleMember>>{};
-      var activeGroupIds = <String>{};
-      var membershipsReported = false;
-      var closed = false;
-
-      CircleMember? memberFrom(
-        QueryDocumentSnapshot<Map<String, dynamic>> doc,
-        String groupId,
-      ) {
-        final data = doc.data();
-        final id = (data['uid'] as String?) ?? doc.id;
-        if (id.isEmpty || id == uid) return null;
-        final name = (data['name'] as String?)?.trim();
-        final photoUrl = (data['photoUrl'] as String?)?.trim();
-        return CircleMember(
-          uid: id,
-          groupIds: {groupId},
-          name: (name != null && name.isNotEmpty) ? name : null,
-          photoUrl: (photoUrl != null && photoUrl.isNotEmpty) ? photoUrl : null,
-        );
-      }
-
-      void emit() {
-        if (controller.isClosed || closed) return;
-        if (membershipsReported == false) return;
-        for (final groupId in activeGroupIds) {
-          if (perGroup.containsKey(groupId) == false) return;
-        }
-
-        final byUid = <String, CircleMember>{};
-        for (final groupId in activeGroupIds) {
-          for (final member in perGroup[groupId] ?? const <CircleMember>[]) {
-            final existing = byUid[member.uid];
-            if (existing == null) {
-              byUid[member.uid] = CircleMember(
-                uid: member.uid,
-                groupIds: {groupId},
-                name: member.name,
-                photoUrl: member.photoUrl,
-              );
-            } else {
-              existing.groupIds.add(groupId);
-            }
-          }
-        }
-        controller.add(byUid.values.toList());
-      }
-
-      void cancelGroup(String groupId) {
-        groupSubs.remove(groupId)?.cancel();
-        perGroup.remove(groupId);
-      }
-
-      final membershipSub = memberships.listen(
-        (memberSnaps) {
-          final groupIds = memberSnaps.docs
-              .map((doc) => doc.reference.parent.parent?.id)
-              .whereType<String>()
-              .toSet();
-          activeGroupIds = groupIds;
-
-          for (final existing in groupSubs.keys.toList()) {
-            if (groupIds.contains(existing) == false) {
-              cancelGroup(existing);
-            }
-          }
-
-          for (final groupId in groupIds) {
-            if (groupSubs.containsKey(groupId)) continue;
-            groupSubs[groupId] = firestore
-                .collection(GroupCollections.groups)
-                .doc(groupId)
-                .collection(GroupCollections.members)
-                .snapshots()
-                .listen(
-              (memberSnap) {
-                final members = <CircleMember>[];
-                for (final doc in memberSnap.docs) {
-                  final member = memberFrom(doc, groupId);
-                  if (member != null) members.add(member);
-                }
-                perGroup[groupId] = members;
-                emit();
-              },
-              onError: (Object e, StackTrace st) {
-                unawaited(_safeLog(e, st));
-                perGroup[groupId] = const <CircleMember>[];
-                emit();
-              },
-            );
-          }
-
-          membershipsReported = true;
-          emit();
-        },
-        onError: (Object e, StackTrace st) {
-          unawaited(_safeLog(e, st));
-          membershipsReported = true;
-          controller.addError(e, st);
-        },
-      );
-
-      controller.onCancel = () {
-        closed = true;
-        membershipSub.cancel();
-        for (final subscription in groupSubs.values) {
-          subscription.cancel();
-        }
-      };
-    });
-  }
+  /// Live stream of the reader's Circle (ADR-0003).
+  Stream<List<CircleMember>> watchCircleMembers(String uid) =>
+      circleService.watchCircleMembers(uid);
 
   /// Stream of the `YYYY-MM-DD` ids [uid] has completed in [groupId]'s
   /// schedule, read from `progress/{dateId}/entries/{uid}` (count > 0 or
   /// done). This is how a Circle row learns a co-member's Plan reading.
-  Stream<Set<String>> memberCompletedDates(String groupId, String uid) {
-    return firestore
-        .collection(GroupCollections.groups)
-        .doc(groupId)
-        .collection('progress')
-        .snapshots()
-        .asyncMap((snap) async {
-      final done = <String>{};
-      for (final day in snap.docs) {
-        try {
-          final entry =
-              await day.reference.collection('entries').doc(uid).get();
-          final data = entry.data();
-          if (data == null) continue;
-          final count = (data['count'] as num?)?.toInt() ?? 0;
-          final complete = data['done'] == true;
-          if (count > 0 || complete) done.add(day.id);
-        } catch (e, st) {
-          await _safeLog(e, st);
-        }
-      }
-      return done;
-    });
-  }
+  Stream<Set<String>> memberCompletedDates(String groupId, String uid) =>
+      circleService.memberCompletedDates(groupId, uid);
 
   /// Stream of member display names for [groupId].
   Stream<List<String>> memberNames(String groupId) {

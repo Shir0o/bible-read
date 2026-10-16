@@ -11,6 +11,7 @@ import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/badge_service.dart';
 import '../services/catch_up_engine.dart';
+import '../services/circle_service.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/nudge_service.dart';
@@ -32,22 +33,24 @@ class CommunityPage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final GroupService groupService;
+  final CircleService circleService;
   final ReadingStatusService readingStatusService;
   final VibrationService vibrationService;
   final NudgeService? nudgeService;
 
   final DateTime Function() dateProvider;
 
-  const CommunityPage({
+  CommunityPage({
     super.key,
     required this.auth,
     required this.firestore,
     required this.groupService,
+    CircleService? circleService,
     required this.readingStatusService,
     required this.vibrationService,
     this.nudgeService,
     required this.dateProvider,
-  });
+  }) : circleService = circleService ?? groupService.circleService;
 
   @override
   State<CommunityPage> createState() => _CommunityPageState();
@@ -140,6 +143,7 @@ class _CommunityPageState extends State<CommunityPage>
                       child: _CirclePeopleList(
                         auth: widget.auth,
                         groupService: widget.groupService,
+                        circleService: widget.circleService,
                         readingStatusService: widget.readingStatusService,
                         nudgeService: _nudgeService,
                         dateProvider: widget.dateProvider,
@@ -247,6 +251,7 @@ class _GroupFilterChips extends StatelessWidget {
 class _CirclePeopleList extends StatefulWidget {
   final FirebaseAuth auth;
   final GroupService groupService;
+  final CircleService circleService;
   final ReadingStatusService readingStatusService;
   final NudgeService nudgeService;
   final DateTime Function() dateProvider;
@@ -256,6 +261,7 @@ class _CirclePeopleList extends StatefulWidget {
   const _CirclePeopleList({
     required this.auth,
     required this.groupService,
+    required this.circleService,
     required this.readingStatusService,
     required this.nudgeService,
     required this.dateProvider,
@@ -290,7 +296,7 @@ class _CirclePeopleListState extends State<_CirclePeopleList> {
       builder: (context, badgeSnap) {
         final badges = badgeSnap.data ?? const <String, BadgeMirror>{};
         return StreamBuilder<List<CircleMember>>(
-          stream: widget.groupService.circleMembers(myUid),
+          stream: widget.circleService.watchCircleMembers(myUid),
           builder: (context, circleSnap) {
             final circle = (circleSnap.data ?? const <CircleMember>[])
                 .where((m) => m.groupIds.any(groupIds.contains))
@@ -317,6 +323,7 @@ class _CirclePeopleListState extends State<_CirclePeopleList> {
                       person: members[i],
                       auth: widget.auth,
                       groupService: widget.groupService,
+                      circleService: widget.circleService,
                       readingStatusService: widget.readingStatusService,
                       dateProvider: widget.dateProvider,
                       groupIds: groupIds,
@@ -377,6 +384,7 @@ class _CirclePersonRow extends StatefulWidget {
   final _PersonStatus person;
   final FirebaseAuth auth;
   final GroupService groupService;
+  final CircleService circleService;
   final ReadingStatusService readingStatusService;
   final DateTime Function() dateProvider;
   final List<String> groupIds;
@@ -389,6 +397,7 @@ class _CirclePersonRow extends StatefulWidget {
     required this.person,
     required this.auth,
     required this.groupService,
+    required this.circleService,
     required this.readingStatusService,
     required this.dateProvider,
     required this.groupIds,
@@ -469,7 +478,7 @@ class _CirclePersonRowState extends State<_CirclePersonRow> {
             builder: (context, scheduleSnap) {
               return StreamBuilder<Set<String>>(
                 stream: widget.groupIds.length == 1
-                    ? widget.groupService
+                    ? widget.circleService
                         .memberCompletedDates(widget.groupIds.first, person.uid)
                     : const Stream.empty(),
                 builder: (context, completedSnap) {

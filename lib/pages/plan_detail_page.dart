@@ -11,8 +11,7 @@ import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 import '../services/catch_up_engine.dart';
 import '../services/group_service.dart';
-import '../services/plan_completion_coordinator.dart';
-import '../services/read_log_service.dart';
+import '../services/habit_lifecycle_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/vibration_service.dart';
@@ -32,6 +31,7 @@ class PlanDetailPage extends StatefulWidget {
   final FirebaseAuth auth;
   final UserPlanProgress? initialProgress;
   final VibrationService vibrationService;
+  final HabitLifecycleService? habitLifecycleService;
 
   // Group schedule mode parameters
   final Group? group;
@@ -46,6 +46,7 @@ class PlanDetailPage extends StatefulWidget {
     required this.auth,
     this.initialProgress,
     this.vibrationService = const VibrationService(),
+    this.habitLifecycleService,
     this.group,
     this.groupService,
     this.initialSchedule,
@@ -64,16 +65,17 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   ReadingPlanService get _planService => _planServiceInstance ??=
       ReadingPlanService(firestore: _effectiveFirestore);
 
-  PlanCompletionCoordinator? _coordinator;
-  PlanCompletionCoordinator get _completionCoordinator =>
-      _coordinator ??= PlanCompletionCoordinator(
-        firestore: _effectiveFirestore,
-        planService: widget.plan != null ? _planService : null,
-        readingStatusService: ReadingStatusService(
-          firestore: _effectiveFirestore,
-          auth: widget.auth,
-        ),
-      );
+  HabitLifecycleService? _lifecycleService;
+  HabitLifecycleService get _habitService =>
+      _lifecycleService ??= widget.habitLifecycleService ??
+          HabitLifecycleService(
+            firestore: _effectiveFirestore,
+            planService: widget.plan != null ? _planService : null,
+            readingStatusService: ReadingStatusService(
+              firestore: _effectiveFirestore,
+              auth: widget.auth,
+            ),
+          );
 
   FirebaseFirestore get _effectiveFirestore =>
       widget.firestore ??
@@ -517,33 +519,23 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     }
 
     if (!isRead) {
-      if (_burstUndo.count == 0) {
-        _burstUndo.habitBeforeBurst = await _isHabitRecordedToday(user);
-      }
       if (mounted) {
-        _burstUndo.add(context, () {
-          _handleGroupToggle(schedule, true);
-          if (_burstUndo.couplingFiredInBurst && !_burstUndo.habitBeforeBurst) {
-            _burstUndo.couplingFiredInBurst = false;
-            final u = widget.auth.currentUser;
-            if (u == null) return;
-            unawaited(
-              ReadLogService(firestore: _effectiveFirestore).clear(
-                u,
-                date: DateTime.now(),
-              ),
-            );
-          }
-        });
-      }
-      if (!mounted) return;
-      if (coupleHabit) {
-        final coupled = await _completionCoordinator.maybeCoupleHabit(
-          context: context,
-          user: user,
-          onMessage: _burstUndo.count > 1 ? null : _showSnack,
-        );
-        if (coupled) _burstUndo.couplingFiredInBurst = true;
+        if (coupleHabit) {
+          await _habitService.coupleWithBurst(
+            context: context,
+            user: user,
+            burstController: _burstUndo,
+            onUndo: () => _handleGroupToggle(schedule, true),
+            onMessage: _showSnack,
+          );
+        } else {
+          await _habitService.registerBurstMark(
+            context: context,
+            user: user,
+            burstController: _burstUndo,
+            onUndo: () => _handleGroupToggle(schedule, true),
+          );
+        }
       }
     }
   }
@@ -574,11 +566,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     }
 
     if (!mounted) return;
-    final coupled = await _completionCoordinator.maybeCoupleHabit(
+    await _habitService.coupleMonthWithBurst(
       context: context,
       user: user,
+      burstController: _burstUndo,
     );
-    if (coupled) _burstUndo.couplingFiredInBurst = true;
   }
 
   Future<void> _toggleDay(
@@ -620,13 +612,23 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       } else {
         await _planService.markDayComplete(
             user.uid, widget.plan!.id, dayNumber);
-        // Snapshot today's habit at burst start so a burst undo can revert
-        // the habit exactly when the burst caused it (ADR-0005).
-        if (_burstUndo.count == 0) {
-          _burstUndo.habitBeforeBurst = await _isHabitRecordedToday(user);
-        }
         if (!mounted) return;
-        _burstUndo.add(context, () => _undoDay(dayNumber, newCompletedDays));
+        if (coupleHabit) {
+          await _habitService.coupleWithBurst(
+            context: context,
+            user: user,
+            burstController: _burstUndo,
+            onUndo: () => _undoDay(dayNumber, newCompletedDays),
+            onMessage: _showSnack,
+          );
+        } else {
+          await _habitService.registerBurstMark(
+            context: context,
+            user: user,
+            burstController: _burstUndo,
+            onUndo: () => _undoDay(dayNumber, newCompletedDays),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -641,54 +643,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       }
       return;
     }
-
-    // Coupling is one-directional and opt-in: finishing a plan reading may also
-    // count as "showing up" for the day. Un-marking never touches the habit.
-    // During a burst (more than one mark) the follow-up message is folded into
-    // the burst toast, so it is suppressed here (ADR-0005).
-    if (!wasCompleted && mounted && coupleHabit) {
-      final coupled = await _completionCoordinator.maybeCoupleHabit(
-        context: context,
-        user: user,
-        onMessage: _burstUndo.count > 1 ? null : _showSnack,
-      );
-      if (coupled) _burstUndo.couplingFiredInBurst = true;
-    }
   }
 
-  /// Whether today's habit ("showing up") is already recorded for [user].
-  Future<bool> _isHabitRecordedToday(User user) async {
-    final today = DateTime.now();
-    final dateKey = ReadLogService.dateKeyFor(today);
-    try {
-      final doc = await _effectiveFirestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('reading')
-          .doc(dateKey)
-          .get();
-      return doc.exists && doc.data()?['read'] == true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Undoes one mark of a burst: un-marks the day and, when the burst caused
-  /// today's habit to be recorded, reverts it (ADR-0005).
+  /// Undoes one mark of a burst: un-marks the day.
   void _undoDay(int dayNumber, Set<int> completedDays) {
     _toggleDay(dayNumber, true, completedDays);
-    if (_burstUndo.couplingFiredInBurst && !_burstUndo.habitBeforeBurst) {
-      // Revert once per burst; later actions in the same burst skip.
-      _burstUndo.couplingFiredInBurst = false;
-      final user = widget.auth.currentUser;
-      if (user == null) return;
-      unawaited(
-        ReadLogService(firestore: _effectiveFirestore).clear(
-          user,
-          date: DateTime.now(),
-        ),
-      );
-    }
   }
 
   /// Marks every uncompleted day of [month] up to and including today as one
@@ -713,11 +672,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
     // Couple once, silently: the burst toast is the only feedback.
     if (!mounted) return;
-    final coupled = await _completionCoordinator.maybeCoupleHabit(
+    await _habitService.coupleMonthWithBurst(
       context: context,
       user: user,
+      burstController: _burstUndo,
     );
-    if (coupled) _burstUndo.couplingFiredInBurst = true;
   }
 
   void _showSnack(String message) {
