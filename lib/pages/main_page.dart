@@ -22,7 +22,7 @@ import 'package:bible_read/widgets/animated_page_route.dart'; // Added
 import 'challenges_page.dart';
 import 'streak_history_page.dart';
 import '../services/admin_role_service.dart';
-
+import '../services/circle_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
 import '../services/reading_status_service.dart';
@@ -87,6 +87,7 @@ class MainPageState extends State<MainPage> {
   VibrationService get vibrationService => widget.vibrationService;
   late final AdminRoleService _adminRoleService;
   late final GroupService _groupService;
+  late final CircleService _circleService;
 
   late final DataCacheService _cacheService;
   late final ReadingStatusService _readingStatusService;
@@ -112,6 +113,7 @@ class MainPageState extends State<MainPage> {
           cache: _cacheService,
         );
     _groupService = GroupService(firestore: widget.firestore);
+    _circleService = CircleService(firestore: widget.firestore);
     _userPreferencesService = UserPreferencesService(
       firestore: widget.firestore,
     );
@@ -130,6 +132,7 @@ class MainPageState extends State<MainPage> {
         readingStatusService: _readingStatusService,
         userPreferencesService: _userPreferencesService,
         groupService: _groupService,
+        circleService: _circleService,
         googleSignInProvider: widget.googleSignInProvider,
         dateProvider: () => DateTime.now(),
         onOpenJourney: () => _onItemTapped(2),
@@ -139,6 +142,7 @@ class MainPageState extends State<MainPage> {
         auth: widget.auth,
         firestore: widget.firestore,
         groupService: _groupService,
+        circleService: _circleService,
         readingStatusService: _readingStatusService,
         vibrationService: widget.vibrationService,
         dateProvider: () => DateTime.now(),

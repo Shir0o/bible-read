@@ -1,8 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Coalesces rapid mark-as-read actions into a single undoable burst.
+/// Coalesces rapid mark-as-read actions into a single undoable burst (ADR-0005).
 ///
 /// Each mark calls [add] with an undo callback. Marks within [window] of the
 /// previous one merge into the same burst: the toast's count grows, its timer
@@ -13,11 +14,6 @@ import 'package:flutter/material.dart';
 /// the first mark, updates its count in place on subsequent marks (via a
 /// [ValueListenableBuilder] content), and dismisses it when the burst ends.
 /// [dispose] must be called from the host's dispose.
-///
-/// Burst-scoped coupling state ([couplingFiredInBurst], [habitBeforeBurst]) is
-/// set by the host around the reading→habit coupling and read by the undo
-/// closures, so a burst undo can revert today's habit record exactly when the
-/// burst caused it (ADR-0005).
 class BurstUndoController {
   BurstUndoController({
     this.window = const Duration(seconds: 4),
@@ -31,16 +27,6 @@ class BurstUndoController {
   /// controls (the app's bottom nav, the plan hub's action buttons).
   final EdgeInsets margin;
 
-  /// Whether the current burst's marks caused today's habit to be recorded
-  /// (the reading→habit coupling). Set by the host after coupling fires; read
-  /// by the burst's undo closures to decide whether to revert the habit.
-  bool couplingFiredInBurst = false;
-
-  /// Whether today's habit was already recorded before the burst started.
-  /// Set by the host at burst start; the undo reverts the habit only when
-  /// this is false and [couplingFiredInBurst] is true.
-  bool habitBeforeBurst = false;
-
   final List<VoidCallback> _undoActions = [];
   final ValueNotifier<int> _count = ValueNotifier(0);
   Timer? _timer;
@@ -49,6 +35,9 @@ class BurstUndoController {
 
   /// Number of marks in the current burst (0 when idle).
   int get count => _undoActions.length;
+
+  /// Listenable for the active burst count.
+  ValueListenable<int> get countListenable => _count;
 
   /// Registers a mark and (re)shows the coalesced undo toast.
   void add(BuildContext context, VoidCallback undo) {
@@ -103,8 +92,6 @@ class BurstUndoController {
     for (final action in actions.reversed) {
       action();
     }
-    couplingFiredInBurst = false;
-    habitBeforeBurst = false;
   }
 
   void _dismiss() {
@@ -114,8 +101,6 @@ class BurstUndoController {
     _controller = null;
     _undoActions.clear();
     _count.value = 0;
-    couplingFiredInBurst = false;
-    habitBeforeBurst = false;
   }
 
   void dispose() {

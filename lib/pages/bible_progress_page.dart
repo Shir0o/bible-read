@@ -6,8 +6,7 @@ import '../theme/app_theme.dart';
 
 import '../models/lap_coverage.dart';
 import '../models/read_through.dart';
-import '../services/bible_progress_service.dart';
-import '../services/lap_progress_service.dart';
+import '../services/coverage_ledger_service.dart';
 import '../services/read_through_service.dart';
 import '../services/reference_parser.dart';
 import '../services/error_logger.dart';
@@ -21,6 +20,7 @@ class BibleProgressPage extends StatefulWidget {
   final FirebaseAuth auth;
   final String? initialScrollToBook;
   final VibrationService vibrationService;
+  final CoverageLedgerService? coverageLedgerService;
 
   const BibleProgressPage({
     super.key,
@@ -28,6 +28,7 @@ class BibleProgressPage extends StatefulWidget {
     required this.auth,
     this.initialScrollToBook,
     this.vibrationService = const VibrationService(),
+    this.coverageLedgerService,
   });
 
   @override
@@ -35,9 +36,7 @@ class BibleProgressPage extends StatefulWidget {
 }
 
 class BibleProgressPageState extends State<BibleProgressPage> {
-  late final BibleProgressService _bibleProgressService;
-  late final LapProgressService _lapService;
-  late final ReadThroughService _readThroughService;
+  late final CoverageLedgerService _coverageService;
 
   // Chapters read in the CURRENT lap — what the grid fills in.
   LapCoverage _lapCoverage = LapCoverage.empty;
@@ -132,12 +131,8 @@ class BibleProgressPageState extends State<BibleProgressPage> {
   @override
   void initState() {
     super.initState();
-    _bibleProgressService = BibleProgressService(firestore: widget.firestore);
-    _readThroughService = ReadThroughService(firestore: widget.firestore);
-    _lapService = LapProgressService(
-      firestore: widget.firestore,
-      readThroughService: _readThroughService,
-    );
+    _coverageService = widget.coverageLedgerService ??
+        CoverageLedgerService(firestore: widget.firestore);
     _loadData();
   }
 
@@ -154,20 +149,19 @@ class BibleProgressPageState extends State<BibleProgressPage> {
     }
 
     try {
-      final data =
-          await _bibleProgressService.completedChaptersByBook(user.uid);
+      final data = await _coverageService.completedChaptersByBook(user.uid);
 
       // Carry existing progress into the lap model the first time this user
       // sees a lap-scoped grid. Idempotent, and it matters here as well as in
       // ReadThroughHost: without it the whole library would render as
       // "earlier lap" for anyone whose lap state has not been written yet.
-      if (!await _lapService.isSeeded(user.uid)) {
-        await _lapService.seedFromLifetime(user.uid, data);
+      if (!await _coverageService.isSeeded(user.uid)) {
+        await _coverageService.seedFromLifetime(user.uid, data);
       }
 
       final results = await Future.wait([
-        _lapService.fetch(user.uid),
-        _readThroughService.fetchAll(user.uid),
+        _coverageService.fetchLapCoverage(user.uid),
+        _coverageService.fetchReadThroughs(user.uid),
       ]);
       final coverage = results[0] as LapCoverage;
       final ledger = results[1] as List<ReadThrough>;
@@ -180,7 +174,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
 
         // Trigger scroll logic
         final String? targetBook = widget.initialScrollToBook ??
-            await _bibleProgressService.getLastCheckedBook(user.uid);
+            await _coverageService.getLastCheckedBook(user.uid);
 
         if (targetBook != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -294,34 +288,13 @@ class BibleProgressPageState extends State<BibleProgressPage> {
     });
 
     try {
+      await _coverageService.setBookManualCompletion(
+        uid: user.uid,
+        book: book,
+        completed: desiredCompleted,
+      );
       if (desiredCompleted) {
-        await widget.firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('bible_books')
-            .doc(book)
-            .set({
-          'completed': true,
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-
-        // Marking a book by hand counts toward the current lap, exactly as
-        // checking its chapters off in a group or a plan would.
-        final total = ReferenceParser.chapterCount(book) ?? 0;
-        if (total > 0) {
-          await _lapService.recordChapters(
-            user.uid,
-            List<String>.generate(total, (i) => '$book ${i + 1}'),
-          );
-          await _loadData();
-        }
-      } else {
-        await widget.firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('bible_books')
-            .doc(book)
-            .delete();
+        await _loadData();
       }
 
       // Successfully updated, we can eventually clear override but

@@ -9,18 +9,17 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/error_logger.dart';
 import '../services/google_sign_in_factory.dart';
+import '../services/active_reading_aggregator.dart';
 import '../services/bible_progress_service.dart';
 import '../services/catch_up_engine.dart' hide ReadingStatus;
+import '../services/circle_service.dart';
 import '../services/group_service.dart';
-import '../services/plan_pace_service.dart';
-import '../services/plan_completion_coordinator.dart';
+import '../services/habit_lifecycle_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/reflection_service.dart';
 import '../services/user_preferences_service.dart';
-import '../models/group.dart';
 import '../models/group_member_progress.dart';
-import '../models/group_schedule.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 import '../models/reflection.dart';
@@ -64,6 +63,9 @@ class HomePage extends StatefulWidget {
     UserPreferencesService? userPreferencesService,
     ReflectionService? reflectionService,
     GroupService? groupService,
+    CircleService? circleService,
+    ActiveReadingAggregator? activeReadingAggregator,
+    this.habitLifecycleService,
     this.enableDriftAnimation = true,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
@@ -90,7 +92,35 @@ class HomePage extends StatefulWidget {
         bibleProgressService =
             bibleProgressService ?? BibleProgressService(firestore: firestore),
         groupService = groupService ??
-            GroupService(firestore: firestore ?? FirebaseFirestore.instance);
+            GroupService(firestore: firestore ?? FirebaseFirestore.instance),
+        circleService = circleService ??
+            (groupService?.circleService ??
+                CircleService(
+                  firestore: firestore ?? FirebaseFirestore.instance,
+                )),
+        activeReadingAggregator = activeReadingAggregator ??
+            ActiveReadingAggregator(
+              firestore: firestore ?? FirebaseFirestore.instance,
+              readingPlanService: readingPlanService ??
+                  ReadingPlanService(
+                    firestore: firestore ?? FirebaseFirestore.instance,
+                  ),
+              groupService: groupService ??
+                  GroupService(
+                    firestore: firestore ?? FirebaseFirestore.instance,
+                  ),
+              userPreferencesService: userPreferencesService ??
+                  UserPreferencesService(
+                    firestore: firestore ?? FirebaseFirestore.instance,
+                  ),
+              dateProvider: dateProvider,
+            );
+
+  /// Deep module aggregating active personal and shared reading items.
+  final ActiveReadingAggregator activeReadingAggregator;
+
+  /// Service managing the showing-up daily habit lifecycle.
+  final HabitLifecycleService? habitLifecycleService;
 
   /// Service for loading and updating reading status.
   final ReadingStatusService readingStatusService;
@@ -113,6 +143,9 @@ class HomePage extends StatefulWidget {
   /// Loads the user's group, its schedule and member presence for the
   /// "together" reading card (design parity — Home shared-plan section).
   final GroupService groupService;
+
+  /// Service managing Circle derivation across shared groups.
+  final CircleService circleService;
 
   /// Switches to the Journey tab when the consistency glimpse is tapped.
   final VoidCallback? onOpenJourney;
@@ -151,14 +184,7 @@ class _HomePageState extends State<HomePage>
   int _currentStreak = 0;
   int _totalReadDays = 0;
 
-  // Plan state. *All* active personal plans (plan + progress) are retained so
-  // Home can rank every active reading, pick a single primary hero, and fold
-  // the rest into compact rows — plus surface a "wrap-up" hero for any plan
-  // whose calendar window has ended but isn't yet content-complete (#716).
   StreamSubscription<DocumentSnapshot>? _syncSub;
-
-  /// Subscription to the active-plans stream, cancelled on dispose.
-  StreamSubscription<List<UserPlanProgress>>? _activePlansSub;
 
   /// Streams the current reading status, so a Firestore change updates Home
   /// without a pull-to-refresh.
@@ -167,38 +193,25 @@ class _HomePageState extends State<HomePage>
   /// Streams today's reflection document.
   StreamSubscription<dynamic>? _reflectionSub;
 
-  /// Streams the reader's group list; changes re-subscribe the per-group
-  /// schedule/progress watchers below.
-  StreamSubscription<List<Group>>? _groupMembershipSub;
-
-  /// Streaming change triggers for each group shown on Home.
-  final Set<StreamSubscription<dynamic>> _groupTriggerSubs = {};
-
   /// Streaming change trigger for today's Circle feed.
   StreamSubscription<dynamic>? _communityFeedSub;
 
-  Timer? _groupRefreshTimer;
   Timer? _communityRefreshTimer;
 
-  /// Timers/subscriptions created by best-effort loads, tracked so they can be
-  /// cancelled on dispose (otherwise a slow stream's timeout Timer can outlive
-  /// the widget and trip the "Timer still pending" test invariant).
-  final Set<Timer> _loadTimers = {};
-  final Set<StreamSubscription<dynamic>> _loadSubs = {};
+  /// Subscription to the active readings aggregator stream.
+  StreamSubscription<ActiveReadingsSnapshot>? _readingsSub;
 
-  List<_PersonalPlan> _personalPlans = [];
+  /// Current snapshot of resolved active readings (plans and groups).
+  ActiveReadingsSnapshot _readingsSnapshot = ActiveReadingsSnapshot.empty;
+
+  /// Set of group IDs currently toggling reading status.
+  final Set<String> _groupMarkingIds = {};
 
   /// Tracks whether the CheckInPage was auto-opened on app launch.
   bool _hasAutoOpenedCheckIn = false;
 
   /// Whether the primary plan card's mark is mid-write.
   bool _planToggleLoading = false;
-
-  // Group state. Powers the "together" reading cards under Today's reading: every
-  // group the user belongs to, each with today's scheduled chapters, member
-  // presence and the catch-up set used by the shared CatchUpStatusRow. Keyed by
-  // group id; insertion order is preserved so ranking stays stable.
-  final Map<String, _GroupData> _groups = {};
 
   // Community presence. The bottom "Your community" glimpse — who among the
   // reader's Circle (the co-members of their Groups) has read today.
@@ -213,10 +226,10 @@ class _HomePageState extends State<HomePage>
   /// Whether finishing a plan reading also records the daily habit (Settings'
   /// "Reading counts as showing up" toggle). Drives the "Also counts as
   /// showing up today" hint on not-yet-read mark buttons; the actual coupling
-  /// write is owned by [PlanCompletionCoordinator], untouched here.
+  /// write is owned by [HabitLifecycleService], untouched here.
   bool _autoMarkPlanRead = false;
 
-  late final PlanCompletionCoordinator _completionCoordinator;
+  late final HabitLifecycleService _habitService;
 
   /// Coalesces rapid marks into one undoable burst (ADR-0005).
   late final BurstUndoController _burstUndo;
@@ -226,11 +239,12 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    _completionCoordinator = PlanCompletionCoordinator(
-      firestore: widget.firestore,
-      planService: widget.readingPlanService,
-      readingStatusService: widget.readingStatusService,
-    );
+    _habitService = widget.habitLifecycleService ??
+        HabitLifecycleService(
+          firestore: widget.firestore,
+          planService: widget.readingPlanService,
+          readingStatusService: widget.readingStatusService,
+        );
     _burstUndo = BurstUndoController();
     _animationController = AnimationController(
       vsync: this,
@@ -248,12 +262,8 @@ class _HomePageState extends State<HomePage>
   void _watchLiveData() {
     _statusSub?.cancel();
     _reflectionSub?.cancel();
-    _groupMembershipSub?.cancel();
+    _readingsSub?.cancel();
     _communityFeedSub?.cancel();
-    for (final subscription in _groupTriggerSubs) {
-      subscription.cancel();
-    }
-    _groupTriggerSubs.clear();
 
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
@@ -270,7 +280,23 @@ class _HomePageState extends State<HomePage>
           onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
         );
 
-    _watchGroupsAndCommunity(uid);
+    _readingsSub = widget.activeReadingAggregator
+        .watch(
+      uid,
+      dateProvider: widget.dateProvider,
+      pinnedReadingId: _pinnedReadingId,
+    )
+        .listen(
+      (snapshot) {
+        if (_disposed || mounted == false) return;
+        setState(() {
+          _readingsSnapshot = snapshot;
+        });
+      },
+      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
+    );
+
+    _watchCommunity(uid);
   }
 
   void _applyStatus(ReadingStatus status) {
@@ -294,54 +320,6 @@ class _HomePageState extends State<HomePage>
     });
   }
 
-  void _watchGroupsAndCommunity(String uid) {
-    _groupMembershipSub?.cancel();
-    _groupMembershipSub =
-        widget.groupService.groupsForUser(uid, includeFinished: false).listen(
-      (groups) {
-        for (final subscription in _groupTriggerSubs) {
-          subscription.cancel();
-        }
-        _groupTriggerSubs.clear();
-
-        for (final group in groups) {
-          _groupTriggerSubs.add(
-            widget.groupService.schedule(group.id).listen(
-                  (_) => _scheduleGroupReload(),
-                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-                ),
-          );
-          _groupTriggerSubs.add(
-            widget.groupService
-                .memberDailyCompletion(group.id, includeUid: uid)
-                .listen(
-                  (_) => _scheduleGroupReload(),
-                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-                ),
-          );
-          _groupTriggerSubs.add(
-            widget.groupService.userProgressForGroup(group.id, uid).listen(
-                  (_) => _scheduleGroupReload(),
-                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-                ),
-          );
-          _groupTriggerSubs.add(
-            PlanPaceService(firestore: widget.firestore)
-                .sharedPlanOverlay(uid, group.id)
-                .listen(
-                  (_) => _scheduleGroupReload(),
-                  onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-                ),
-          );
-        }
-
-        _scheduleGroupReload();
-        _watchCommunity(uid);
-      },
-      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-    );
-  }
-
   void _watchCommunity(String uid) {
     _communityFeedSub?.cancel();
     final dateKey = _dateKeyFor(widget.dateProvider());
@@ -351,17 +329,6 @@ class _HomePageState extends State<HomePage>
           (_) => _scheduleCommunityReload(),
           onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
         );
-  }
-
-  void _scheduleGroupReload() {
-    _groupRefreshTimer?.cancel();
-    _groupRefreshTimer = Timer(
-      const Duration(milliseconds: 250),
-      () {
-        if (_disposed || mounted == false) return;
-        unawaited(_loadGroup());
-      },
-    );
   }
 
   void _scheduleCommunityReload() {
@@ -379,8 +346,8 @@ class _HomePageState extends State<HomePage>
     final shouldAutoOpenCheckIn = !_hasAutoOpenedCheckIn;
     _hasAutoOpenedCheckIn = true;
 
-    // Resolve the pinned-reading preference first so _loadGroup can prefer the
-    // pinned group (Home only surfaces one group, so it must load the right one).
+    // Resolve the pinned-reading preference first so _loadActiveReadings can prefer the
+    // pinned reading.
     await _loadPreferences();
 
     // Start the remaining loads in parallel.
@@ -400,13 +367,31 @@ class _HomePageState extends State<HomePage>
           }
         }
       }),
-      _loadActivePlans(),
-      _loadGroup(),
+      _loadActiveReadings(),
       _loadCommunity(),
       _loadReflection(),
     ];
 
     await Future.wait(futures);
+  }
+
+  Future<void> _loadActiveReadings() async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final snapshot = await widget.activeReadingAggregator.fetch(
+        uid,
+        today: widget.dateProvider(),
+        pinnedReadingId: _pinnedReadingId,
+      );
+      if (!_disposed && mounted) {
+        setState(() {
+          _readingsSnapshot = snapshot;
+        });
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
   }
 
   /// Loads the user's pinned-reading preference. Best-effort: any failure just
@@ -449,157 +434,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Resolves with the first value of [stream], falling back to [fallback] after
-  /// [timeout]. Unlike `stream.first.timeout(...)`, the timer and subscription
-  /// are owned and tracked so they are cancelled on dispose rather than leaking.
-  Future<T> _firstWithTimeout<T>(
-    Stream<T> stream, {
-    required Duration timeout,
-    required T fallback,
-  }) {
-    final completer = Completer<T>();
-    StreamSubscription<T>? sub;
-    Timer? timer;
-
-    void finish(T value) {
-      if (completer.isCompleted) return;
-      final t = timer;
-      if (t != null) {
-        t.cancel();
-        _loadTimers.remove(t);
-      }
-      final s = sub;
-      if (s != null) {
-        _loadSubs.remove(s);
-        s.cancel();
-      }
-      completer.complete(value);
-    }
-
-    timer = Timer(timeout, () => finish(fallback));
-    _loadTimers.add(timer);
-    sub = stream.listen(
-      finish,
-      onError: (_) => finish(fallback),
-      onDone: () => finish(fallback),
-    );
-    _loadSubs.add(sub);
-    return completer.future;
-  }
-
-  /// Loads the user's first group, today's scheduled chapters, member presence
-  /// and the catch-up set. Best-effort: any failure simply hides the section.
-  Future<void> _loadGroup() async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-
-    try {
-      final groups = await _firstWithTimeout<List<Group>>(
-        widget.groupService.groupsForUser(uid, includeFinished: false),
-        timeout: const Duration(seconds: 5),
-        fallback: const <Group>[],
-      );
-      if (groups.isEmpty) {
-        if (!_disposed && mounted) {
-          setState(() => _groups.clear());
-        }
-        return;
-      }
-
-      final today = _dateOnly(widget.dateProvider());
-      final paceService = PlanPaceService(firestore: widget.firestore);
-
-      // Load every group the user belongs to in parallel — each group's
-      // schedule, today's member presence, and the user's per-chapter progress —
-      // so they can all participate in the Today's-reading hero/list ranking.
-      final loaded = await Future.wait(
-        groups.map((group) async {
-          final results = await Future.wait([
-            _firstWithTimeout<List<GroupSchedule>>(
-              widget.groupService.schedule(group.id),
-              timeout: const Duration(seconds: 3),
-              fallback: const <GroupSchedule>[],
-            ),
-            _firstWithTimeout<List<GroupMemberProgressData>>(
-              widget.groupService.memberDailyCompletion(
-                group.id,
-                includeUid: uid,
-              ),
-              timeout: const Duration(seconds: 3),
-              fallback: const <GroupMemberProgressData>[],
-            ),
-            _firstWithTimeout<Map<String, int>>(
-              widget.groupService.userProgressForGroup(group.id, uid),
-              timeout: const Duration(seconds: 3),
-              fallback: const <String, int>{},
-            ),
-            paceService.getSharedPlanOverlay(uid, group.id).timeout(
-                  const Duration(seconds: 3),
-                  onTimeout: () => null,
-                ),
-          ]);
-
-          // The reader's own pace overlay, when they adjusted pace
-          // (ADR-0007), replaces the Group's dates in their view.
-          final overlay = results[3] as List<GroupSchedule>?;
-          final schedule = overlay ?? results[0] as List<GroupSchedule>;
-          var members = results[1] as List<GroupMemberProgressData>;
-          final progress = results[2] as Map<String, int>;
-
-          GroupSchedule? todayEntry;
-          for (final s in schedule) {
-            if (_dateOnly(s.date) == today) {
-              todayEntry = s;
-              break;
-            }
-          }
-
-          // Presence scores today against the Group's own reading, so on the
-          // reader's own dates their read-today comes from their progress.
-          if (overlay != null) {
-            final todayCount = progress[GroupService.dateId(today)] ?? 0;
-            final readToday = todayEntry != null &&
-                todayCount > 0 &&
-                todayCount >= todayEntry.chapters.length;
-            members = [
-              for (final m in members)
-                m.uid == uid
-                    ? GroupMemberProgressData(
-                        uid: m.uid,
-                        name: m.name,
-                        photoUrl: m.photoUrl,
-                        completion: readToday ? 1.0 : 0.0,
-                      )
-                    : m,
-            ];
-          }
-
-          return _GroupData(
-            group: group,
-            schedule: schedule,
-            today: todayEntry,
-            members: members,
-            completedDateIds: progress.entries
-                .where((e) => e.value > 0)
-                .map((e) => e.key)
-                .toSet(),
-            ownPace: overlay != null,
-          );
-        }),
-      );
-
-      if (!_disposed && mounted) {
-        setState(() {
-          _groups
-            ..clear()
-            ..addEntries(loaded.map((g) => MapEntry(g.group.id, g)));
-        });
-      }
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-    }
-  }
-
   /// Loads today's community presence — the reader plus the co-members of
   /// their Groups (their Circle, derived per ADR-0003) who have read today —
   /// for the bottom "Your community" glimpse. Best-effort.
@@ -609,7 +443,7 @@ class _HomePageState extends State<HomePage>
 
     try {
       final coMemberIds =
-          await widget.groupService.circleMemberIds(user.uid).timeout(
+          await widget.circleService.circleMemberIds(user.uid).timeout(
                 const Duration(seconds: 5),
                 onTimeout: () => const <String>{},
               );
@@ -683,8 +517,6 @@ class _HomePageState extends State<HomePage>
     }
     return '?';
   }
-
-  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   String _dateKeyFor(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -771,119 +603,9 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Loads *every* active (non-archived, unfinished) personal plan with its plan document,
-  /// so Home can rank them and choose a primary. Streams updates so marking a
-  /// reading re-ranks live.
-  Future<void> _loadActivePlans() async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-
-    final completer = Completer<void>();
-    bool firstEvent = true;
-
-    _activePlansSub?.cancel();
-    _activePlansSub = widget.readingPlanService.getActivePlans(uid).listen(
-      (allProgress) async {
-        // A plan the reader Finished (ADR-0010) has left Home.
-        final progresses =
-            allProgress.where((p) => p.finishedAt == null).toList();
-        if (progresses.isEmpty) {
-          if (!_disposed && mounted) {
-            setState(() => _personalPlans = []);
-          }
-          if (firstEvent) {
-            firstEvent = false;
-            completer.complete();
-          }
-          return;
-        }
-
-        final items = <_PersonalPlan>[];
-        for (final progress in progresses) {
-          final plan = await widget.readingPlanService.getPlanById(
-            progress.planId,
-            userId: uid,
-          );
-          if (plan != null) {
-            items.add(_PersonalPlan(plan: plan, progress: progress));
-          }
-        }
-
-        if (!_disposed && mounted) {
-          setState(() => _personalPlans = items);
-        }
-
-        if (firstEvent) {
-          firstEvent = false;
-          completer.complete();
-        }
-      },
-      onError: (e) {
-        if (firstEvent) {
-          firstEvent = false;
-          completer.completeError(e);
-        }
-      },
-    );
-
-    return completer.future;
-  }
-
-  /// Builds the ranked list of active readings (personal plans + my group),
-  /// dropping any that are content-complete. Ordered by how pressing each is —
-  /// due → behind → on-track → ended — so the first item is the primary hero.
-  List<_ReadingItem> _buildReadingItems() {
-    final today = widget.dateProvider();
-    final items = <_ReadingItem>[];
-
-    for (final pp in _personalPlans) {
-      final status = CatchUpEngine.forPersonalPlan(
-        pp.plan,
-        pp.progress,
-        today: today,
-      );
-      final state = status.lifecycleAt(today);
-      if (state == PlanLifecycle.complete) continue;
-      items.add(_ReadingItem.personal(pp.plan, pp.progress, status, state));
-    }
-
-    for (final g in _groups.values) {
-      if (g.schedule.isEmpty) continue;
-      final status = CatchUpEngine.forGroupSchedule(
-        g.schedule,
-        g.completedDateIds,
-        today: today,
-      );
-      final state = status.lifecycleAt(today);
-      if (state != PlanLifecycle.complete) {
-        items.add(_ReadingItem.group(g.group, status, state));
-      }
-    }
-
-    const rank = {
-      PlanLifecycle.due: 0,
-      PlanLifecycle.behind: 1,
-      PlanLifecycle.ontrack: 2,
-      PlanLifecycle.wrapup: 3,
-    };
-    items.sort((a, b) {
-      final r = rank[a.state]! - rank[b.state]!;
-      if (r != 0) return r;
-      return b.status.missedCount - a.status.missedCount;
-    });
-
-    // A user-pinned reading overrides the automatic ranking and becomes the
-    // hero, matching the "Primary on Home" pin in the All Plans hub.
-    final pinned = _pinnedReadingId;
-    if (pinned != null) {
-      final idx = items.indexWhere((it) => it.pinKey == pinned);
-      if (idx > 0) {
-        final hero = items.removeAt(idx);
-        items.insert(0, hero);
-      }
-    }
-    return items;
-  }
+  /// Returns the ranked list of active readings from the current snapshot.
+  List<ActiveReadingItem> _buildReadingItems() =>
+      _readingsSnapshot.homeReadings;
 
   /// Marks (or unmarks) the current day as read. Optimistically updates local
   /// state and writes the change to Firestore, rolling back on failure.
@@ -979,45 +701,15 @@ class _HomePageState extends State<HomePage>
     try {
       await user.reload();
     } catch (_) {}
-    final refreshedUser = widget.auth.currentUser;
+    final refreshedUser = widget.auth.currentUser ?? user;
 
-    final readLogService = ReadLogService(firestore: widget.firestore);
     try {
-      final dateKey = ReadLogService.dateKeyFor(today);
-
       if (wasRead) {
-        final List<Future<void>> backendWrites = [
-          readLogService.clear(refreshedUser ?? user, date: today),
-          widget.firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('reading')
-              .doc(dateKey)
-              .set({'read': false}, SetOptions(merge: true)),
-        ];
-        await Future.wait(backendWrites);
+        await _habitService.clearShowingUp(refreshedUser, date: today);
       } else {
-        // The daily habit is a pure presence mark — it never advances any plan.
-        // Coupling is one-directional: finishing a plan reading may optionally
-        // record the habit (see PlanDetailPage), but the bare habit tap does not
-        // touch plan progress.
-        final List<Future<void>> backendWrites = [
-          readLogService.mark(refreshedUser ?? user, date: today),
-          widget.firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('reading')
-              .doc(dateKey)
-              .set({'read': true}, SetOptions(merge: true)),
-        ];
-        await Future.wait(backendWrites);
+        await _habitService.showUp(refreshedUser, date: today);
       }
 
-      // Update summary collection (lightweight update)
-      await _updateSummaryWithToday();
-
-      // Invalidate cache so the next tab visit fetches fresh data.
-      widget.readingStatusService.invalidateCache();
       unawaited(_loadReadStatus(showLoading: false));
 
       // Show a transient SnackBar with an Undo option when marked as read.
@@ -1065,16 +757,11 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Replaces the progress for [planId] in [_personalPlans] (used for optimistic
+  /// Updates the progress for [planId] in [_readingsSnapshot] (used for optimistic
   /// updates and rollback when marking a specific plan's reading).
   void _setProgressFor(String planId, UserPlanProgress next) {
-    _personalPlans = _personalPlans
-        .map(
-          (pp) => pp.plan.id == planId
-              ? _PersonalPlan(plan: pp.plan, progress: next)
-              : pp,
-        )
-        .toList();
+    _readingsSnapshot =
+        _readingsSnapshot.withOptimisticPlanProgress(planId, next);
   }
 
   /// Marks (or un-marks) a specific plan's [day] reading. Distinct from the bare
@@ -1119,42 +806,23 @@ class _HomePageState extends State<HomePage>
         );
       } else {
         if (!mounted) return;
-        // Snapshot today's habit at burst start so a burst undo can revert
-        // the habit exactly when the burst caused it (ADR-0005).
-        if (_burstUndo.count == 0) {
-          _burstUndo.habitBeforeBurst = await _isHabitRecordedToday(user);
-        }
-        if (!mounted) return;
-        final coupled = await _completionCoordinator.completePlanDay(
+        await _habitService.completePlanDayWithBurst(
           context: context,
           user: user,
           planId: plan.id,
           day: day,
+          burstController: _burstUndo,
+          onUndo: () {
+            final p = _readingsSnapshot.activePersonalPlans
+                .where((pp) => pp.plan.id == plan.id)
+                .firstOrNull;
+            if (p != null) {
+              _togglePlanReadingFor(p.plan, p.progress, day);
+            }
+          },
+          onMessage: _showSnack,
         );
-        if (coupled) _burstUndo.couplingFiredInBurst = true;
-        // The coupling may have recorded the habit; refresh habit state.
-        widget.readingStatusService.invalidateCache();
         unawaited(_loadReadStatus(showLoading: false));
-
-        if (!mounted) return;
-        _burstUndo.add(context, () {
-          final p = _personalPlans.firstWhere(
-            (pp) => pp.plan.id == plan.id,
-          );
-          _togglePlanReadingFor(p.plan, p.progress, day);
-          // Revert today's habit once when this burst caused it.
-          if (_burstUndo.couplingFiredInBurst && !_burstUndo.habitBeforeBurst) {
-            _burstUndo.couplingFiredInBurst = false;
-            final u = widget.auth.currentUser;
-            if (u == null) return;
-            unawaited(
-              ReadLogService(firestore: widget.firestore).clear(
-                u,
-                date: DateTime.now(),
-              ),
-            );
-          }
-        });
       }
     } catch (e, st) {
       if (kDebugMode) {
@@ -1179,7 +847,7 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Whether the current user has marked today's reading complete for [g].
-  bool _groupReadToday(_GroupData g) {
+  bool _groupReadToday(ActiveGroupReading g) {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return false;
     for (final m in g.members) {
@@ -1191,31 +859,24 @@ class _HomePageState extends State<HomePage>
   /// Marks (or unmarks) today's reading for group [g] for the current user via
   /// the shared group progress API, then optimistically reflects it in that
   /// group's member-presence list so the card updates immediately.
-  Future<void> _toggleGroupReading(_GroupData g) async {
+  Future<void> _toggleGroupReading(ActiveGroupReading g) async {
     final user = widget.auth.currentUser;
-    final today = g.today;
+    final today = g.todaySchedule;
     if (user == null || today == null) return;
-    if (g.markLoading) return;
+    if (_groupMarkingIds.contains(g.group.id)) return;
 
     unawaited(widget.vibrationService.lightImpact());
     final wasRead = _groupReadToday(g);
-    final previousMembers = List<GroupMemberProgressData>.from(g.members);
+    final previousSnapshot = _readingsSnapshot;
 
     if (!_disposed && mounted) {
       setState(() {
-        g.markLoading = true;
-        g.members = g.members
-            .map(
-              (m) => m.uid == user.uid
-                  ? GroupMemberProgressData(
-                      uid: m.uid,
-                      name: m.name,
-                      photoUrl: m.photoUrl,
-                      completion: wasRead ? 0.0 : 1.0,
-                    )
-                  : m,
-            )
-            .toList();
+        _groupMarkingIds.add(g.group.id);
+        _readingsSnapshot = _readingsSnapshot.withOptimisticGroupCompletion(
+          g.group.id,
+          user.uid,
+          wasRead ? 0.0 : 1.0,
+        );
       });
     }
 
@@ -1227,43 +888,28 @@ class _HomePageState extends State<HomePage>
         read: !wasRead,
       );
       if (!wasRead) {
-        // Snapshot today's habit at burst start so a burst undo can revert
-        // the habit exactly when the burst caused it (ADR-0005).
-        if (_burstUndo.count == 0) {
-          _burstUndo.habitBeforeBurst = await _isHabitRecordedToday(user);
-        }
         if (mounted) {
-          _burstUndo.add(context, () {
-            _toggleGroupReading(g);
-            // Revert today's habit once when this burst caused it.
-            if (_burstUndo.couplingFiredInBurst &&
-                !_burstUndo.habitBeforeBurst) {
-              _burstUndo.couplingFiredInBurst = false;
-              final u = widget.auth.currentUser;
-              if (u == null) return;
-              unawaited(
-                ReadLogService(firestore: widget.firestore).clear(
-                  u,
-                  date: DateTime.now(),
-                ),
-              );
-            }
-          });
+          await _habitService.coupleWithBurst(
+            context: context,
+            user: user,
+            burstController: _burstUndo,
+            onUndo: () {
+              final latest = _readingsSnapshot.activeGroupReadings
+                  .where((gr) => gr.group.id == g.group.id)
+                  .firstOrNull;
+              if (latest != null) {
+                _toggleGroupReading(latest);
+              }
+            },
+            onMessage: _showSnack,
+          );
+          unawaited(_loadReadStatus(showLoading: false));
         }
-        if (!mounted) return;
-        final coupled = await _completionCoordinator.maybeCoupleHabit(
-          context: context,
-          user: user,
-          onMessage: _burstUndo.count > 1 ? null : _showSnack,
-        );
-        if (coupled) _burstUndo.couplingFiredInBurst = true;
-        widget.readingStatusService.invalidateCache();
-        unawaited(_loadReadStatus(showLoading: false));
       }
     } catch (e, st) {
       ErrorLogger.log(e, st);
       if (!_disposed && mounted) {
-        setState(() => g.members = previousMembers);
+        setState(() => _readingsSnapshot = previousSnapshot);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to update reading. Please try again.'),
@@ -1272,25 +918,8 @@ class _HomePageState extends State<HomePage>
       }
     } finally {
       if (!_disposed && mounted) {
-        setState(() => g.markLoading = false);
+        setState(() => _groupMarkingIds.remove(g.group.id));
       }
-    }
-  }
-
-  /// Whether today's habit ("showing up") is already recorded for [user].
-  Future<bool> _isHabitRecordedToday(User user) async {
-    final today = DateTime.now();
-    final dateKey = ReadLogService.dateKeyFor(today);
-    try {
-      final doc = await widget.firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('reading')
-          .doc(dateKey)
-          .get();
-      return doc.exists && doc.data()?['read'] == true;
-    } catch (_) {
-      return false;
     }
   }
 
@@ -1300,33 +929,6 @@ class _HomePageState extends State<HomePage>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  /// Recomputes summary data after marking today as read. Delegates to
-  /// [ReadingStatusService.updateSummary], which applies the shared
-  /// chronological grace-credit accounting used across the app.
-  Future<SummaryStats?> _updateSummaryWithToday() async {
-    final user = widget.auth.currentUser;
-    if (user == null) return null;
-
-    try {
-      final stats = await widget.readingStatusService.updateSummary();
-      return stats;
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('Failed to update summary with today: $e');
-      }
-      ErrorLogger.log(e, st);
-      if (!_disposed && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to update summary. Please try again.'),
-          ),
-        );
-        unawaited(_loadReadStatus(showLoading: false));
-      }
-      return null;
-    }
   }
 
   /// Adds a like entry for today's reading document.
@@ -1701,7 +1303,8 @@ class _HomePageState extends State<HomePage>
   /// (a personal plan, a group, or a wrap-up card for a plan whose window has
   /// ended), every other active plan/group folded into compact rows beneath,
   /// and a "Manage all N plans" affordance.
-  Widget _buildReadingSection(BuildContext context, List<_ReadingItem> items) {
+  Widget _buildReadingSection(
+      BuildContext context, List<ActiveReadingItem> items) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final primary = items.first;
@@ -1738,7 +1341,7 @@ class _HomePageState extends State<HomePage>
         if (primary.state == PlanLifecycle.wrapup)
           _buildWrapUpHero(context, primary)
         else ...[
-          primary.isGroup
+          primary is ActiveGroupReading
               ? _buildGroupReadingCard(context, primary)
               : _buildPersonalReadingCard(context, primary),
           const SizedBox(height: AppSpacing.gap12),
@@ -1746,8 +1349,7 @@ class _HomePageState extends State<HomePage>
             status: primary.status,
             // A reader on their own pace overlay is on track with their own
             // dates, not in step with the Group schedule (ADR-0007).
-            onTrackLabel: primary.isGroup &&
-                    !(_groups[primary.group!.id]?.ownPace ?? false)
+            onTrackLabel: primary.isGroup && !primary.ownPace
                 ? 'In step with your group'
                 : "You're on track",
             onTap: () => _openPrimarySchedule(primary),
@@ -1849,7 +1451,8 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Hero card for a personal plan — the current reading with its own mark.
-  Widget _buildPersonalReadingCard(BuildContext context, _ReadingItem item) {
+  Widget _buildPersonalReadingCard(
+      BuildContext context, ActiveReadingItem item) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final plan = item.plan!;
@@ -1939,24 +1542,25 @@ class _HomePageState extends State<HomePage>
 
   /// Hero card for a group — today's chapters, member presence, "Read with your
   /// community" mark. (The group catch-up row is rendered by the section.)
-  Widget _buildGroupReadingCard(BuildContext context, _ReadingItem item) {
+  Widget _buildGroupReadingCard(BuildContext context, ActiveGroupReading item) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final group = item.group!;
-    final g = _groups[group.id];
-    if (g == null) return const SizedBox.shrink();
-    final isRead = _groupReadToday(g);
-    final canMark = g.today != null;
-    final refText = g.today != null && g.today!.chapters.isNotEmpty
-        ? _formatReadings(g.today!.chapters)
-        : _formatReadings(item.status.currentReadings);
+    final group = item.group;
+    final isRead = _groupReadToday(item);
+    final canMark = item.todaySchedule != null;
+    final refText =
+        item.todaySchedule != null && item.todaySchedule!.chapters.isNotEmpty
+            ? _formatReadings(item.todaySchedule!.chapters)
+            : _formatReadings(item.status.currentReadings);
 
     // Members who have read today lead the presence stack.
-    final readers = g.members.where((m) => m.completion >= 1.0).toList();
+    final readers = item.members.where((m) => m.completion >= 1.0).toList();
     final presenceMembers = [
       ...readers,
-      ...g.members.where((m) => m.completion < 1.0),
+      ...item.members.where((m) => m.completion < 1.0),
     ];
+
+    final isMarking = _groupMarkingIds.contains(group.id);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -2017,7 +1621,7 @@ class _HomePageState extends State<HomePage>
             height: 48,
             child: !canMark
                 ? OutlinedButton.icon(
-                    onPressed: () => _openGroupSchedule(g),
+                    onPressed: () => _openGroupSchedule(item),
                     icon: Icon(
                       Icons.calendar_today_outlined,
                       size: 18,
@@ -2038,8 +1642,8 @@ class _HomePageState extends State<HomePage>
                     ? _buildReadConfirmationRow(context, 'Read with your group')
                     : FilledButton.tonalIcon(
                         onPressed:
-                            g.markLoading ? null : () => _toggleGroupReading(g),
-                        icon: g.markLoading
+                            isMarking ? null : () => _toggleGroupReading(item),
+                        icon: isMarking
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
@@ -2065,7 +1669,7 @@ class _HomePageState extends State<HomePage>
   /// No "mark done" shortcut: a plan is fully read only when every reading is
   /// marked. A reader who is done anyway can Finish it (ADR-0010), which
   /// leaves the unread readings unmarked.
-  Widget _buildWrapUpHero(BuildContext context, _ReadingItem item) {
+  Widget _buildWrapUpHero(BuildContext context, ActiveReadingItem item) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final status = item.status;
@@ -2218,7 +1822,7 @@ class _HomePageState extends State<HomePage>
   }
 
   /// A compact, non-primary plan/group row.
-  Widget _buildPlanMiniRow(BuildContext context, _ReadingItem item) {
+  Widget _buildPlanMiniRow(BuildContext context, ActiveReadingItem item) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final accent = item.state == PlanLifecycle.behind ||
@@ -2301,7 +1905,7 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Status line for a [_buildPlanMiniRow].
-  String _miniStatusText(_ReadingItem item) {
+  String _miniStatusText(ActiveReadingItem item) {
     final s = item.status;
     final ref = _formatReadings(s.currentReadings);
     switch (item.state) {
@@ -2340,24 +1944,22 @@ class _HomePageState extends State<HomePage>
   /// A personal plan's schedule is rewritten in place; a Shared plan only
   /// gets the reader's own pace overlay (ADR-0007). A schedule rewrite
   /// doesn't touch `plan_progress`, so the plans are reloaded afterwards.
-  Future<void> _adjustPace(_ReadingItem item) async {
+  Future<void> _adjustPace(ActiveReadingItem item) async {
     final uid = widget.auth.currentUser?.uid;
     final group = item.group;
     if (uid != null && group != null) {
-      final data = _groups[group.id];
-      if (data == null) return;
       final applied = await adjustSharedPace(
         context,
         firestore: widget.firestore,
         uid: uid,
         groupId: group.id,
-        schedule: data.schedule,
-        completedDateIds: data.completedDateIds,
+        schedule: item.schedule,
+        completedDateIds: item.completedDateIds,
         daysBehind: item.status.missedCount,
         today: widget.dateProvider(),
         vibrationService: widget.vibrationService,
       );
-      if (applied && !_disposed && mounted) await _loadGroup();
+      if (applied && !_disposed && mounted) await _loadActiveReadings();
       return;
     }
     final plan = item.plan;
@@ -2372,27 +1974,21 @@ class _HomePageState extends State<HomePage>
       today: widget.dateProvider(),
       vibrationService: widget.vibrationService,
     );
-    if (applied && !_disposed && mounted) await _loadActivePlans();
+    if (applied && !_disposed && mounted) await _loadActiveReadings();
   }
 
   /// Finishes the ended plan on the card (ADR-0010) — personal, optimistic
   /// and undoable. The plan leaves Home at once and returns if the write
   /// fails; unread readings stay unmarked.
-  Future<void> _finishReading(_ReadingItem item) async {
+  Future<void> _finishReading(ActiveReadingItem item) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     unawaited(widget.vibrationService.lightImpact());
     final group = item.group;
     final plan = item.plan;
-    final previousPlans = _personalPlans;
-    final previousGroup = group == null ? null : _groups[group.id];
+    final previousSnapshot = _readingsSnapshot;
     setState(() {
-      if (group != null) {
-        _groups.remove(group.id);
-      } else {
-        _personalPlans =
-            _personalPlans.where((pp) => pp.plan.id != plan!.id).toList();
-      }
+      _readingsSnapshot = _readingsSnapshot.withoutReading(item.pinKey);
     });
     try {
       if (group != null) {
@@ -2417,11 +2013,7 @@ class _HomePageState extends State<HomePage>
       ErrorLogger.log(e, st);
       if (_disposed || !mounted) return;
       setState(() {
-        if (previousGroup != null) {
-          _groups[previousGroup.group.id] = previousGroup;
-        } else {
-          _personalPlans = previousPlans;
-        }
+        _readingsSnapshot = previousSnapshot;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2432,7 +2024,7 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Undoes [_finishReading]; the live plan/group streams bring it back.
-  Future<void> _unfinishReading(_ReadingItem item) async {
+  Future<void> _unfinishReading(ActiveReadingItem item) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     try {
@@ -2457,10 +2049,9 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Opens the schedule/detail for any reading item (personal plan or group).
-  void _openPrimarySchedule(_ReadingItem item) {
-    if (item.isGroup) {
-      final g = _groups[item.group!.id];
-      if (g != null) _openGroupSchedule(g);
+  void _openPrimarySchedule(ActiveReadingItem item) {
+    if (item is ActiveGroupReading) {
+      _openGroupSchedule(item);
       return;
     }
     _openPlanScheduleFor(item.plan!, item.progress!);
@@ -2557,7 +2148,7 @@ class _HomePageState extends State<HomePage>
     return '${names.join(', ')}$suffix read today';
   }
 
-  void _openGroupSchedule(_GroupData g) {
+  void _openGroupSchedule(ActiveGroupReading g) {
     unawaited(widget.vibrationService.lightImpact());
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -2980,25 +2571,11 @@ class _HomePageState extends State<HomePage>
     _burstUndo.dispose();
     _animationController.dispose();
     _syncSub?.cancel();
-    _activePlansSub?.cancel();
+    _readingsSub?.cancel();
     _statusSub?.cancel();
     _reflectionSub?.cancel();
-    _groupMembershipSub?.cancel();
     _communityFeedSub?.cancel();
-    _groupRefreshTimer?.cancel();
     _communityRefreshTimer?.cancel();
-    for (final subscription in _groupTriggerSubs) {
-      subscription.cancel();
-    }
-    _groupTriggerSubs.clear();
-    for (final timer in _loadTimers) {
-      timer.cancel();
-    }
-    _loadTimers.clear();
-    for (final sub in _loadSubs) {
-      sub.cancel();
-    }
-    _loadSubs.clear();
     super.dispose();
   }
 
@@ -3013,62 +2590,4 @@ class _CommunityReader {
   final String name;
 
   const _CommunityReader({required this.uid, required this.name});
-}
-
-/// An active personal plan paired with the user's progress on it.
-class _PersonalPlan {
-  final ReadingPlan plan;
-  final UserPlanProgress progress;
-
-  const _PersonalPlan({required this.plan, required this.progress});
-}
-
-/// A single rankable reading on Home — a personal plan or the user's group —
-/// together with its computed catch-up [status] and [PlanLifecycle] state.
-class _ReadingItem {
-  final bool isGroup;
-  final ReadingPlan? plan;
-  final UserPlanProgress? progress;
-  final Group? group;
-  final CatchUpStatus status;
-  final PlanLifecycle state;
-
-  _ReadingItem.personal(this.plan, this.progress, this.status, this.state)
-      : isGroup = false,
-        group = null;
-
-  _ReadingItem.group(this.group, this.status, this.state)
-      : isGroup = true,
-        plan = null,
-        progress = null;
-
-  String get title => isGroup ? group!.name : plan!.title;
-
-  /// Typed pin key matching `UserPreferences.pinnedReadingId`.
-  String get pinKey => isGroup ? 'group:${group!.id}' : 'plan:${plan!.id}';
-}
-
-/// Per-group state backing the "together" reading cards on Home — one entry per
-/// group the user belongs to, holding that group's schedule, today's entry,
-/// member presence, the completed-date set used by the catch-up engine, and a
-/// per-group mark-loading flag (so marking one group doesn't spin the others).
-class _GroupData {
-  _GroupData({
-    required this.group,
-    this.schedule = const [],
-    this.today,
-    this.members = const [],
-    this.completedDateIds = const {},
-    this.ownPace = false,
-  });
-
-  final Group group;
-  List<GroupSchedule> schedule;
-  GroupSchedule? today;
-  List<GroupMemberProgressData> members;
-  Set<String> completedDateIds;
-
-  /// The reader follows their own pace overlay instead of the Group schedule.
-  bool ownPace;
-  bool markLoading = false;
 }

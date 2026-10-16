@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/read_through.dart';
 import '../../pages/read_throughs_page.dart';
+import '../../services/coverage_ledger_service.dart';
 import '../../services/read_through_service.dart';
 import '../../theme/app_theme.dart';
 import '../skeleton_loader.dart';
@@ -14,12 +15,14 @@ class ReadThroughCard extends StatelessWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final ReadThroughService? service;
+  final CoverageLedgerService? coverageService;
 
   const ReadThroughCard({
     super.key,
     required this.firestore,
     required this.auth,
     this.service,
+    this.coverageService,
   });
 
   @override
@@ -27,14 +30,16 @@ class ReadThroughCard extends StatelessWidget {
     final user = auth.currentUser;
     if (user == null) return const SizedBox.shrink();
 
-    final resolved = service ?? ReadThroughService(firestore: firestore);
-
-    return StreamBuilder<List<ReadThrough>>(
-      stream: resolved.watch(user.uid),
-      builder: (context, snapshot) {
-        final counts = ReadThroughService.countsFrom(
-          snapshot.data ?? const <ReadThrough>[],
+    final coverage = coverageService ??
+        CoverageLedgerService(
+          firestore: firestore,
+          readThroughService: service,
         );
+
+    return StreamBuilder<ReadThroughCounts>(
+      stream: coverage.watchCounts(user.uid),
+      builder: (context, snapshot) {
+        final counts = snapshot.data ?? ReadThroughCounts.empty;
         return SkeletonLoader(
           loading: snapshot.connectionState == ConnectionState.waiting,
           minTime: const Duration(milliseconds: 1000),

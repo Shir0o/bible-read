@@ -2,162 +2,97 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../models/user_preferences.dart';
-import 'read_log_service.dart';
-import 'reading_status_service.dart';
-import '../widgets/sync_sheet.dart';
-import 'error_logger.dart';
+import 'coverage_ledger_service.dart';
+import 'habit_lifecycle_service.dart';
 import 'read_through_coordinator.dart';
 import 'reading_plan_service.dart';
+import 'reading_status_service.dart';
 import 'user_preferences_service.dart';
 
 /// Shared owner of the one-directional, opt-in coupling between finishing a
 /// *plan reading* and recording the daily *habit* ("showing up").
 ///
-/// The coupling rule (epic #716, issue #717): completing a plan reading may
-/// optionally also count as showing up for the day. The choice is asked once
-/// via [SyncSheet], saved to [UserPreferences], and changeable in Settings. The
-/// bare daily-habit tap never advances a plan — coupling only flows reading →
-/// habit, never the reverse, and never on un-marking.
-///
-/// Both [PlanDetailPage] and the Home "Today's reading" card route through this
-/// so the semantics stay identical in both places.
+/// Delegates to [HabitLifecycleService], which provides the deep in-process
+/// lifecycle for Showing up and reading->habit coupling across the app.
 class PlanCompletionCoordinator {
   final FirebaseFirestore firestore;
   final ReadingPlanService planService;
   final UserPreferencesService preferencesService;
+  final CoverageLedgerService coverageService;
   final ReadThroughCoordinator readThroughCoordinator;
-
-  /// Recomputes the stored summary (streak) after the coupling records the
-  /// habit, as the Home tap does. Omitted by callers that never couple.
   final ReadingStatusService? readingStatusService;
+  final HabitLifecycleService _habitService;
 
   PlanCompletionCoordinator({
     required this.firestore,
     ReadingPlanService? planService,
     UserPreferencesService? preferencesService,
     ReadThroughCoordinator? readThroughCoordinator,
+    CoverageLedgerService? coverageService,
     this.readingStatusService,
+    HabitLifecycleService? habitService,
   })  : planService = planService ?? ReadingPlanService(firestore: firestore),
         preferencesService =
             preferencesService ?? UserPreferencesService(firestore: firestore),
+        coverageService = coverageService ??
+            (readThroughCoordinator?.coverageLedgerService ??
+                CoverageLedgerService(
+                  firestore: firestore,
+                  planService: planService,
+                )),
         readThroughCoordinator = readThroughCoordinator ??
-            ReadThroughCoordinator(firestore: firestore);
+            ReadThroughCoordinator(
+              firestore: firestore,
+              planService: planService,
+              coverageLedgerService: coverageService,
+            ),
+        _habitService = habitService ??
+            HabitLifecycleService(
+              firestore: firestore,
+              planService: planService,
+              preferencesService: preferencesService,
+              readThroughCoordinator: readThroughCoordinator,
+              coverageService: coverageService,
+              readingStatusService: readingStatusService,
+            );
 
   /// Marks [day] of [planId] complete, then honors the reading → habit coupling.
-  ///
-  /// Throws if the underlying [ReadingPlanService.markDayComplete] write fails so
-  /// callers can roll back optimistic UI; the coupling step is best-effort and
-  /// never throws. Returns whether the coupling recorded today's habit, so a
-  /// burst undo can revert it (ADR-0005).
   Future<bool> completePlanDay({
     required BuildContext context,
     required User user,
     required String planId,
     required int day,
-  }) async {
-    await planService.markDayComplete(user.uid, planId, day);
+    void Function(String message)? onMessage,
+  }) =>
+      _habitService.completePlanDay(
+        context: context,
+        user: user,
+        planId: planId,
+        day: day,
+        onMessage: onMessage,
+      );
 
-    // Credit the day's chapters to the reader's testament laps. Best-effort,
-    // and deliberately before the habit coupling so a lap that completes is
-    // already recorded by the time anything else runs.
-    await readThroughCoordinator.creditPlanDay(
-      uid: user.uid,
-      planId: planId,
-      day: day,
-    );
-
-    if (!context.mounted) return false;
-    return maybeCoupleHabit(context: context, user: user);
-  }
-
-  /// Honors the one-directional reading→habit coupling after a reading is
-  /// finished. Asks once via [SyncSheet], then respects the saved preference.
-  ///
-  /// Best-effort: failures are logged (and surfaced via [onMessage] when given)
-  /// but never thrown — a reading is already recorded by the time this runs.
-  /// Returns whether today's habit was recorded, so a burst undo can revert it
-  /// (ADR-0005).
+  /// Honors the one-directional reading→habit coupling after a reading is finished.
   Future<bool> maybeCoupleHabit({
     required BuildContext context,
     required User user,
     void Function(String message)? onMessage,
-  }) async {
-    UserPreferences prefs;
-    try {
-      prefs = await preferencesService.fetchPreferences(user.uid);
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      return false;
-    }
-
-    if (!prefs.syncPromptAnswered) {
-      if (!context.mounted) return false;
-      final choice = await SyncSheet.show(context);
-      final linked = choice == true;
-      try {
-        await preferencesService.updatePreferences(
-          user.uid,
-          prefs.copyWith(autoMarkPlanRead: linked, syncPromptAnswered: true),
-        );
-      } catch (e, st) {
-        ErrorLogger.log(e, st);
-        onMessage?.call(
-          "Couldn't save your choice. We'll ask again next time.",
-        );
-      }
-      if (linked) return _recordHabitForToday(user, onMessage);
-      return false;
-    } else if (prefs.autoMarkPlanRead) {
-      return _recordHabitForToday(user, onMessage);
-    }
-    return false;
-  }
-
-  /// Records the daily habit ("showing up") for today, equivalent to tapping
-  /// "I read today" on Home. Idempotent; surfaces a gentle notice on failure.
-  /// Returns whether the habit was recorded.
-  Future<bool> _recordHabitForToday(
-    User user,
-    void Function(String message)? onMessage,
-  ) async {
-    try {
-      await ReadLogService(firestore: firestore).mark(user);
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      onMessage?.call(
-        "Saved your reading, but couldn't mark you as showing up today.",
+  }) =>
+      _habitService.maybeCoupleHabit(
+        context: context,
+        user: user,
+        onMessage: onMessage,
       );
-      return false;
-    }
-    // The stored streak is only recomputed here and on the Home tap; without
-    // this, readers who show up through their plan keep a stale streak.
-    try {
-      await readingStatusService?.updateSummary();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-    }
-    return true;
-  }
 
-  /// Credits [days] of [planId] to the reader's testament laps without
-  /// announcing anything (ADR-0005).
-  ///
-  /// Used by the Starting point: the days are a claim about reading done
-  /// before the app, so any Read-Through they complete must be silent, like a
-  /// Backfilled Read-Through — never a Milestone. Best-effort, like every
-  /// credit.
+  /// Credits [days] of [planId] to testament laps silently (ADR-0005).
   Future<void> creditPlanDaysSilently({
     required String uid,
     required String planId,
     required Iterable<int> days,
-  }) async {
-    for (final day in days) {
-      await readThroughCoordinator.creditPlanDaySilently(
+  }) =>
+      _habitService.creditPlanDaysSilently(
         uid: uid,
         planId: planId,
-        day: day,
+        days: days,
       );
-    }
-  }
 }
