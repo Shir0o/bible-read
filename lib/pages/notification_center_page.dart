@@ -165,6 +165,76 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
   }
 }
 
+/// What tapping [notification] does: mark it read, then route by type. Shared
+/// by the notification center rows and the avatar sheet's recent list so both
+/// behave identically (including `groupId` routing for join requests).
+Future<void> openNotification(
+  BuildContext context, {
+  required AppNotification notification,
+  required NotificationService service,
+  required FirebaseAuth auth,
+  required VibrationService vibrationService,
+}) async {
+  if (!notification.read) {
+    try {
+      await service.markRead(auth.currentUser!.uid, notification.id);
+    } catch (e) {
+      // Ignore error
+    }
+  }
+
+  if (!context.mounted) return;
+  unawaited(vibrationService.lightImpact());
+  switch (notification.type) {
+    case NotificationType.seasonalChallenge:
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SeasonalChallengesPage(
+            auth: auth,
+            service: SeasonalChallengeService(firestore: service.firestore),
+          ),
+        ),
+      );
+      break;
+    case NotificationType.groupJoinRequest:
+      if (notification.groupId != null) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => GroupJoinRequestsPage(
+              groupId: notification.groupId!,
+              groupService: GroupService(
+                firestore: service.firestore,
+                notificationService: service,
+              ),
+              auth: auth,
+            ),
+          ),
+        );
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+/// Fallback line for a notification with no stored message.
+String defaultNotificationMessage(AppNotification n) {
+  switch (n.type) {
+    case NotificationType.seasonalChallenge:
+      return 'Seasonal challenge update';
+    case NotificationType.groupScheduleUpdate:
+      return 'Group schedule updated';
+    case NotificationType.groupJoinRequest:
+      return 'New group join request';
+    case NotificationType.amen:
+      return 'Someone said Amen';
+    case NotificationType.nudge:
+      return 'Someone nudged you to read';
+    default:
+      return 'New notification';
+  }
+}
+
 class _NotificationItem extends StatefulWidget {
   final AppNotification notification;
   final NotificationService service;
@@ -210,58 +280,13 @@ class _NotificationItemState extends State<_NotificationItem> {
     }
   }
 
-  Future<void> _handleTap(BuildContext context) async {
-    if (!widget.notification.read) {
-      // Mark as read
-      try {
-        await widget.service.markRead(
-          widget.auth.currentUser!.uid,
-          widget.notification.id,
-        );
-      } catch (e) {
-        // Ignore error
-      }
-    }
-
-    if (!context.mounted) return;
-    unawaited(widget.vibrationService.lightImpact());
-    await _navigate(context);
-  }
-
-  Future<void> _navigate(BuildContext context) async {
-    switch (widget.notification.type) {
-      case NotificationType.seasonalChallenge:
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => SeasonalChallengesPage(
-              auth: widget.auth,
-              service: SeasonalChallengeService(
-                firestore: widget.service.firestore,
-              ),
-            ),
-          ),
-        );
-        break;
-      case NotificationType.groupJoinRequest:
-        if (widget.notification.groupId != null) {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => GroupJoinRequestsPage(
-                groupId: widget.notification.groupId!,
-                groupService: GroupService(
-                  firestore: widget.service.firestore,
-                  notificationService: widget.service,
-                ),
-                auth: widget.auth,
-              ),
-            ),
-          );
-        }
-        break;
-      default:
-        break;
-    }
-  }
+  Future<void> _handleTap(BuildContext context) => openNotification(
+        context,
+        notification: widget.notification,
+        service: widget.service,
+        auth: widget.auth,
+        vibrationService: widget.vibrationService,
+      );
 
   @override
   Widget build(BuildContext context) {

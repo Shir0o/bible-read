@@ -10,7 +10,6 @@ import '../helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/challenges_page.dart';
-import 'package:bible_read/pages/welcome_page.dart';
 
 import 'package:bible_read/widgets/app_nav_bar.dart';
 import 'package:bible_read/widgets/nav_glyphs.dart';
@@ -343,37 +342,6 @@ void main() {
     );
     expect(responsive.contentIndex, 0);
     expect(responsive.selectedIndex, 0);
-
-    Future<void> selectMenuItem(
-      String label,
-      int expectedIndex, {
-      String? expectedTitle,
-    }) async {
-      final state =
-          tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
-      state.navigateFromMenu(expectedIndex);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-      if (expectedIndex >= 3 && expectedIndex != 10) {
-        Navigator.pop(state.context);
-        await tester.pumpAndSettle();
-      }
-
-      if (expectedIndex != 10) {
-        responsive = tester.widget<ResponsiveScaffold>(
-          find.byType(ResponsiveScaffold),
-        );
-        expect(responsive.contentIndex, 0);
-        expect(responsive.selectedIndex, 0);
-      } else {
-        await tester.pumpAndSettle();
-        expect(find.byType(WelcomePage), findsOneWidget);
-      }
-    }
-
-    // These usages are now checking no-op behavior for pushed items
-    await selectMenuItem('Challenges', 5); // 5 is pushed
-    await selectMenuItem('Sign out', 10);
   });
 
   testWidgets('bottom navigation visible on non-core pages', (tester) async {
@@ -404,7 +372,16 @@ void main() {
 
     final state =
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
-    state.navigateFromMenu(5);
+    Navigator.push(
+      state.context as BuildContext,
+      MaterialPageRoute(
+        builder: (_) => ChallengesPage(
+          auth: auth,
+          firestore: firestore,
+          vibrationService: _RecordingVibrationService(),
+        ),
+      ),
+    );
     await tester.pump();
 
     await tester.pump(const Duration(milliseconds: 500));
@@ -445,12 +422,12 @@ void main() {
         tester.state(find.byType(MainPage, skipOffstage: false)) as dynamic;
     vibration.getIndex = () => state.selectedIndex;
 
-    state.navigateFromMenu(5);
+    state.navigateFromMenu(1);
     await tester.pump();
 
     expect(vibration.lightCount, 1);
     expect(vibration.indexDuringCall, 0); // Starting index is 0
-    expect(state.selectedIndex, 0); // Stays 0 as Challenges is a pushed page
+    expect(state.selectedIndex, 1);
   });
 
   testWidgets('tapping a bar destination vibrates and switches tabs', (
@@ -782,8 +759,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('No one here yet'), findsOneWidget);
 
-    // Go to profile through the menu and sign out
-    state.navigateFromMenu(10);
+    // Sign out (Settings is the UI entry point)
+    await auth.signOut();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 

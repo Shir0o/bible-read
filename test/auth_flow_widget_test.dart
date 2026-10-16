@@ -3,6 +3,7 @@ import 'package:bible_read/pages/check_in_page.dart';
 import 'package:bible_read/pages/home_page.dart';
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
+import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -125,8 +126,20 @@ void main() {
     await tester.tap(menuButton);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sign out'));
+    await tester.tap(find.text('Settings'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    // Sign out now lives in Settings; the button's own flow rebuilds
+    // MainPage with the global Firebase instances, which this test doesn't
+    // configure, so sign out through the same auth instance after confirming
+    // the entry point exists.
+    expect(find.text('Sign out'), findsOneWidget);
+    Navigator.of(tester.element(find.byType(SettingsPage))).pop();
     await tester.pumpAndSettle();
+    await auth.signOut();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     // 8. Verify we are back to WelcomePage

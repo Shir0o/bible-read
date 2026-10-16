@@ -84,6 +84,18 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
                     selectedIndex: safeSelected,
                     onDestinationSelected: widget.onDestinationSelected,
                     labelType: NavigationRailLabelType.all,
+                    selectedLabelTextStyle:
+                        Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                    unselectedLabelTextStyle: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
                     leading: const SizedBox(height: 16),
                     destinations: widget.destinations.asMap().entries.map((
                       entry,

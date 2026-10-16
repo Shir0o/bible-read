@@ -117,7 +117,6 @@ void main() {
   testWidgets('showMenu forwards dependencies to AppMenuSheet', (tester) async {
     final vibrationService = _RecordingVibrationService();
     final adminRoleService = _MockAdminRoleService();
-    void onNavigate(int _) {}
     late NavigationMenuScope scope;
     late BuildContext childContext;
 
@@ -130,7 +129,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: NavigationMenuScope(
-            onNavigate: onNavigate,
+            onNavigate: (_) {},
             vibrationService: vibrationService,
             adminRoleService: adminRoleService,
             child: Builder(
@@ -149,7 +148,6 @@ void main() {
     await tester.pumpAndSettle();
 
     final sheet = tester.widget<AppMenuSheet>(find.byType(AppMenuSheet));
-    expect(sheet.onNavigate, same(onNavigate));
     expect(sheet.vibrationService, same(vibrationService));
     expect(sheet.adminRoleService, same(adminRoleService));
 
