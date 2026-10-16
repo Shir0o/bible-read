@@ -10,14 +10,6 @@ class CommonStyles {
   static BoxDecoration backgroundDecoration(ColorScheme colorScheme) =>
       BoxDecoration(color: colorScheme.surface);
 
-  static TextStyle appBarTitleText(BuildContext context) =>
-      Theme.of(context).textTheme.titleLarge!.copyWith(
-            fontFamily: AppTheme.fontSerif,
-            fontSize: 24,
-            letterSpacing: -0.2,
-            color: Theme.of(context).colorScheme.onSurface,
-          );
-
   /// Builds a card with the app's standard padding and rounded corners.
   ///
   /// [child] is placed inside the card.
