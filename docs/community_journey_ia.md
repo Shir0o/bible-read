@@ -378,3 +378,75 @@ reached from `GroupMembersPage`. Its pencil stops saying "Edit plan".
 The deletions land **first**, as their own change. Every issue after is then
 written against an app with one doorway per thing — which is the discipline the
 first pass lacked.
+
+---
+
+# Third pass — navigation, Circle, Path and consistency
+
+_Settled 2026-10-16, after the shipped second pass still felt hard to
+navigate. Mocks: the "Top bar variations" design canvas._
+
+## Navigation
+
+- **Bottom bar**: three tabs, Today / Circle / Path, **labels shown on every
+  tab** — the invented names do not explain themselves as glyphs alone.
+- **Top bar** (one `AppHeader` on all three tabs, Today's copy retired):
+  eyebrow and large serif title on the left; on the right a **per-tab action
+  slot** (Circle: Invite, Path: New plan, Today: none) and the **avatar**,
+  which carries the unread-notification count.
+- **The avatar opens a small sheet**: the three newest unread notifications,
+  "See all", a Settings row, and Inbox for admins. Sign out stays in Settings.
+  The old destination grid is gone: Library, Challenges and streak history
+  move to Path; Notifications lives only behind the avatar.
+- **Pushed pages use `SubHeader` only.** `CommonStyles.buildAppBar` and raw
+  `AppBar`s are retired.
+
+## Circle is the Feed
+
+See [ADR-0011](adr/0011-circle-tab-is-the-feed.md) and the **Feed** and
+**Amen** entries in `CONTEXT.md`.
+
+- A **status row** of Circle avatars, ringed when Shown up; tap one who has not
+  to Nudge. Your own avatar first.
+- The **Feed** below: each person's day (one update, carrying their shared
+  Reflection when there is one), Milestones and Badges. Shown-up updates for
+  the same day may group ("Ana, Ben and 3 others read today"). Newest first,
+  today plus seven days, ending "That's the week". Amen only.
+- **Group filter chips** stay above the Feed.
+- **Action slot → sheet**: Share code (pick a Group), Have a code?, Find a
+  group, Create a group, and your Groups, each opening its Group page.
+- **States**: no Groups → the existing three-action empty state; Groups but
+  nothing posted → status row plus "No updates yet today".
+- The flat roster list is deleted.
+
+## Path is one page
+
+No Plans / Record toggle. Three sections:
+
+1. **Plans**, with an active Seasonal Challenge as a card in the same list.
+2. **Consistency**: the calendar with streak and "shown up this month" in its
+   header, replacing the two stat tiles; tap opens streak history.
+3. **Read-throughs**: links to Library and shows the latest Badge; the
+   separate badge strip is folded in.
+
+Path opens at the top. Every section skeletonizes from the first frame and
+fills in on its own signal ([ADR-0008](adr/0008-per-section-skeleton-ownership.md)
+stands) — no section renders blank or a spinner while loading.
+
+## App-wide consistency pass
+
+Today (`home_page.dart`) is the reference. Visual only, no behaviour change.
+One PR per pattern:
+
+1. **Headers** — `AppHeader` on tabs, `SubHeader` everywhere else.
+2. **Loading** — `SkeletonLoader` wherever content loads; a spinner only inside
+   a submitting button.
+3. **Buttons and inputs** — theme `FilledButton` (no per-call `styleFrom`
+   colours), no `ElevatedButton`, no `OutlineInputBorder` overrides.
+4. **Spacing and type** — `AppSpacing` and theme text styles in place of raw
+   `EdgeInsets`, `SizedBox` and `TextStyle` numbers.
+
+Check-in keeps its sky-and-gradient language on purpose; only its literal
+colours move into named tokens. Create plan and Plan detail are redesigned on
+the canvas first and skip the per-pattern passes rather than being restyled
+twice.
