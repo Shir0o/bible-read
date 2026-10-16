@@ -11,6 +11,9 @@ class ConsistencyCalendar extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final bool showTitle;
+
+  /// Drops the calendar's own card surface so it can sit inside another card.
+  final bool embedded;
   final bool isLoading;
   final Set<DateTime>? initialReadDates;
 
@@ -19,6 +22,7 @@ class ConsistencyCalendar extends StatefulWidget {
     required this.firestore,
     required this.auth,
     this.showTitle = true,
+    this.embedded = false,
     this.isLoading = false,
     this.initialReadDates,
   });
@@ -129,11 +133,14 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final now = DateTime.now();
+    final outerPadding = widget.embedded
+        ? EdgeInsets.zero
+        : const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding);
     final isCurrentMonth =
         now.year == _currentMonth.year && now.month == _currentMonth.month;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
+      padding: outerPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -149,12 +156,15 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             minTime: const Duration(milliseconds: 1000),
             skeleton: const ConsistencyCalendarSkeleton(),
             child: Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                border: Border.all(color: AppColors.of(context).border),
-              ),
-              padding: const EdgeInsets.all(20),
+              decoration: widget.embedded
+                  ? null
+                  : BoxDecoration(
+                      color: colorScheme.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                      border: Border.all(color: AppColors.of(context).border),
+                    ),
+              padding:
+                  widget.embedded ? EdgeInsets.zero : const EdgeInsets.all(20),
               child: Column(
                 children: [
                   // Header
