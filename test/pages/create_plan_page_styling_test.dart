@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/pages/create_plan_page.dart';
+import 'package:bible_read/widgets/sub_header.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 
+import '../helpers/stub_vibration_service.dart';
+
+/// The Create plan page as rebuilt to the third-pass mock (#988).
 void main() {
   late MockFirebaseAuth auth;
   late FakeFirebaseFirestore firestore;
@@ -13,10 +17,8 @@ void main() {
     firestore = FakeFirebaseFirestore();
   });
 
-  testWidgets('Custom Plan section expansion and goal selection', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(1000, 2000);
+  Future<void> pumpPage(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1000, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -24,71 +26,136 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(useMaterial3: true),
-        home: CreatePlanPage(auth: auth, firestore: firestore),
+        home: CreatePlanPage(
+          auth: auth,
+          firestore: firestore,
+          vibrationService: const StubVibrationService(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
+  }
 
-    // Verify basic page structure
-    expect(find.text('Enroll in New Plan'), findsOneWidget); // AppBar
-    expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('SELECT READING METHOD'), findsOneWidget);
+  String lengthText(WidgetTester tester) =>
+      tester.widget<Text>(find.byKey(const Key('create_plan_length'))).data!;
 
-    // Scroll to Custom Plan section
-    final customPlanFinder = find.text('Custom Plan');
-    await tester.dragUntilVisible(
-      customPlanFinder,
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
-    await tester.pumpAndSettle();
-    expect(customPlanFinder, findsOneWidget);
+  testWidgets('a sub-page header and the five sections', (tester) async {
+    await pumpPage(tester);
 
-    // Tap to expand
-    await tester.tap(customPlanFinder);
-    await tester.pumpAndSettle();
-
-    // Verify goal selection radio buttons exist (based on implementation plan)
-    expect(find.text('End date:'), findsOneWidget);
-    expect(find.text('Amount of verses to read per day:'), findsOneWidget);
-    expect(find.text('Amount of chapters to read per day:'), findsOneWidget);
-
-    // Verify fields are present
-    expect(find.byIcon(Icons.calendar_today), findsWidgets);
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.widgetWithText(SubHeader, 'New plan'), findsOneWidget);
+    for (final title in [
+      "Who's reading",
+      'Name',
+      'What to read',
+      'Pace',
+      'Start',
+    ]) {
+      expect(find.text(title), findsOneWidget, reason: title);
+    }
+    for (final row in [
+      'In order',
+      'Balanced',
+      '3 in Old, 1 in New',
+      'Old Testament',
+      'New Testament',
+      'Choose books',
+    ]) {
+      expect(find.text(row), findsOneWidget, reason: row);
+    }
+    expect(find.text('Start date'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Starting point'), findsOneWidget);
+    expect(find.text('Start fresh'), findsOneWidget);
+    expect(lengthText(tester), '365 days');
+    expect(find.textContaining('about 3 chapters a day'), findsOneWidget);
+    expect(find.text('Start plan'), findsOneWidget);
   });
 
-  testWidgets('Hierarchical Bible book selection', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1000, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('the length stepper moves between lengths', (tester) async {
+    await pumpPage(tester);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(useMaterial3: true),
-        home: CreatePlanPage(auth: auth, firestore: firestore),
-      ),
+    await tester.tap(find.byKey(const Key('create_plan_length_inc')));
+    await tester.pumpAndSettle();
+    expect(lengthText(tester), '730 days');
+    expect(find.textContaining('about 2 chapters a day'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('create_plan_length_dec')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('create_plan_length_dec')));
+    await tester.pumpAndSettle();
+    expect(lengthText(tester), '180 days');
+  });
+
+  testWidgets('the fixed distribution keeps its own length and days', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.text('3 in Old, 1 in New'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reading days'), findsNothing);
+    expect(
+        find.textContaining('three OT chapters on six days'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('create_plan_length_inc')));
+    await tester.pumpAndSettle();
+    expect(lengthText(tester), isNot('730 days'));
+  });
+
+  testWidgets('Choose books opens the book picker and daily amounts', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    expect(find.text('Pentateuch'), findsNothing);
+    await tester.tap(find.text('Choose books'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pace by'), findsOneWidget);
+    expect(find.text('Chapters a day'), findsOneWidget);
+    expect(find.text('Verses a day'), findsOneWidget);
+
+    // Expand the Old Testament category of the book picker.
+    await tester.tap(
+      find.byKey(const Key('create_plan_category_Old Testament')),
     );
     await tester.pumpAndSettle();
-
-    final customPlanFinder = find.text('Custom Plan');
-    await tester.dragUntilVisible(
-      customPlanFinder,
-      find.byType(ListView),
-      const Offset(0, -200),
-    );
-    await tester.tap(customPlanFinder);
-    await tester.pumpAndSettle();
-
-    // Verify categories exist
-    expect(find.text('Old Testament'), findsOneWidget);
-    expect(find.text('New Testament'), findsOneWidget);
-
-    // Expand Old Testament - find the toggle icon near the text
-    await tester.tap(find.text('Old Testament'));
-    await tester.pumpAndSettle();
-
     expect(find.text('Pentateuch'), findsOneWidget);
     expect(find.text('Books of History'), findsOneWidget);
+
+    // A daily amount takes a stepper and reshapes the preview.
+    await tester.tap(find.text('Chapters a day'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('about 3 chapters a day'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('create_plan_chapters_inc')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('about 4 chapters a day'), findsOneWidget);
+
+    // Leaving Choose books goes back to the whole Bible paced by length.
+    await tester.tap(find.text('In order'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pace by'), findsNothing);
+    expect(lengthText(tester), '365 days');
+  });
+
+  testWidgets('the preview line opens the full schedule', (tester) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.byKey(const Key('create_plan_preview')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Full Schedule'), findsOneWidget);
+    expect(find.textContaining('Genesis 1'), findsWidgets);
+  });
+
+  testWidgets('a title is required', (tester) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.text('Start plan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Please enter a plan title.'), findsOneWidget);
+    expect((await firestore.collection('custom_plans').get()).docs, isEmpty);
   });
 }

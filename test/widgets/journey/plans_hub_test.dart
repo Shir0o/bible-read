@@ -147,14 +147,9 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
     // The creation form is pushed directly — no personal-vs-group chooser
-    // before it (#809). The who-is-reading field sits below the fold.
+    // before it (#809). Who's reading is the form's first section.
     expect(find.byType(CreatePlanPage), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('WHO IS READING'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
+    expect(find.text("Who's reading"), findsOneWidget);
 
     // The who-is-reading answer is a field in the flow, not a fork.
     expect(find.text('Just you'), findsOneWidget);

@@ -16,8 +16,8 @@ class _StubVibrationService extends VibrationService {
   Future<void> mediumImpact() async {}
 }
 
-/// The creation flow (#809): one form, entered straight from Path, that asks
-/// what to read and over how long first and who is reading as a field.
+/// The creation flow (#809, #988): one form, entered straight from Path, that
+/// asks who is reading as a field rather than a fork.
 void main() {
   late FakeFirebaseFirestore firestore;
   late MockFirebaseAuth auth;
@@ -50,28 +50,18 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 600));
   }
 
-  Future<void> scrollTo(WidgetTester tester, Finder finder) async {
-    await tester.scrollUntilVisible(
-      finder,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-  }
-
   testWidgets('just you creates a solo plan with no group', (tester) async {
     await pumpPage(tester);
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Plan Title').first,
+      find.byKey(const Key('create_plan_title')),
       'Morning Light',
     );
-    await scrollTo(tester, find.text('WHO IS READING'));
 
     // The default answer is "Just you" — no group name field, no group.
     expect(find.byKey(const Key('create_plan_group_name')), findsNothing);
 
-    await tester.tap(find.text('Start My Plan'));
+    await tester.tap(find.text('Start plan'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
     // The plan exists as a personal plan and was auto-started.
@@ -101,10 +91,9 @@ void main() {
     await pumpPage(tester);
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Plan Title').first,
+      find.byKey(const Key('create_plan_title')),
       'Jonah Together',
     );
-    await scrollTo(tester, find.text('WHO IS READING'));
 
     await tester.tap(find.text('With a group'));
     await tester.pumpAndSettle();
@@ -114,7 +103,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Create plan together'));
+    await tester.tap(find.text('Start plan'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1500));
 
     // The group exists, owned by the reader, with them as its first member.
@@ -146,11 +135,10 @@ void main() {
     await pumpPage(tester);
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Plan Title').first,
+      find.byKey(const Key('create_plan_title')),
       'Morning Light',
     );
-    await scrollTo(tester, find.text('WHO IS READING'));
-    await tester.tap(find.text('Start My Plan'));
+    await tester.tap(find.text('Start plan'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
     // Reload the hub the way PlansHub does on returning from the flow.
@@ -168,15 +156,14 @@ void main() {
     await pumpPage(tester);
 
     await tester.enterText(
-      find.widgetWithText(TextField, 'Plan Title').first,
+      find.byKey(const Key('create_plan_title')),
       'Jonah Together',
     );
-    await scrollTo(tester, find.text('WHO IS READING'));
 
     await tester.tap(find.text('With a group'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Create plan together'));
+    await tester.tap(find.text('Start plan'));
     await tester.pumpAndSettle();
 
     expect(find.text('Please name your group.'), findsOneWidget);

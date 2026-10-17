@@ -10,7 +10,6 @@ import '../models/group_plan_config.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 import '../models/schedule_mode.dart';
-import '../services/catch_up_engine.dart';
 import '../services/group_service.dart';
 import '../services/plan_completion_coordinator.dart';
 import '../services/plan_generator.dart';
@@ -18,9 +17,11 @@ import '../services/reading_plan_service.dart';
 import '../services/reference_parser.dart';
 import '../services/schedule_generator.dart';
 import '../services/vibration_service.dart';
+import '../widgets/animated_action_button.dart';
 import '../widgets/app_bottom_sheet.dart';
-import '../widgets/schedule_preview.dart';
+import '../widgets/common_styles.dart';
 import '../widgets/start_chapter_sheet.dart';
+import '../widgets/sub_header.dart';
 import '../services/nudge_service.dart';
 import 'group_members_page.dart';
 import 'plan_detail_page.dart';
@@ -220,10 +221,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           ..clear()
           ..addAll(books);
       }
-      // Surface the custom panel when the plan used a non-default goal/books.
-      _isCustomPlanExpanded = _goalMethod != _PlanGoalMethod.endDate ||
-          _endDate != null ||
-          _selectedBooks.length != ReferenceParser.allBooks.length;
+      // A sequential plan with a daily amount or a subset of books was made
+      // through "Choose books"; reopen it there. An end date is a Length.
+      _isCustomPlanExpanded = _selectedType == PlanType.sequential &&
+          (_goalMethod != _PlanGoalMethod.endDate ||
+              _selectedBooks.length != ReferenceParser.allBooks.length);
     }
   }
 
@@ -573,29 +575,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
-  /// Live preview card reflecting the current configuration.
-  Widget _buildPreviewSection(BuildContext context) {
-    final plan = _previewPlan();
-    if (plan == null) return const SizedBox.shrink();
-
-    final status = CatchUpEngine.forPersonalPlan(
-      plan,
-      UserPlanProgress(
-        planId: plan.id,
-        userId: '',
-        startDate: _startDate,
-        completedDays: const [],
-      ),
-      today: DateTime.now(),
-    );
-
-    return SchedulePreview(
-      status: status,
-      title: 'Preview',
-      onViewFull: () => _showFullSchedule(context, plan),
-    );
-  }
-
   void _showFullSchedule(BuildContext context, ReadingPlan plan) {
     final colorScheme = Theme.of(context).colorScheme;
     showAppSheet<void>(
@@ -609,7 +588,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.hPadding,
+                      AppSpacing.gap16, AppSpacing.hPadding, AppSpacing.gap12),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -621,13 +601,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.gap16, 0,
+                        AppSpacing.gap16, AppSpacing.gap24),
                     itemCount: plan.schedule.length,
                     itemBuilder: (context, index) {
                       final day = plan.schedule[index];
                       final date = _startDate.add(Duration(days: day.day - 1));
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
+                        margin: const EdgeInsets.only(bottom: AppSpacing.gap8),
                         padding: const EdgeInsets.all(AppSpacing.gap12),
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainer,
@@ -648,7 +629,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                                     ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.gap8),
                             Expanded(
                               child: Text(
                                 day.readings.join(', '),
@@ -748,71 +729,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     return null;
   }
 
-  /// The "Who is reading?" field, answered in context after the reader has
-  /// chosen what to read and over how long (#809). Replaces the modal fork.
-  Widget _buildAudienceSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isGroup = _audience == PlanAudience.group;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppSpacing.rCard),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'WHO IS READING',
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: colorScheme.primary),
-          ),
-          const SizedBox(height: 12),
-          SegmentedButton<PlanAudience>(
-            segments: const [
-              ButtonSegment(
-                value: PlanAudience.solo,
-                icon: Icon(Icons.person_outline, size: 18),
-                label: Text('Just you'),
-              ),
-              ButtonSegment(
-                value: PlanAudience.group,
-                icon: Icon(Icons.group_outlined, size: 18),
-                label: Text('With a group'),
-              ),
-            ],
-            selected: {_audience},
-            showSelectedIcon: false,
-            onSelectionChanged: (selection) {
-              unawaited(widget.vibrationService.lightImpact());
-              setState(() => _audience = selection.first);
-            },
-          ),
-          if (isGroup) ...[
-            const SizedBox(height: 16),
-            TextField(
-              key: const Key('create_plan_group_name'),
-              controller: _groupNameController,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Group name',
-                hintText: 'e.g., Thursday morning group',
-                border: OutlineInputBorder(
-                  // token-exempt: slice 8 rebuild (#988)
-                  borderRadius:
-                      BorderRadius.all(Radius.circular(AppSpacing.rField)),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   final _months = [
     'Jan',
     'Feb',
@@ -828,598 +744,469 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     'Dec',
   ];
 
+  String _formatDate(DateTime date) =>
+      '${_months[date.month - 1]} ${date.day}, ${date.year}';
+
+  String get _startDateLabel {
+    final now = DateTime.now();
+    final isToday = _startDate.year == now.year &&
+        _startDate.month == now.month &&
+        _startDate.day == now.day;
+    return isToday ? 'Today' : _formatDate(_startDate);
+  }
+
+  /// Lengths the Length stepper moves between. Whole years keep the
+  /// generator's year mode (the long-standing default); anything else is
+  /// expressed as an end date. Any other length — from an edited plan or the
+  /// end-date picker — sits between them.
+  static const _lengthSteps = [30, 60, 90, 180, 365, 730];
+
+  /// The plan's length in calendar days as the current configuration sets it.
+  int get _lengthDays {
+    if (_selectedType != PlanType.threeOldOneNew &&
+        _goalMethod == _PlanGoalMethod.endDate) {
+      final end = _endDate;
+      if (end == null) return (_years > 0 ? _years : 1) * 365;
+      final start = DateTime(_startDate.year, _startDate.month, _startDate.day);
+      return DateTime(end.year, end.month, end.day).difference(start).inDays +
+          1;
+    }
+    // Paced by a daily amount, or a fixed schedule: the length follows from
+    // the generated plan.
+    return _previewPlan()?.durationDays ?? 0;
+  }
+
+  /// Sets the plan's length, switching the pace back to length-based.
+  void _setLength(int days) {
+    setState(() {
+      _goalMethod = _PlanGoalMethod.endDate;
+      if (days % 365 == 0) {
+        _years = days ~/ 365;
+        _endDate = null;
+      } else {
+        _years = 0;
+        _endDate = DateTime(
+          _startDate.year,
+          _startDate.month,
+          _startDate.day + days - 1,
+        );
+      }
+    });
+  }
+
+  /// Picks a reading method. "Choose books" is the sequential reading with
+  /// the book picker and daily-amount options open; leaving it goes back to
+  /// the whole Bible paced by length.
+  void _selectReading(PlanType type, {bool chooseBooks = false}) {
+    unawaited(widget.vibrationService.lightImpact());
+    setState(() {
+      _selectedType = type;
+      if (type == PlanType.threeOldOneNew) {
+        _years = 1;
+      }
+      if (chooseBooks) {
+        _isCustomPlanExpanded = true;
+      } else if (_isCustomPlanExpanded) {
+        _isCustomPlanExpanded = false;
+        _selectedBooks
+          ..clear()
+          ..addAll(ReferenceParser.allBooks);
+        _goalMethod = _PlanGoalMethod.endDate;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final appColors = AppColors.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        // token-exempt: slice 8 rebuild (#988)
-        title: Text(
-          _isEditing ? 'Edit Plan' : 'Enroll in New Plan',
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: colorScheme.surface,
-        scrolledUnderElevation: 0,
-      ),
       backgroundColor: colorScheme.surface,
-      body: Stack(
-        children: [
-          ListView(
-            padding: const EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: 100,
-            ), // padding for bottom button
-            children: [
-              TextField(
-                controller: _titleController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Plan Title',
-                  hintText: 'e.g., Daily Walk',
-                  border: OutlineInputBorder(
-                    // token-exempt: slice 8 rebuild (#988)
-                    borderRadius:
-                        BorderRadius.all(Radius.circular(AppSpacing.rField)),
-                  ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            SubHeader(
+              title: _isEditing ? 'Edit plan' : 'New plan',
+              onBack: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.hPadding,
+                  0,
+                  AppSpacing.hPadding,
+                  AppSpacing.gap16,
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: Text(
-                  'SELECT READING METHOD',
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelSmall
-                      ?.copyWith(color: colorScheme.primary),
-                ),
-              ),
-
-              _buildPlanTypeOption(
-                PlanType.sequential,
-                'Sequentially',
-                'Read from Genesis to Revelation',
-              ),
-              const SizedBox(height: 8),
-              _buildPlanTypeOption(
-                PlanType.portions,
-                'Old & New Testaments',
-                'Balanced daily portions from both',
-              ),
-              const SizedBox(height: 8),
-              _buildPlanTypeOption(
-                PlanType.threeOldOneNew,
-                '3 in Old, 1 in New',
-                'Fixed daily distribution',
-                showInfo: true,
-              ),
-              const SizedBox(height: 8),
-              _buildPlanTypeOption(
-                PlanType.otOnly,
-                'Old Testament Only',
-                'Genesis to Malachi',
-              ),
-              const SizedBox(height: 8),
-              _buildPlanTypeOption(
-                PlanType.ntOnly,
-                'New Testament Only',
-                'Matthew to Revelation',
-              ),
-              const SizedBox(height: 24),
-
-              // Configuration Section
-              if (_selectedType != PlanType.threeOldOneNew) ...[
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                  ),
-                  child: Column(
-                    children: [
-                      // Duration Selector
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Plan Duration',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.rCard,
-                              ),
-                              border: Border.all(
-                                color: colorScheme.outlineVariant.withValues(
-                                  alpha: 0.5,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () => setState(() {
-                                    _years = 1;
-                                    _endDate = null;
-                                  }),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _years == 1
-                                          ? colorScheme.primary
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(
-                                          AppSpacing.rPill),
-                                    ),
-                                    child: Text(
-                                      '1 Year',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium
-                                          ?.copyWith(
-                                            color: _years == 1
-                                                ? colorScheme.onPrimary
-                                                : colorScheme.onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () => setState(() {
-                                    _years = 2;
-                                    _endDate = null;
-                                  }),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _years == 2
-                                          ? colorScheme.primary
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(
-                                          AppSpacing.rPill),
-                                    ),
-                                    child: Text(
-                                      '2 Years',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium
-                                          ?.copyWith(
-                                            color: _years == 2
-                                                ? colorScheme.onPrimary
-                                                : colorScheme.onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Day Selection
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Active Reading Days',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _dayCircle(7, 'S'), // Sun
-                          _dayCircle(1, 'M'), // Mon
-                          _dayCircle(2, 'T'), // Tue
-                          _dayCircle(3, 'W'), // Wed
-                          _dayCircle(4, 'T'), // Thu
-                          _dayCircle(5, 'F'), // Fri
-                          _dayCircle(6, 'S'), // Sat
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      const Divider(height: 1),
-                      const SizedBox(height: 16),
-
-                      // Start Date
-                      InkWell(
-                        // When editing, the start date is fixed: the schedule
-                        // is anchored to the plan's existing progress, so it
-                        // must not drift out from under recorded readings.
-                        onTap: _isEditing
-                            ? null
-                            : () => _selectDate(context, true),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today_outlined,
-                                  size: 20,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 12),
-                                const Text('Start Date'),
-                              ],
-                            ),
-                            Text(
-                              '${_months[_startDate.month - 1]} ${_startDate.day}, ${_startDate.year}',
-                              style: TextStyle(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Divider(height: 1),
-                      const SizedBox(height: 16),
-
-                      // Starting point (ADR-0005): "I've already read up to
-                      // this chapter" when migrating an existing plan from
-                      // elsewhere. Shifts the start date so the position lands
-                      // on today and marks the days up to it.
-                      InkWell(
-                        onTap: _isEditing ? null : _pickStartingPoint,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.menu_book_outlined,
-                                  size: 20,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 12),
-                                const Text("I've already read up to"),
-                              ],
-                            ),
-                            Text(
-                              _startingPointRef ?? 'Start fresh',
-                              style: TextStyle(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                // Fixed configuration for 3 in Old, 1 in New
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Plan Duration',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            '1 Year',
-                            style: TextStyle(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Divider(height: 1),
-                      const SizedBox(height: 16),
-                      InkWell(
-                        // When editing, the start date is fixed: the schedule
-                        // is anchored to the plan's existing progress, so it
-                        // must not drift out from under recorded readings.
-                        onTap: _isEditing
-                            ? null
-                            : () => _selectDate(context, true),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today_outlined,
-                                  size: 20,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 12),
-                                const Text('Start Date'),
-                              ],
-                            ),
-                            Text(
-                              '${_months[_startDate.month - 1]} ${_startDate.day}, ${_startDate.year}',
-                              style: TextStyle(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Divider(height: 1),
-                      const SizedBox(height: 16),
-
-                      // Starting point (ADR-0005): "I've already read up to
-                      // this chapter" when migrating an existing plan from
-                      // elsewhere. Shifts the start date so the position lands
-                      // on today and marks the days up to it.
-                      InkWell(
-                        onTap: _isEditing ? null : _pickStartingPoint,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.menu_book_outlined,
-                                  size: 20,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 12),
-                                const Text("I've already read up to"),
-                              ],
-                            ),
-                            Text(
-                              _startingPointRef ?? 'Start fresh',
-                              style: TextStyle(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 24),
-
-              // Custom Plan Section
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHigh.withValues(
-                    alpha: 0.5,
-                  ),
-                  border: Border.all(
-                    color: AppColors.of(context).border,
-                    style: BorderStyle.solid,
-                  ),
-                  borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                ),
-                child: Column(
-                  children: [
-                    InkWell(
-                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                      onTap: () {
-                        setState(() {
-                          _isCustomPlanExpanded = !_isCustomPlanExpanded;
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.tune,
-                                  color: colorScheme.primary,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                const Text(
-                                  'Custom Plan',
-                                  style: TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
-                            Icon(
-                              _isCustomPlanExpanded
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ],
-                        ),
+                children: [
+                  // Who's reading — a field, not a fork (#809). Hidden while
+                  // editing: an existing plan's audience never changes.
+                  if (!_isEditing)
+                    _section(
+                      context,
+                      "Who's reading",
+                      _buildAudienceSection(context),
+                      first: true,
+                    ),
+                  _section(
+                    context,
+                    'Name',
+                    TextField(
+                      key: const Key('create_plan_title'),
+                      controller: _titleController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        hintText: 'e.g., Daily Walk',
                       ),
                     ),
-                    if (_isCustomPlanExpanded)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildGoalOption(
-                              _PlanGoalMethod.endDate,
-                              'End date:',
-                              InkWell(
-                                onTap: _goalMethod == _PlanGoalMethod.endDate
-                                    ? () => _selectDate(context, false)
-                                    : null,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: _goalMethod ==
-                                                _PlanGoalMethod.endDate
-                                            ? colorScheme.primary
-                                            : colorScheme.outlineVariant,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        _endDate != null
-                                            ? '${_months[_endDate!.month - 1]} ${_endDate!.day}, ${_endDate!.year}'
-                                            : 'Select Date',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: _goalMethod ==
-                                                      _PlanGoalMethod.endDate
-                                                  ? colorScheme.primary
-                                                  : colorScheme
-                                                      .onSurfaceVariant,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                      const Spacer(),
-                                      Icon(
-                                        Icons.calendar_today,
-                                        size: 16,
-                                        color: _goalMethod ==
-                                                _PlanGoalMethod.endDate
-                                            ? colorScheme.primary
-                                            : colorScheme.onSurfaceVariant,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildGoalOption(
-                              _PlanGoalMethod.versesPerDay,
-                              'Amount of verses to read per day:',
-                              _buildNumericField(
-                                value: _customVersesPerDay,
-                                onChanged: (val) => setState(
-                                  () => _customVersesPerDay = int.tryParse(val),
-                                ),
-                                enabled:
-                                    _goalMethod == _PlanGoalMethod.versesPerDay,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildGoalOption(
-                              _PlanGoalMethod.chaptersPerDay,
-                              'Amount of chapters to read per day:',
-                              _buildNumericField(
-                                value: _customChaptersPerDay,
-                                onChanged: (val) => setState(
-                                  () =>
-                                      _customChaptersPerDay = int.tryParse(val),
-                                ),
-                                enabled: _goalMethod ==
-                                    _PlanGoalMethod.chaptersPerDay,
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            Text(
-                              'Select Bible books to read:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ..._bookCategories.entries.map(
-                              (entry) =>
-                                  _buildBookCategory(entry.key, entry.value),
-                            ),
-                          ],
-                        ),
+                    first: _isEditing,
+                  ),
+                  _section(context, 'What to read', _buildReadingCard(context)),
+                  _section(context, 'Pace', _buildPaceCard(context)),
+                  _section(context, 'Start', _buildStartCard(context)),
+                  const SizedBox(height: AppSpacing.gap8),
+                  _buildPreviewLine(context),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border(top: BorderSide(color: appColors.border)),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.hPadding,
+          AppSpacing.gap12,
+          AppSpacing.hPadding,
+          AppSpacing.gap12,
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            width: double.infinity,
+            child: AnimatedActionButton(
+              key: const Key('create_plan_submit'),
+              onPressed: _createPlan,
+              isLoading: _isCreating,
+              enableHapticFeedback: false,
+              child: Text(_isEditing ? 'Save changes' : 'Start plan'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A titled section of the form: serif section title, then its content.
+  Widget _section(
+    BuildContext context,
+    String title,
+    Widget child, {
+    bool first = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(top: first ? AppSpacing.gap8 : AppSpacing.gap24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: AppTextStyles.sectionTitle(context)),
+          const SizedBox(height: AppSpacing.gap12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  /// A surface card holding rows separated by dividers.
+  Widget _card(BuildContext context, List<Widget> children) {
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerLowest,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+        side: BorderSide(color: AppColors.of(context).border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+
+  /// "Just you" / "With a group", with the group name once a group is chosen.
+  Widget _buildAudienceSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.gap4),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(AppSpacing.rPill),
+          ),
+          child: Row(
+            children: [
+              _audienceSegment(context, PlanAudience.solo, 'Just you'),
+              _audienceSegment(context, PlanAudience.group, 'With a group'),
+            ],
+          ),
+        ),
+        if (_audience == PlanAudience.group) ...[
+          const SizedBox(height: AppSpacing.gap12),
+          TextField(
+            key: const Key('create_plan_group_name'),
+            controller: _groupNameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Group name',
+              hintText: 'e.g., Thursday morning group',
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _audienceSegment(
+    BuildContext context,
+    PlanAudience value,
+    String label,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final selected = _audience == value;
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        inMutuallyExclusiveGroup: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            if (selected) return;
+            unawaited(widget.vibrationService.lightImpact());
+            setState(() => _audience = value);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: AppSpacing.gap40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected
+                  ? colorScheme.surfaceContainerLowest
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppSpacing.rPill),
+              boxShadow: selected ? AppSpacing.cardShadow(context) : null,
+            ),
+            child: Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: selected
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The reading methods as one list of radio rows.
+  Widget _buildReadingCard(BuildContext context) {
+    bool isType(PlanType type) =>
+        !_isCustomPlanExpanded && _selectedType == type;
+
+    return _card(context, [
+      _readingRow(
+        context,
+        title: 'In order',
+        subtitle: 'Genesis to Revelation',
+        selected: isType(PlanType.sequential),
+        onTap: () => _selectReading(PlanType.sequential),
+      ),
+      const Divider(height: 1),
+      _readingRow(
+        context,
+        title: 'Balanced',
+        subtitle: 'Old and New Testament each day',
+        selected: isType(PlanType.portions),
+        onTap: () => _selectReading(PlanType.portions),
+      ),
+      const Divider(height: 1),
+      _readingRow(
+        context,
+        title: '3 in Old, 1 in New',
+        subtitle: 'A fixed daily distribution',
+        selected: isType(PlanType.threeOldOneNew),
+        onTap: () => _selectReading(PlanType.threeOldOneNew),
+      ),
+      const Divider(height: 1),
+      _readingRow(
+        context,
+        title: 'Old Testament',
+        subtitle: 'Genesis to Malachi',
+        selected: isType(PlanType.otOnly),
+        onTap: () => _selectReading(PlanType.otOnly),
+      ),
+      const Divider(height: 1),
+      _readingRow(
+        context,
+        title: 'New Testament',
+        subtitle: 'Matthew to Revelation',
+        selected: isType(PlanType.ntOnly),
+        onTap: () => _selectReading(PlanType.ntOnly),
+      ),
+      const Divider(height: 1),
+      _readingRow(
+        context,
+        title: 'Choose books',
+        subtitle: 'Pick exactly what to read',
+        selected: _isCustomPlanExpanded,
+        onTap: () => _selectReading(PlanType.sequential, chooseBooks: true),
+      ),
+      if (_isCustomPlanExpanded) _buildChooseBooks(context),
+    ]);
+  }
+
+  Widget _readingRow(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Semantics(
+      checked: selected,
+      inMutuallyExclusiveGroup: true,
+      button: true,
+      label: '$title, $subtitle',
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.cardPadding,
+            vertical: AppSpacing.gap12,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: AppSpacing.gap2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Who is reading — answered here, in context, after the what
-              // and how long are settled (#809). Hidden while editing: an
-              // existing plan's audience never changes.
-              if (!_isEditing) ...[
-                _buildAudienceSection(context),
-                const SizedBox(height: 24),
-              ],
-              _buildPreviewSection(context),
+              const SizedBox(width: AppSpacing.gap12),
+              _radio(context, selected, size: AppSpacing.iconMd),
             ],
           ),
+        ),
+      ),
+    );
+  }
 
-          // Bottom Action
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surface.withValues(alpha: 0.95),
-                border: Border(
-                  top: BorderSide(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.2),
-                  ),
-                ),
-              ),
-              child: FilledButton(
-                onPressed: _isCreating ? null : _createPlan,
-                style: FilledButton.styleFrom(
-                  // token-exempt: slice 8 rebuild (#988)
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                  ),
-                ),
-                child: _isCreating
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          // token-exempt: slice 8 rebuild (#988)
-                          color: colorScheme.onPrimary,
-                          strokeWidth: 2,
-                        ),
+  Widget _radio(BuildContext context, bool selected, {required double size}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+          width: selected ? size * 0.3 : 1.5,
+        ),
+      ),
+    );
+  }
+
+  /// The "Choose books" flow: the book picker and the daily-amount pace.
+  Widget _buildChooseBooks(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.cardPadding,
+        0,
+        AppSpacing.cardPadding,
+        AppSpacing.cardPadding,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ..._bookCategories.entries.map(
+            (entry) => _buildBookCategory(entry.key, entry.value),
+          ),
+          const SizedBox(height: AppSpacing.gap12),
+          Text('Pace by', style: theme.textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.gap4),
+          _buildGoalOption(_PlanGoalMethod.endDate, 'Length'),
+          _buildGoalOption(
+            _PlanGoalMethod.chaptersPerDay,
+            'Chapters a day',
+            stepper: _RoundStepper(
+              value: '${_customChaptersPerDay ?? 1}',
+              decrementLabel: 'One chapter fewer',
+              incrementLabel: 'One chapter more',
+              decrementKey: const Key('create_plan_chapters_dec'),
+              incrementKey: const Key('create_plan_chapters_inc'),
+              onDecrement: (_customChaptersPerDay ?? 1) > 1
+                  ? () => setState(
+                        () =>
+                            _customChaptersPerDay = _customChaptersPerDay! - 1,
                       )
-                    : Text(
-                        _isEditing
-                            ? 'Save Changes'
-                            : (_audience == PlanAudience.group
-                                ? 'Create plan together'
-                                : 'Start My Plan'),
-                      ),
-              ),
+                  : null,
+              onIncrement: (_customChaptersPerDay ?? 1) < _maxChaptersPerDay
+                  ? () => setState(
+                        () => _customChaptersPerDay =
+                            (_customChaptersPerDay ?? 1) + 1,
+                      )
+                  : null,
+              vibrationService: widget.vibrationService,
+            ),
+          ),
+          _buildGoalOption(
+            _PlanGoalMethod.versesPerDay,
+            'Verses a day',
+            stepper: _RoundStepper(
+              value: '${_customVersesPerDay ?? _verseStep}',
+              decrementLabel: '$_verseStep verses fewer',
+              incrementLabel: '$_verseStep verses more',
+              decrementKey: const Key('create_plan_verses_dec'),
+              incrementKey: const Key('create_plan_verses_inc'),
+              onDecrement: (_customVersesPerDay ?? _verseStep) > _verseStep
+                  ? () => setState(
+                        () => _customVersesPerDay =
+                            _customVersesPerDay! - _verseStep,
+                      )
+                  : null,
+              onIncrement: (_customVersesPerDay ?? _verseStep) <
+                      _maxVersesPerDay
+                  ? () => setState(
+                        () => _customVersesPerDay =
+                            (_customVersesPerDay ?? _verseStep) + _verseStep,
+                      )
+                  : null,
+              vibrationService: widget.vibrationService,
             ),
           ),
         ],
@@ -1427,112 +1214,155 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
-  Widget _buildPlanTypeOption(
-    PlanType type,
-    String title,
-    String subtitle, {
-    bool showInfo = false,
+  static const _maxChaptersPerDay = 20;
+  static const _verseStep = 5;
+  static const _maxVersesPerDay = 200;
+
+  Widget _buildGoalOption(
+    _PlanGoalMethod method,
+    String label, {
+    Widget? stepper,
   }) {
-    final isSelected = _selectedType == type;
-    final colorScheme = Theme.of(context).colorScheme;
+    final isSelected = _goalMethod == method;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Semantics(
       checked: isSelected,
       inMutuallyExclusiveGroup: true,
       button: true,
-      label: '$title, $subtitle',
-      child: GestureDetector(
+      label: label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSpacing.rChip),
         onTap: () {
           unawaited(widget.vibrationService.lightImpact());
           setState(() {
-            _selectedType = type;
-            if (type == PlanType.threeOldOneNew) {
-              _years = 1;
+            _goalMethod = method;
+            // A daily amount starts from a sensible value instead of empty.
+            if (method == _PlanGoalMethod.chaptersPerDay) {
+              _customChaptersPerDay ??= 3;
+            } else if (method == _PlanGoalMethod.versesPerDay) {
+              _customVersesPerDay ??= 25;
             }
           });
         },
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(AppSpacing.rCard),
-            border: Border.all(
-              color: isSelected ? colorScheme.primary : Colors.transparent,
-              width: 1.5,
-            ),
-          ),
-          child: Column(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Row(
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? colorScheme.primary
-                            : colorScheme.outlineVariant,
-                        width: isSelected ? 6 : 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (showInfo && isSelected) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.of(context).primarySoft,
-                    borderRadius: BorderRadius.circular(AppSpacing.rChip),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'To complete this schedule in one year, you must read three OT chapters on six days and one NT chapter on five days. Choose another schedule type to specify days.',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurface,
-                                    height: 1.4,
-                                  ),
-                        ),
-                      ),
-                    ],
+              _radio(context, isSelected, size: 18),
+              const SizedBox(width: AppSpacing.gap12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isSelected
+                        ? colorScheme.onSurface
+                        : colorScheme.onSurfaceVariant,
                   ),
                 ),
-              ],
+              ),
+              if (isSelected && stepper != null) stepper,
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Length stepper and reading-day chips.
+  Widget _buildPaceCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final fixed = _selectedType == PlanType.threeOldOneNew;
+    final length = _lengthDays;
+    final shorter = _lengthSteps.lastWhere(
+      (days) => days < length,
+      orElse: () => 0,
+    );
+    final longer = _lengthSteps.firstWhere(
+      (days) => days > length,
+      orElse: () => 0,
+    );
+
+    return _card(context, [
+      Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.cardPadding,
+          vertical: AppSpacing.gap12,
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text('Length', style: theme.textTheme.titleMedium)),
+            _RoundStepper(
+              value: '$length days',
+              decrementLabel: 'Shorter',
+              incrementLabel: 'Longer',
+              decrementKey: const Key('create_plan_length_dec'),
+              incrementKey: const Key('create_plan_length_inc'),
+              valueKey: const Key('create_plan_length'),
+              onDecrement:
+                  fixed || shorter == 0 ? null : () => _setLength(shorter),
+              onIncrement:
+                  fixed || longer == 0 ? null : () => _setLength(longer),
+              // Any other length: pick the end date directly.
+              onTapValue: fixed
+                  ? null
+                  : () async {
+                      final before = _endDate;
+                      await _selectDate(context, false);
+                      if (mounted && _endDate != before) {
+                        setState(() => _goalMethod = _PlanGoalMethod.endDate);
+                      }
+                    },
+              vibrationService: widget.vibrationService,
+            ),
+          ],
+        ),
+      ),
+      const Divider(height: 1),
+      Padding(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        child: fixed
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: AppSpacing.iconSm,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.gap8),
+                  Expanded(
+                    child: Text(
+                      'To complete this schedule in one year, you must read three OT chapters on six days and one NT chapter on five days. Choose another schedule type to specify days.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Reading days', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.gap12),
+                  Row(
+                    children: [
+                      _dayChip(7, 'S'), // Sun
+                      _dayChip(1, 'M'), // Mon
+                      _dayChip(2, 'T'), // Tue
+                      _dayChip(3, 'W'), // Wed
+                      _dayChip(4, 'T'), // Thu
+                      _dayChip(5, 'F'), // Fri
+                      _dayChip(6, 'S'), // Sat
+                    ],
+                  ),
+                ],
+              ),
+      ),
+    ]);
   }
 
   String _fullDayName(int day) {
@@ -1548,137 +1378,182 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     return days[day] ?? '';
   }
 
-  Widget _dayCircle(int day, String label) {
+  Widget _dayChip(int day, String label) {
     final isSelected = _readingDays.contains(day);
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Semantics(
-      checked: isSelected,
-      button: true,
-      label: _fullDayName(day),
-      child: GestureDetector(
-        onTap: () {
-          unawaited(widget.vibrationService.lightImpact());
-          _toggleDay(day);
-        },
-        child: Container(
-          width: 48,
-          height: 48,
-          color: Colors.transparent,
-          alignment: Alignment.center,
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.surfaceContainerHighest,
+    return Expanded(
+      child: Semantics(
+        checked: isSelected,
+        button: true,
+        label: _fullDayName(day),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            unawaited(widget.vibrationService.lightImpact());
+            _toggleDay(day);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.gap2,
+              vertical: AppSpacing.gap2,
             ),
             child: Center(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: isSelected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurfaceVariant,
-                    ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGoalOption(
-    _PlanGoalMethod method,
-    String label,
-    Widget inputField,
-  ) {
-    final isSelected = _goalMethod == method;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(
-          checked: isSelected,
-          inMutuallyExclusiveGroup: true,
-          button: true,
-          label: label,
-          child: GestureDetector(
-            onTap: () {
-              unawaited(widget.vibrationService.lightImpact());
-              setState(() => _goalMethod = method);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              color: Colors.transparent,
-              child: Row(
-                children: [
-                  Container(
-                    width: 18,
-                    height: 18,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: AppSpacing.gap40),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
+                      color: isSelected
+                          ? colorScheme.primary
+                          : colorScheme.surfaceContainerLow,
+                      border: isSelected
+                          ? null
+                          : Border.all(color: AppColors.of(context).border),
+                    ),
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelLarge?.copyWith(
                         color: isSelected
-                            ? colorScheme.primary
-                            : colorScheme.outlineVariant,
-                        width: isSelected ? 5.5 : 1.5,
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: isSelected
-                                ? colorScheme.onSurface
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        Padding(padding: const EdgeInsets.only(left: 30), child: inputField),
-      ],
+      ),
     );
   }
 
-  Widget _buildNumericField({
-    int? value,
-    required ValueChanged<String> onChanged,
-    required bool enabled,
+  /// Start date and Starting point. Both are fixed while editing: the
+  /// schedule is anchored to the plan's existing progress, so it must not
+  /// drift out from under recorded readings.
+  Widget _buildStartCard(BuildContext context) {
+    return _card(context, [
+      _valueRow(
+        context,
+        key: const Key('create_plan_start_date'),
+        label: 'Start date',
+        value: _startDateLabel,
+        onTap: _isEditing ? null : () => _selectDate(context, true),
+      ),
+      const Divider(height: 1),
+      // Starting point (ADR-0005): "I've already read up to this chapter"
+      // when migrating an existing plan from elsewhere. Shifts the start date
+      // so the position lands on today and marks the days up to it.
+      _valueRow(
+        context,
+        key: const Key('create_plan_starting_point'),
+        label: 'Starting point',
+        value: _startingPointRef ?? 'Start fresh',
+        onTap: _isEditing ? null : _pickStartingPoint,
+      ),
+    ]);
+  }
+
+  Widget _valueRow(
+    BuildContext context, {
+    required Key key,
+    required String label,
+    required String value,
+    required VoidCallback? onTap,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: enabled ? colorScheme.surface : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppSpacing.rChip),
-        border: Border.all(
-          color: enabled ? colorScheme.outline : colorScheme.outlineVariant,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final enabled = onTap != null;
+
+    return InkWell(
+      key: key,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.cardPadding,
+          vertical: AppSpacing.gap16,
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text(label, style: theme.textTheme.titleMedium)),
+            Text(
+              value,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: enabled
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (enabled) ...[
+              const SizedBox(width: AppSpacing.gap4),
+              Icon(
+                Icons.chevron_right,
+                size: AppSpacing.iconMd,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ],
         ),
       ),
-      child: TextField(
-        enabled: enabled,
-        keyboardType: TextInputType.number,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: 'Enter amount',
-          hintStyle: TextStyle(
-            color: colorScheme.onSurfaceVariant.withAlpha(150),
+    );
+  }
+
+  /// One line saying where the current configuration lands; tapping it opens
+  /// the full schedule.
+  Widget _buildPreviewLine(BuildContext context) {
+    final plan = _previewPlan();
+    if (plan == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final end = DateTime(
+      _startDate.year,
+      _startDate.month,
+      _startDate.day + plan.schedule.last.day - 1,
+    );
+    final chapters = plan.schedule.fold<int>(
+      0,
+      (total, day) => total + day.readings.length,
+    );
+    final perDay = (chapters / plan.schedule.length).round().clamp(1, chapters);
+
+    return Semantics(
+      button: true,
+      hint: 'View full schedule',
+      child: InkWell(
+        key: const Key('create_plan_preview'),
+        borderRadius: BorderRadius.circular(AppSpacing.rChip),
+        onTap: () => _showFullSchedule(context, plan),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.gap4,
+            vertical: AppSpacing.gap12,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          border: InputBorder.none,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Ends ${_formatDate(end)} · about $perDay '
+                  '${perDay == 1 ? 'chapter' : 'chapters'} a day',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.gap4),
+              Icon(
+                Icons.chevron_right,
+                size: AppSpacing.iconMd,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1698,14 +1573,15 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             !isFullySelected;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.gap8),
       child: Material(
-        color: colorScheme.surfaceContainerHighest.withAlpha(100),
+        color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
             ListTile(
+              key: Key('create_plan_category_$name'),
               dense: true,
               visualDensity: VisualDensity.compact,
               onTap: () {
@@ -1723,7 +1599,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                     ? true
                     : (isPartiallySelected ? null : false),
                 tristate: true,
-                activeColor: colorScheme.primary,
                 onChanged: (val) {
                   setState(() {
                     if (val == true) {
@@ -1744,13 +1619,16 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 _expandedCategories.contains(name)
                     ? Icons.expand_less
                     : Icons.expand_more,
-                size: 20,
+                size: AppSpacing.iconMd,
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
             if (_expandedCategories.contains(name))
               Padding(
-                padding: const EdgeInsets.only(left: 16, bottom: 8),
+                padding: const EdgeInsets.only(
+                  left: AppSpacing.gap16,
+                  bottom: AppSpacing.gap8,
+                ),
                 child: Column(
                   children: subcategories.entries
                       .map((e) => _buildBookSubcategory(e.key, e.value))
@@ -1803,7 +1681,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             _expandedCategories.contains(name)
                 ? Icons.expand_less
                 : Icons.expand_more,
-            size: 18,
+            size: AppSpacing.iconMd,
             color: colorScheme.onSurfaceVariant,
           ),
           onTap: () {
@@ -1818,7 +1696,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         ),
         if (_expandedCategories.contains(name))
           Padding(
-            padding: const EdgeInsets.only(left: 32),
+            padding: const EdgeInsets.only(left: AppSpacing.gap32),
             child: Column(
               children: books.map((book) {
                 final isSelected = _selectedBooks.contains(book);
@@ -1838,7 +1716,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   leading: Checkbox(
                     visualDensity: VisualDensity.compact,
                     value: isSelected,
-                    activeColor: colorScheme.primary,
                     onChanged: (val) {
                       setState(() {
                         if (val == true) {
@@ -1862,6 +1739,119 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// A minus / value / plus control with round 40px buttons and a serif value,
+/// used for the plan's length and its daily amount. A null callback dims and
+/// disables that button.
+class _RoundStepper extends StatelessWidget {
+  final String value;
+  final VoidCallback? onDecrement;
+  final VoidCallback? onIncrement;
+  final VoidCallback? onTapValue;
+  final String decrementLabel;
+  final String incrementLabel;
+  final Key? decrementKey;
+  final Key? incrementKey;
+  final Key? valueKey;
+  final VibrationService vibrationService;
+
+  const _RoundStepper({
+    required this.value,
+    required this.onDecrement,
+    required this.onIncrement,
+    required this.decrementLabel,
+    required this.incrementLabel,
+    required this.vibrationService,
+    this.onTapValue,
+    this.decrementKey,
+    this.incrementKey,
+    this.valueKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final valueText = Text(
+      value,
+      key: valueKey,
+      textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.titleLarge,
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _button(
+            context, decrementKey, Icons.remove, decrementLabel, onDecrement),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 84),
+          child: onTapValue == null
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.gap8,
+                  ),
+                  child: valueText,
+                )
+              : InkWell(
+                  borderRadius: BorderRadius.circular(AppSpacing.rChip),
+                  onTap: onTapValue,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.gap8,
+                      vertical: AppSpacing.gap8,
+                    ),
+                    child: valueText,
+                  ),
+                ),
+        ),
+        _button(context, incrementKey, Icons.add, incrementLabel, onIncrement),
+      ],
+    );
+  }
+
+  Widget _button(
+    BuildContext context,
+    Key? key,
+    IconData icon,
+    String label,
+    VoidCallback? onTap,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final enabled = onTap != null;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: Material(
+        key: key,
+        color: colorScheme.surfaceContainerLow,
+        shape: CircleBorder(
+          side: BorderSide(color: AppColors.of(context).border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: enabled
+              ? () {
+                  unawaited(vibrationService.lightImpact());
+                  onTap();
+                }
+              : null,
+          child: SizedBox(
+            width: AppSpacing.gap40,
+            height: AppSpacing.gap40,
+            child: Icon(
+              icon,
+              size: AppSpacing.iconSm,
+              color: enabled
+                  ? colorScheme.primary
+                  : colorScheme.outline.withValues(alpha: 0.45),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
