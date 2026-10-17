@@ -280,6 +280,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
           ),
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
+            // token-exempt: left-aligned list-row action; layout only
             padding: const EdgeInsets.symmetric(
                 vertical: AppSpacing.gap12, horizontal: AppSpacing.gap12),
             alignment: Alignment.centerLeft,
@@ -300,7 +301,6 @@ class _NudgeSheetState extends State<_NudgeSheet> {
   }
 
   Widget _buildCustomField(ThemeData theme) {
-    final colorScheme = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -313,16 +313,6 @@ class _NudgeSheetState extends State<_NudgeSheet> {
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: 'Say something kind…',
-            filled: true,
-            fillColor: colorScheme.surfaceContainerHighest,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.rField),
-              borderSide: BorderSide(color: colorScheme.outlineVariant),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.rField),
-              borderSide: BorderSide(color: colorScheme.outlineVariant),
-            ),
           ),
         ),
         const SizedBox(height: 8),

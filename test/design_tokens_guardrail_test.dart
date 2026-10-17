@@ -25,6 +25,12 @@ final _rules = <String, RegExp>{
   // button (or another reasoned exemption), always with the marker.
   'spinner: use SkeletonLoader, or mark a submitting button':
       RegExp(r'\bCircularProgressIndicator(?:\.adaptive)?\('),
+  'ElevatedButton: use FilledButton (or Outlined/Text)':
+      RegExp(r'\bElevatedButton\b'),
+  'OutlineInputBorder: inputs take the theme\'s filled style':
+      RegExp(r'\bOutlineInputBorder\('),
+  // Variants live in the theme or AppButtonStyles (common_styles.dart).
+  'styleFrom: use the theme or AppButtonStyles': RegExp(r'\bstyleFrom\('),
 };
 
 void main() {
@@ -40,6 +46,7 @@ void main() {
       if (path.startsWith('lib/theme/') ||
           path == 'lib/firebase_options.dart' ||
           path == 'lib/widgets/sub_header.dart' ||
+          path == 'lib/widgets/common_styles.dart' ||
           _allowlistedFiles.any(path.startsWith)) {
         continue;
       }

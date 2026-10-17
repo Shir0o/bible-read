@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../widgets/common_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -198,9 +199,7 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
               Navigator.pop(dialogContext);
               _deletePermanently(item);
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+            style: AppButtonStyles.destructiveText(context),
             child: const Text('Delete Permanently'),
           ),
         ],
@@ -258,9 +257,7 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
               Navigator.pop(dialogContext);
               _emptyTrash();
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+            style: AppButtonStyles.destructiveText(context),
             child: const Text('Empty Trash'),
           ),
         ],

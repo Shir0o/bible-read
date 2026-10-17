@@ -25,7 +25,7 @@ class VibrationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return FilledButton(
       onPressed: () {
         unawaited(vibrationService.lightImpact());
         onPressed();

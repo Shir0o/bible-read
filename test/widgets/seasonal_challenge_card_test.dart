@@ -94,7 +94,7 @@ void main() {
       await tester.pumpWidget(buildCard(progress: incomplete, onClaim: () {}));
       await tester.pump();
 
-      var button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      var button = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(button.onPressed, isNull);
       expect(find.text('In progress'), findsOneWidget);
 
@@ -109,7 +109,7 @@ void main() {
       await tester.pumpWidget(buildCard(progress: complete, onClaim: () {}));
       await tester.pump();
 
-      button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      button = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(button.onPressed, isNotNull);
       expect(find.text('Claim reward'), findsOneWidget);
 
@@ -125,7 +125,7 @@ void main() {
       await tester.pumpWidget(buildCard(progress: claimed, onClaim: () {}));
       await tester.pump();
 
-      button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      button = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(button.onPressed, isNull);
       expect(find.text('Claimed'), findsOneWidget);
     },
@@ -153,7 +153,7 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Claim reward'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Claim reward'));
     await tester.pump();
 
     expect(callCount, 1);

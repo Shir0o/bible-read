@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'common_styles.dart';
 import '../theme/app_theme.dart';
 
 import '../models/group.dart';
@@ -161,15 +162,7 @@ class GroupCard extends StatelessWidget {
                                     color: colorScheme.primary,
                                   ),
                                 ),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
+                                style: AppButtonStyles.compactText(context),
                               ),
                             ),
                           ],

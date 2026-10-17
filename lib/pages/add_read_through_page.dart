@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../widgets/common_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -250,9 +251,7 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
                     Center(
                       child: TextButton(
                         onPressed: _delete,
-                        style: TextButton.styleFrom(
-                          foregroundColor: colorScheme.error,
-                        ),
+                        style: AppButtonStyles.destructiveText(context),
                         child: const Text('Remove from my history'),
                       ),
                     ),

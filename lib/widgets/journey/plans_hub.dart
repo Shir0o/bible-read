@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../common_styles.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -595,9 +596,7 @@ class PlansHubState extends State<PlansHub> {
               Navigator.pop(dialogContext);
               _trashGroup(group);
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+            style: AppButtonStyles.destructiveText(context),
             child: const Text('Delete'),
           ),
         ],
@@ -697,9 +696,7 @@ class PlansHubState extends State<PlansHub> {
               Navigator.pop(dialogContext);
               _trashPlan(row);
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+            style: AppButtonStyles.destructiveText(context),
             child: const Text('Delete'),
           ),
         ],
@@ -1470,7 +1467,6 @@ class PlansHubState extends State<PlansHub> {
   }
 
   Widget _enrollButton(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: double.infinity,
       height: 52,
@@ -1478,19 +1474,6 @@ class PlansHubState extends State<PlansHub> {
         onPressed: _enroll,
         icon: const Icon(Icons.add, size: 20),
         label: const Text('Enroll in a new plan'),
-        style: FilledButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          // From the theme so the label keeps the app font; a bare TextStyle
-          // here replaces the theme's and falls back to the system font.
-          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-              ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.rInset),
-          ),
-        ),
       ),
     );
   }
@@ -1498,7 +1481,6 @@ class PlansHubState extends State<PlansHub> {
   /// Quiet link to the Recently Deleted hub (#776) at the foot of the list,
   /// with a hint of how much is waiting in the trash.
   Widget _trashShortcut(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: TextButton.icon(
         onPressed: _openTrash,
@@ -1508,9 +1490,7 @@ class PlansHubState extends State<PlansHub> {
               ? 'Recently Deleted · $_trashedCount waiting'
               : 'Recently Deleted',
         ),
-        style: TextButton.styleFrom(
-          foregroundColor: colorScheme.onSurfaceVariant,
-        ),
+        style: AppButtonStyles.mutedText(context),
       ),
     );
   }
@@ -1565,23 +1545,12 @@ class PlansHubState extends State<PlansHub> {
     required String label,
     required VoidCallback onTap,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       height: 46,
       child: FilledButton.icon(
         onPressed: onTap,
         icon: Icon(icon, size: 18),
         label: Text(label),
-        style: FilledButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontSize: 14,
-              ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.rInset),
-          ),
-        ),
       ),
     );
   }

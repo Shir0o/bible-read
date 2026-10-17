@@ -312,10 +312,7 @@ class SettingsPageState extends State<SettingsPage> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
+            style: AppButtonStyles.destructiveFilled(context),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Delete'),
           ),

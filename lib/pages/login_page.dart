@@ -481,21 +481,8 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(
                         height: 56, // h-14
                         width: double.infinity,
-                        child: ElevatedButton(
+                        child: FilledButton(
                           onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.primary,
-                            foregroundColor: colorScheme.onPrimary,
-                            elevation: 10, // shadow-lg
-                            shadowColor: colorScheme.shadow.withValues(
-                              alpha: 0.3,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.rCard,
-                              ),
-                            ),
-                          ),
                           child: _loading
                               ? SizedBox(
                                   height: 24,
@@ -564,24 +551,8 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(
                         height: 56, // h-14
                         width: double.infinity,
-                        child: ElevatedButton(
+                        child: OutlinedButton(
                           onPressed: _handleGoogleSignIn,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.surfaceBright,
-                            foregroundColor: colorScheme.onSurface,
-                            elevation: 4, // shadow-md
-                            shadowColor: colorScheme.shadow.withValues(
-                              alpha: 0.1,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.rCard,
-                              ),
-                              side: BorderSide(
-                                color: colorScheme.outlineVariant,
-                              ),
-                            ),
-                          ),
                           child: _isGoogleSigningIn
                               ? SizedBox(
                                   height: 24,
@@ -705,9 +676,6 @@ class _LoginPageState extends State<LoginPage> {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    const radius =
-        BorderRadius.vertical(top: Radius.circular(AppSpacing.rChip));
-
     return TextFormField(
       key: key,
       controller: controller,
@@ -721,35 +689,6 @@ class _LoginPageState extends State<LoginPage> {
       style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: textTheme.bodyMedium?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w500,
-        ),
-        floatingLabelStyle: textTheme.bodyMedium?.copyWith(
-          color: colorScheme.primary,
-          fontWeight: FontWeight.w500,
-        ),
-        filled: true,
-        fillColor: colorScheme.surface.withValues(alpha: 0.08),
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-          borderRadius: radius,
-        ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          borderRadius: radius,
-        ),
-        errorBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: colorScheme.error, width: 2),
-          borderRadius: radius,
-        ),
-        focusedErrorBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: colorScheme.error, width: 2),
-          borderRadius: radius,
-        ),
-        contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
         suffixIcon: suffixIcon,
       ),
     );
@@ -807,7 +746,6 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
             onSubmitted: (_) => _send(),
             decoration: InputDecoration(
               labelText: 'Email',
-              border: const OutlineInputBorder(),
               suffixIcon: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _controller,
                 builder: (context, value, child) {
@@ -831,7 +769,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           onPressed: _sending ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        FilledButton(
           onPressed: _sending ? null : _send,
           child: _sending
               ? const SizedBox(

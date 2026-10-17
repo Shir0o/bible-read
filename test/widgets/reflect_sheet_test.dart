@@ -12,7 +12,7 @@ Widget _host({
     home: Scaffold(
       body: Builder(
         builder: (context) => Center(
-          child: ElevatedButton(
+          child: FilledButton(
             onPressed: () => showReflectSheet(
               context,
               initialText: initialText,

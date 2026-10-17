@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../common_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -179,13 +180,6 @@ class EmptyGroupState extends StatelessWidget {
             height: AppSpacing.buttonHeight,
             child: FilledButton(
               onPressed: () => _onHaveCode(context),
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                ),
-              ),
               child: const Text('Have a code?'),
             ),
           ),
@@ -195,13 +189,6 @@ class EmptyGroupState extends StatelessWidget {
             height: AppSpacing.buttonHeight,
             child: OutlinedButton(
               onPressed: () => _onFindGroup(context),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: colorScheme.primary,
-                side: BorderSide(color: appColors.primaryLine),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                ),
-              ),
               child: const Text('Find a group'),
             ),
           ),
@@ -211,12 +198,7 @@ class EmptyGroupState extends StatelessWidget {
             height: 44,
             child: TextButton(
               onPressed: () => _onCreateGroup(context),
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.onSurfaceVariant,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                ),
-              ),
+              style: AppButtonStyles.mutedText(context),
               child: const Text('Create a group'),
             ),
           ),

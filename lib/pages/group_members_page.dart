@@ -554,11 +554,8 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: danger
-                ? TextButton.styleFrom(
-                    foregroundColor: Theme.of(dialogContext).colorScheme.error,
-                  )
-                : null,
+            style:
+                danger ? AppButtonStyles.destructiveText(dialogContext) : null,
             child: Text(confirmLabel),
           ),
         ],

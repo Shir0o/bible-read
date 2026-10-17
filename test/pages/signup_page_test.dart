@@ -166,7 +166,7 @@ void main() {
     );
 
     // Tap Create Account
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
     await tester.pumpAndSettle();
 
     expect(auth.createCalled, isTrue);
@@ -202,7 +202,7 @@ void main() {
     );
 
     // Tap Create Account without entering anything
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
     await tester.pump();
 
     expect(find.text('Please fill in all fields'), findsAtLeast(3));
@@ -237,7 +237,7 @@ void main() {
       'password',
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
     await tester.pump();
 
     expect(find.text('Please enter a valid email address'), findsAtLeast(1));
@@ -272,7 +272,7 @@ void main() {
       '12345',
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
     await tester.pump();
 
     expect(

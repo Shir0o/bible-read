@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
 import 'app_bottom_sheet.dart';
 import 'common_styles.dart';
 
@@ -143,16 +142,6 @@ class _ReflectSheetState extends State<_ReflectSheet> {
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: 'A sentence is plenty…',
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.rField),
-                  borderSide: BorderSide(color: colorScheme.outlineVariant),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.rField),
-                  borderSide: BorderSide(color: colorScheme.outlineVariant),
-                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -216,6 +205,7 @@ class _ReflectSheetState extends State<_ReflectSheet> {
             TextButton(
               onPressed: _saving ? null : _skip,
               style: TextButton.styleFrom(
+                // token-exempt: full-width text button; layout only
                 minimumSize: const Size.fromHeight(44),
               ),
               child: Text(_isEditing ? 'Cancel' : 'Skip for today'),

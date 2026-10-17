@@ -70,7 +70,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: Builder(
-            builder: (context) => ElevatedButton(
+            builder: (context) => FilledButton(
               onPressed: () => AppMenuSheet.show(
                 context: context,
                 vibrationService: vibration ?? const VibrationService(),
@@ -292,7 +292,7 @@ void main() {
         home: Scaffold(
           body: Builder(
             builder: (context) {
-              return ElevatedButton(
+              return FilledButton(
                 onPressed: () {
                   AppMenuSheet.show(
                     context: context,

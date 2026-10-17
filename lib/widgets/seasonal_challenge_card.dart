@@ -185,7 +185,7 @@ class SeasonalChallengeCard extends StatelessWidget {
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,
-            child: ElevatedButton(
+            child: FilledButton(
               onPressed: canClaim ? onClaim : null,
               child: Text(buttonLabel),
             ),
