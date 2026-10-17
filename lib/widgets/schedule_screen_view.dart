@@ -252,13 +252,14 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
 
     return SingleChildScrollView(
       controller: _controller,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap16, AppSpacing.gap4, AppSpacing.gap16, 80),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (widget.header != null) ...[
             widget.header!,
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
           ],
           _buildSummaryCard(context),
           if (showAnchor) ...[
@@ -275,12 +276,12 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
             const SizedBox(height: AppSpacing.gap16),
             _buildInStepCard(context),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.gap20),
           KeyedSubtree(
             key: _scheduleHeaderKey,
             child: _buildFullScheduleHeader(context),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.gap4),
           if (entries.isEmpty)
             _buildEmpty(context)
           else
@@ -319,7 +320,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.gap6),
           Text(
             _paceText(),
             style: theme.textTheme.titleLarge,
@@ -417,7 +418,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       "These are still here whenever you're ready — in any "
                       'order, no rush.',
@@ -430,9 +431,9 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
           const Divider(height: 1),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.gap4),
           for (final i in missedItems) _buildCatchUpRow(context, i),
         ],
       ),
@@ -501,7 +502,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.gap16),
       decoration: _cardDecoration(colorScheme),
       child: Row(
         children: [
@@ -529,7 +530,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSpacing.gap2),
                 Text(
                   'Tap any day below to mark it read — in any order.',
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -539,7 +540,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.gap8),
           _Chip(label: 'Jump', onTap: () => unawaited(_scrollToResume())),
         ],
       ),
@@ -551,7 +552,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.gap16),
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
@@ -561,7 +562,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
         children: [
           Icon(Icons.check_circle,
               size: AppSpacing.iconLg, color: colorScheme.primary),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Text(
               "You're in step with your group.",
@@ -581,7 +582,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -653,7 +654,8 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
         );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 16, 2, 12),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap2, AppSpacing.gap16, AppSpacing.gap2, AppSpacing.gap12),
       child: Row(
         children: [
           Text(
@@ -663,15 +665,16 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
               letterSpacing: 0.6,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(child: Divider(color: colorScheme.outlineVariant)),
           if (markable) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.gap8),
             InkWell(
               onTap: () => _preserveScrollAnchor(() => onMarkMonth(date)),
               borderRadius: BorderRadius.circular(AppSpacing.rSmall),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.gap8, vertical: AppSpacing.gap4),
                 child: Text(
                   'Mark month',
                   style: theme.textTheme.labelSmall?.copyWith(
@@ -768,7 +771,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                   ),
                 ),
                 if (caption != null) ...[
-                  const SizedBox(height: 1),
+                  const SizedBox(height: AppSpacing.gap2),
                   Text(
                     caption,
                     style: theme.textTheme.labelSmall?.copyWith(
@@ -781,7 +784,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.gap8),
           _StatusToggle(status: st),
         ],
       ),
@@ -790,7 +793,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     return AnimatedContainer(
       key: ValueKey('schedule-row-${entry.index}'),
       duration: const Duration(milliseconds: 250),
-      margin: const EdgeInsets.only(bottom: 4),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap4),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isHighlighted
@@ -924,7 +927,8 @@ class _Chip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.rPill),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.gap12, vertical: AppSpacing.gap8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -932,7 +936,7 @@ class _Chip extends StatelessWidget {
                 Icon(icon,
                     size: AppSpacing.iconSm,
                     color: colorScheme.onSurfaceVariant),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.gap6),
               ],
               Text(
                 label,

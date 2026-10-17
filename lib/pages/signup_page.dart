@@ -280,7 +280,7 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               // Header
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(AppSpacing.gap16),
                 child: Row(
                   children: [
                     IconButton(
@@ -306,11 +306,12 @@ class _SignupPageState extends State<SignupPage> {
               ),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.gap24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.gap16),
                     Text(
                       'Create your account',
                       style: textTheme.headlineSmall?.copyWith(
@@ -318,12 +319,12 @@ class _SignupPageState extends State<SignupPage> {
                         height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.gap8),
                     Text(
                       'Join a group to start reading together.',
                       style: textTheme.bodyMedium,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: AppSpacing.gap32),
 
                     // Form
                     Form(
@@ -359,7 +360,7 @@ class _SignupPageState extends State<SignupPage> {
                                 );
                               },
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: AppSpacing.gap20),
 
                             // Email
                             ValueListenableBuilder<TextEditingValue>(
@@ -390,7 +391,7 @@ class _SignupPageState extends State<SignupPage> {
                                 );
                               },
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: AppSpacing.gap20),
 
                             // Password
                             TextFormField(
@@ -431,9 +432,10 @@ class _SignupPageState extends State<SignupPage> {
                     ),
 
                     // Terms
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.gap8),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.gap4),
                       // Text.rich (not RichText) so the line follows the
                       // system text size.
                       child: Text.rich(
@@ -468,7 +470,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: AppSpacing.gap32),
 
                     // Create Account Button
                     SizedBox(
@@ -499,16 +501,18 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: AppSpacing.gap40),
 
               // Or continue with
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.gap24),
                 child: Row(
                   children: [
                     Expanded(child: Divider(color: colorScheme.outlineVariant)),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.gap16),
                       child: Text(
                         'Or continue with',
                         style: textTheme.bodyMedium,
@@ -519,7 +523,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.gap24),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -533,7 +537,7 @@ class _SignupPageState extends State<SignupPage> {
                 ],
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.gap32),
 
               // Log in link
               Row(
@@ -568,7 +572,7 @@ class _SignupPageState extends State<SignupPage> {
                             );
                           },
                           child: Padding(
-                            padding: const EdgeInsets.all(4.0),
+                            padding: const EdgeInsets.all(AppSpacing.gap4),
                             child: Text(
                               'Log in',
                               style: textTheme.bodyMedium?.copyWith(
@@ -583,7 +587,7 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.gap32),
             ],
           ),
         );

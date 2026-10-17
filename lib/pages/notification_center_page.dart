@@ -80,7 +80,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
               title: 'Notifications',
               onBack: () => Navigator.of(context).pop(),
               right: Padding(
-                padding: const EdgeInsets.only(right: 6),
+                padding: const EdgeInsets.only(right: AppSpacing.gap6),
                 child: TextButton(
                   onPressed: _markingAllRead ? null : _markAllAsRead,
                   child: _markingAllRead
@@ -122,7 +122,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                                       size: 64,
                                       color: colorScheme.outline,
                                     ),
-                                    const SizedBox(height: 16),
+                                    const SizedBox(height: AppSpacing.gap16),
                                     Text(
                                       'No notifications yet',
                                       style:
@@ -136,7 +136,11 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                             }
 
                             return ListView(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                              padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.gap16,
+                                  AppSpacing.gap8,
+                                  AppSpacing.gap16,
+                                  AppSpacing.gap24),
                               children: [
                                 for (final n in notifications) ...[
                                   _NotificationItem(
@@ -328,7 +332,7 @@ class _NotificationItemState extends State<_NotificationItem> {
               ),
               if (isUnread)
                 Container(
-                  margin: const EdgeInsets.only(left: 8),
+                  margin: const EdgeInsets.only(left: AppSpacing.gap8),
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
@@ -392,7 +396,7 @@ class _NotificationItemState extends State<_NotificationItem> {
           bottom: -2,
           right: -2,
           child: Container(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(AppSpacing.gap4),
             decoration: BoxDecoration(
               color: _getBadgeColor(context),
               shape: BoxShape.circle,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/group_schedule.dart';
 import 'common_styles.dart';
+import '../theme/app_theme.dart';
 
 /// List tile displaying a group's reading assignment for a single day.
 class ScheduleItemTile extends StatelessWidget {
@@ -81,7 +82,7 @@ class ScheduleItemTile extends StatelessWidget {
         CommonStyles.buildTappableCard(
           context: context,
           onTap: onTap,
-          margin: const EdgeInsets.symmetric(vertical: 4),
+          margin: const EdgeInsets.symmetric(vertical: AppSpacing.gap4),
           child: ListTile(
             title: Text(dateString),
             subtitle:
@@ -94,14 +95,17 @@ class ScheduleItemTile extends StatelessWidget {
         ),
         if (showPerChapter)
           Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+            padding: const EdgeInsets.only(
+                left: AppSpacing.gap16,
+                right: AppSpacing.gap16,
+                bottom: AppSpacing.gap8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.gap8),
                 for (int i = 0; i < schedule.chapters.length; i++)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.gap6),
                     child: FilterChip(
                       label: Text(schedule.chapters[i]),
                       selected: checkedChapters!.contains(i),

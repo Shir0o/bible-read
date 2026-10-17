@@ -134,7 +134,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
         final textTheme = Theme.of(context).textTheme;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap24),
           child: Column(
             children: [
               // Push content to bottom
@@ -157,11 +157,12 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.gap8),
 
               // Description
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.gap16),
                 child: Text(
                   'Sign up to track your progress and connect with your reading group.',
                   textAlign: TextAlign.center,
@@ -175,7 +176,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                   service: widget.appleSignInService,
                   onPressed: _handleAppleSignIn,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.gap12),
               ],
 
               // Continue with Google Button
@@ -198,7 +199,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const FaIcon(FontAwesomeIcons.google, size: 20),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.gap12),
                             Text(
                               'Continue with Google',
                               style: textTheme.titleSmall,
@@ -207,7 +208,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                         ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.gap12),
 
               // Sign up with email Button
               SizedBox(
@@ -231,7 +232,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.mail_outline, size: 24),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.gap12),
                       Text(
                         'Sign up with email',
                         // The theme's titleSmall carries its own color, which
@@ -244,7 +245,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.gap32),
 
               // Login Link
               Row(
@@ -271,8 +272,8 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                     borderRadius: BorderRadius.circular(AppSpacing.rSmall),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
-                        vertical: 4.0,
+                        horizontal: AppSpacing.gap8,
+                        vertical: AppSpacing.gap4,
                       ),
                       child: Text(
                         'Log in',
@@ -287,7 +288,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
               ),
 
               // Bottom Padding
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.gap32),
             ],
           ),
         );

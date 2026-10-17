@@ -12,6 +12,7 @@ import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/sub_header.dart';
+import '../theme/app_theme.dart';
 
 /// Page displaying pending join requests for a specific group.
 class GroupJoinRequestsPage extends StatelessWidget {
@@ -59,7 +60,7 @@ class GroupJoinRequestsPage extends StatelessWidget {
                 decoration: CommonStyles.backgroundDecoration(
                   Theme.of(context).colorScheme,
                 ),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.gap16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -71,7 +72,7 @@ class GroupJoinRequestsPage extends StatelessWidget {
                                 Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.gap12),
                     Expanded(
                       child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                         stream: joinRequestsStream ??
@@ -105,8 +106,8 @@ class GroupJoinRequestsPage extends StatelessWidget {
                                   return CommonStyles.buildTappableCard(
                                     context: context,
                                     onTap: () {},
-                                    margin:
-                                        const EdgeInsets.symmetric(vertical: 4),
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: AppSpacing.gap4),
                                     child: ListTile(
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(name.isEmpty ? uid : name),

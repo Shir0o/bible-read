@@ -55,7 +55,7 @@ class GroupCard extends StatelessWidget {
                   'Group ${group.name}, $readingText, ${(groupCompletion * 100).toInt()}% complete',
               button: true,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.only(bottom: AppSpacing.gap16),
                 child: Material(
                   color: colorScheme.surfaceContainerHighest.withValues(
                     alpha: 0.3,
@@ -70,7 +70,7 @@ class GroupCard extends StatelessWidget {
                   child: InkWell(
                     onTap: onTap,
                     child: Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(AppSpacing.gap20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -86,7 +86,7 @@ class GroupCard extends StatelessWidget {
                                       group.name,
                                       style: theme.textTheme.titleMedium,
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: AppSpacing.gap4),
                                     Text(
                                       readingText,
                                       style:
@@ -100,7 +100,7 @@ class GroupCard extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: AppSpacing.gap16),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
@@ -117,7 +117,7 @@ class GroupCard extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.gap16),
                           // Progress Bar
                           ClipRRect(
                             borderRadius:
@@ -132,7 +132,7 @@ class GroupCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppSpacing.gap16),
                           // Footer
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -146,7 +146,7 @@ class GroupCard extends StatelessWidget {
                             ],
                           ),
                           if (onViewSchedule != null) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.gap8),
                             Align(
                               alignment: Alignment.centerLeft,
                               child: TextButton.icon(

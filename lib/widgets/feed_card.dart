@@ -27,7 +27,8 @@ class FeedCard extends StatelessWidget {
     final milestone = log.milestone;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap12, vertical: AppSpacing.gap6),
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
@@ -53,7 +54,7 @@ class FeedCard extends StatelessWidget {
                 color: colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             if (milestone != null) ...[
               _MilestoneBanner(milestone: milestone),
               const SizedBox(height: AppSpacing.gap8),
@@ -62,7 +63,7 @@ class FeedCard extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(2),
+                    padding: const EdgeInsets.all(AppSpacing.gap2),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: colorScheme.tertiaryContainer,
@@ -73,7 +74,7 @@ class FeedCard extends StatelessWidget {
                       color: colorScheme.onTertiaryContainer,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.gap8),
                   Text(
                     'Read today',
                     style: AppTextStyles.bodySmall(
@@ -100,7 +101,7 @@ class FeedCard extends StatelessWidget {
                       color: colorScheme.onSecondaryContainer,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.gap8),
                   Expanded(
                     child: Text(
                       _buildLikeText(log.likeNames),
@@ -112,7 +113,7 @@ class FeedCard extends StatelessWidget {
                 ],
               ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             Align(
               alignment: Alignment.centerRight,
               child: _ActionButton(
@@ -215,7 +216,7 @@ class _MilestoneBanner extends StatelessWidget {
         child: Row(
           children: [
             const SunMark(size: 36, done: true, borderWidth: 1.5),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.gap12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -95,7 +95,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
           ],
           SkeletonLoader(
             loading: widget.isLoading,
@@ -133,7 +133,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                     '${(overallProgress * 100).toInt()}%';
 
                 return Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(AppSpacing.gap24),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -158,7 +158,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                       .bodyMedium
                                       ?.copyWith(fontWeight: FontWeight.w500),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: AppSpacing.gap4),
                                 Row(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.baseline,
@@ -171,7 +171,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                           .displaySmall
                                           ?.copyWith(height: 1.0),
                                     ),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: AppSpacing.gap6),
                                     Text(
                                       'Done',
                                       style: Theme.of(context)
@@ -196,7 +196,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                       height: 1.0,
                                     ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: AppSpacing.gap4),
                               Text(
                                 'of $totalBooks Books',
                                 style: Theme.of(context).textTheme.bodyMedium,
@@ -205,7 +205,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.gap20),
                       // Custom Progress Bar
                       Container(
                         height: 16,
@@ -250,13 +250,13 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.gap20),
                       // Row for OT and NT
                       Row(
                         children: [
                           Expanded(
                             child: Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(AppSpacing.gap12),
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainer,
                                 borderRadius:
@@ -282,7 +282,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                       size: 20,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.gap12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -297,7 +297,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        const SizedBox(height: 2),
+                                        const SizedBox(height: AppSpacing.gap2),
                                         Text(
                                           '$otCompleted/39',
                                           style: Theme.of(context)
@@ -311,10 +311,10 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: AppSpacing.gap16),
                           Expanded(
                             child: Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(AppSpacing.gap12),
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainer,
                                 borderRadius:
@@ -340,7 +340,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                       size: 20,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.gap12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -355,7 +355,7 @@ class _BibleLibraryGridState extends State<BibleLibraryGrid> {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        const SizedBox(height: 2),
+                                        const SizedBox(height: AppSpacing.gap2),
                                         Text(
                                           '$ntCompleted/27',
                                           style: Theme.of(context)

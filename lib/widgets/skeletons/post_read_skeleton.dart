@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../skeleton.dart';
+import '../../theme/app_theme.dart';
 
 class PostReadSkeleton extends StatelessWidget {
   const PostReadSkeleton({super.key});
@@ -8,7 +9,7 @@ class PostReadSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(AppSpacing.gap32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -19,7 +20,7 @@ class PostReadSkeleton extends StatelessWidget {
               radius: 40, // Circular
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.gap24),
 
             // "Thank you for being here" Text Skeleton
             const Skeleton(width: 200, height: 32, radius: 8),
@@ -35,7 +36,7 @@ class PostReadSkeleton extends StatelessWidget {
                   children: [
                     // "Reading this week" Label
                     const Skeleton(width: 100, height: 12, radius: 4),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.gap8),
                     // Progress Bar
                     const Skeleton(width: 240, height: 10, radius: 8),
                   ],
@@ -43,12 +44,12 @@ class PostReadSkeleton extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.gap24),
 
             // Streak Text Skeleton
             const Skeleton(width: 120, height: 16, radius: 4),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.gap32),
           ],
         ),
       ),

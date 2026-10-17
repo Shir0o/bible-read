@@ -11,6 +11,7 @@ import '../../services/read_log_service.dart';
 
 import '../skeleton_loader.dart';
 import '../skeletons/streak_history_skeleton.dart';
+import '../../theme/app_theme.dart';
 
 class StreakHistoryView extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -293,7 +294,8 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
           loading: _loading,
           skeleton: const StreakHistorySkeleton(),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -313,7 +315,7 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.gap12),
                 StreakStatsBox(
                   currentStreak: _currentStreak,
                   longestStreak: _longestStreak,
@@ -322,7 +324,7 @@ class _StreakHistoryViewState extends State<StreakHistoryView>
                   periodLabel: periodLabel,
                   remainingGraceCredits: _remainingGraceCredits,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.gap16),
                 if (_period == _Period.week)
                   WeekStreakCalendar(
                     readDates: _readDates,

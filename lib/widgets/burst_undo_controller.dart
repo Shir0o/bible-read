@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 /// Coalesces rapid mark-as-read actions into a single undoable burst (ADR-0005).
 ///
@@ -17,7 +18,8 @@ import 'package:flutter/material.dart';
 class BurstUndoController {
   BurstUndoController({
     this.window = const Duration(seconds: 4),
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 16),
+    this.margin = const EdgeInsets.fromLTRB(
+        AppSpacing.gap16, 0, AppSpacing.gap16, AppSpacing.gap16),
   });
 
   /// How long a burst stays undoable after the last mark.

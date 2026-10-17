@@ -212,7 +212,7 @@ class _JourneyPageState extends State<JourneyPage>
                 onRefresh: _refresh,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.gap24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [

@@ -149,7 +149,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
               'Showing up',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
           ],
           SkeletonLoader(
             loading: widget.isLoading,
@@ -163,8 +163,9 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                       borderRadius: BorderRadius.circular(AppSpacing.rCard),
                       border: Border.all(color: AppColors.of(context).border),
                     ),
-              padding:
-                  widget.embedded ? EdgeInsets.zero : const EdgeInsets.all(20),
+              padding: widget.embedded
+                  ? EdgeInsets.zero
+                  : const EdgeInsets.all(AppSpacing.gap20),
               child: Column(
                 children: [
                   // Header
@@ -182,7 +183,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                             tooltip: 'Previous month',
                             onPressed: () => _changeMonth(-1),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppSpacing.gap8),
                           IconButton(
                             icon: const Icon(Icons.chevron_right),
                             tooltip: 'Next month',
@@ -193,11 +194,11 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.gap16),
 
                   _buildCalendarGrid(colorScheme),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.gap16),
 
                   // Legend
                   Row(
@@ -213,7 +214,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                           alpha: 0.6,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: AppSpacing.gap16),
                       _buildLegendItem(
                         colorScheme,
                         label: 'Read',
@@ -247,7 +248,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
             border: borderColor != null ? Border.all(color: borderColor) : null,
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSpacing.gap6),
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium,
@@ -277,13 +278,13 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
           ),
           const TableRow(
             children: [
-              SizedBox(height: 8),
-              SizedBox(height: 8),
-              SizedBox(height: 8),
-              SizedBox(height: 8),
-              SizedBox(height: 8),
-              SizedBox(height: 8),
-              SizedBox(height: 8),
+              SizedBox(height: AppSpacing.gap8),
+              SizedBox(height: AppSpacing.gap8),
+              SizedBox(height: AppSpacing.gap8),
+              SizedBox(height: AppSpacing.gap8),
+              SizedBox(height: AppSpacing.gap8),
+              SizedBox(height: AppSpacing.gap8),
+              SizedBox(height: AppSpacing.gap8),
             ],
           ),
           // Skeleton rows
@@ -292,7 +293,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
               children: List.generate(7, (index) {
                 return const Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4),
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.gap4),
                     child: Skeleton(width: 32, height: 32, radius: 16),
                   ),
                 );
@@ -430,13 +431,13 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
     rows.add(
       const TableRow(
         children: [
-          SizedBox(height: 8),
-          SizedBox(height: 8),
-          SizedBox(height: 8),
-          SizedBox(height: 8),
-          SizedBox(height: 8),
-          SizedBox(height: 8),
-          SizedBox(height: 8),
+          SizedBox(height: AppSpacing.gap8),
+          SizedBox(height: AppSpacing.gap8),
+          SizedBox(height: AppSpacing.gap8),
+          SizedBox(height: AppSpacing.gap8),
+          SizedBox(height: AppSpacing.gap8),
+          SizedBox(height: AppSpacing.gap8),
+          SizedBox(height: AppSpacing.gap8),
         ],
       ),
     );
@@ -449,7 +450,7 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
           children: rowCells.map((cell) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap4),
                 child: cell,
               ),
             );

@@ -1206,7 +1206,7 @@ class _HomePageState extends State<HomePage>
                   _buildStartPlanInvitationCard(context),
                 ],
                 if (_readToday) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.gap24),
                   _buildReflectionSection(context),
                 ],
                 if (_readToday) ...[
@@ -1221,7 +1221,7 @@ class _HomePageState extends State<HomePage>
                   const SizedBox(height: AppSpacing.gap20),
                   _buildCommunitySection(context),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.gap24),
               ],
             ),
           ),
@@ -1324,7 +1324,7 @@ class _HomePageState extends State<HomePage>
           size: AppSpacing.iconSm,
           color: colorScheme.outline,
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSpacing.gap6),
         Text(
           'Also counts as showing up today',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1384,7 +1384,7 @@ class _HomePageState extends State<HomePage>
     final currentRef = _formatReadings(status.currentReadings);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.gap20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -1400,7 +1400,7 @@ class _HomePageState extends State<HomePage>
                 size: AppSpacing.iconSm,
                 color: colorScheme.primary,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.gap6),
               Expanded(
                 child: Text(
                   plan.title,
@@ -1427,7 +1427,7 @@ class _HomePageState extends State<HomePage>
               color: colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -1452,7 +1452,7 @@ class _HomePageState extends State<HomePage>
                   ),
           ),
           if (!isRead && _autoMarkPlanRead) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             _buildCountsHint(context),
           ],
         ],
@@ -1483,7 +1483,7 @@ class _HomePageState extends State<HomePage>
     final isMarking = _groupMarkingIds.contains(group.id);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.gap20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -1496,7 +1496,7 @@ class _HomePageState extends State<HomePage>
             children: [
               Icon(Icons.group_outlined,
                   size: AppSpacing.iconSm, color: colorScheme.primary),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.gap6),
               Expanded(
                 child: Text(
                   '${group.name} · together',
@@ -1535,7 +1535,7 @@ class _HomePageState extends State<HomePage>
               ],
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -1569,7 +1569,7 @@ class _HomePageState extends State<HomePage>
                       ),
           ),
           if (canMark && !isRead && _autoMarkPlanRead) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             _buildCountsHint(context),
           ],
         ],
@@ -1591,7 +1591,7 @@ class _HomePageState extends State<HomePage>
     final pct = status.total > 0 ? status.doneCount / status.total : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.gap20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -1604,7 +1604,7 @@ class _HomePageState extends State<HomePage>
             children: [
               Icon(Icons.eco_outlined,
                   size: AppSpacing.iconSm, color: colorScheme.tertiary),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.gap6),
               Expanded(
                 child: Text(
                   'Plan ended · finish at your pace',
@@ -1631,7 +1631,7 @@ class _HomePageState extends State<HomePage>
               color: colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           Text(
             '${status.remaining} reading${status.remaining == 1 ? '' : 's'} left '
             'of ${status.total}. The window closed, but it stays here until you '
@@ -1666,7 +1666,7 @@ class _HomePageState extends State<HomePage>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           Row(
             children: [
               Expanded(
@@ -1703,7 +1703,7 @@ class _HomePageState extends State<HomePage>
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.gap4),
           Center(
             child: TextButton(
               onPressed: () => _finishReading(item),
@@ -1771,7 +1771,7 @@ class _HomePageState extends State<HomePage>
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       _miniStatusText(item),
                       maxLines: 1,
@@ -2012,7 +2012,7 @@ class _HomePageState extends State<HomePage>
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       'Optional — a gentle rhythm to read by, on your own '
                       'or together.',
@@ -2174,7 +2174,7 @@ class _HomePageState extends State<HomePage>
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       prompt,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -2262,7 +2262,7 @@ class _HomePageState extends State<HomePage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (var i = 0; i < 7; i++) ...[
-                    if (i > 0) const SizedBox(width: 6),
+                    if (i > 0) const SizedBox(width: AppSpacing.gap6),
                     _weekDot(
                       context,
                       labels[i],
@@ -2283,7 +2283,7 @@ class _HomePageState extends State<HomePage>
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       "Whenever you return, it's enough.",
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -2331,7 +2331,7 @@ class _HomePageState extends State<HomePage>
                   ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.gap6),
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -2430,7 +2430,7 @@ class _HomePageState extends State<HomePage>
                             color: colorScheme.onSurface,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSpacing.gap2),
                         Text(
                           subtitle,
                           maxLines: 1,

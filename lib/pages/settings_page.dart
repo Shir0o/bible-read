@@ -428,7 +428,7 @@ class SettingsPageState extends State<SettingsPage> {
     Widget body;
     if (firebaseUser == null && googleUser == null) {
       body = Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(AppSpacing.gap24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -439,14 +439,14 @@ class SettingsPageState extends State<SettingsPage> {
                 height: 48,
                 cornerRadius: 12,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.gap8),
             ],
             AnimatedActionButton(
               onPressed: _handleSignIn,
               isLoading: _isSigningIn,
               child: const Text('Sign in with Google'),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             VibrationButton(
               vibrationService: widget.vibrationService,
               onPressed: () {
@@ -456,7 +456,7 @@ class SettingsPageState extends State<SettingsPage> {
               },
               child: const Text('Email Sign In'),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             VibrationButton(
               vibrationService: widget.vibrationService,
               onPressed: () {
@@ -531,7 +531,7 @@ class SettingsPageState extends State<SettingsPage> {
                           ),
                     ),
                     if (email.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSpacing.gap2),
                       Text(
                         email,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -590,7 +590,7 @@ class SettingsPageState extends State<SettingsPage> {
                       activeThumbColor: colorScheme.primary,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.hPadding,
-                        vertical: 4,
+                        vertical: AppSpacing.gap4,
                       ),
                     ),
                   ),

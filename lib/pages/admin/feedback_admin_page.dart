@@ -120,7 +120,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                         : !hasAccess
                             ? const Center(
                                 child: Padding(
-                                  padding: EdgeInsets.all(24),
+                                  padding: EdgeInsets.all(AppSpacing.gap24),
                                   child: Text(
                                     'You do not have permission to view this page.',
                                     textAlign: TextAlign.center,
@@ -131,25 +131,21 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                                 length: 2,
                                 child: Column(
                                   children: [
-                                    const TabBar(
+                                    TabBar(
                                       tabs: [
                                         Tab(text: 'Bug Reports'),
                                         Tab(text: 'Feature Requests'),
                                       ],
-                                      labelStyle: TextStyle(
-                                        fontFamily: AppTheme.fontUi,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      unselectedLabelStyle: TextStyle(
-                                        fontFamily: AppTheme.fontUi,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      labelStyle: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall,
+                                      unselectedLabelStyle: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall,
                                       indicatorSize: TabBarIndicatorSize.label,
                                       indicatorWeight: 2.5,
-                                      labelPadding:
-                                          EdgeInsets.symmetric(vertical: 10),
+                                      labelPadding: EdgeInsets.symmetric(
+                                          vertical: AppSpacing.gap12),
                                     ),
                                     Expanded(
                                       child: TabBarView(
@@ -181,7 +177,8 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.gap16, AppSpacing.gap16,
+              AppSpacing.gap16, AppSpacing.gap8),
           child: _StatusSelect(
             selectKey: ValueKey('statusFilter_$collection'),
             options: _FeedbackStatusFilter.values
@@ -211,7 +208,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                     error.code == 'permission-denied') {
                   return const Center(
                     child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: EdgeInsets.all(AppSpacing.gap24),
                       child: Text(
                         'You do not have permission to view this feedback.',
                         textAlign: TextAlign.center,
@@ -226,7 +223,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
 
                 return const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: EdgeInsets.all(AppSpacing.gap24),
                     child: Text(
                       'Failed to load feedback entries. Please try again later.',
                       textAlign: TextAlign.center,
@@ -247,7 +244,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                   if (filteredDocs.isEmpty) {
                     return const Center(
                       child: Padding(
-                        padding: EdgeInsets.all(24),
+                        padding: EdgeInsets.all(AppSpacing.gap24),
                         child: Text('No feedback matches the selected filter.'),
                       ),
                     );
@@ -463,14 +460,11 @@ class _StatusSelectState extends State<_StatusSelect> {
           children: [
             Text(
               'Status',
-              style: TextStyle(
-                fontFamily: AppTheme.fontUi,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurfaceVariant,
-              ),
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.gap12),
             Expanded(
               child: Material(
                 color: colorScheme.surface,
@@ -487,19 +481,14 @@ class _StatusSelectState extends State<_StatusSelect> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
-                      vertical: 10,
+                      vertical: AppSpacing.gap12,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           widget.value,
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontUi,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
-                          ),
+                          style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Icon(
                           Icons.keyboard_arrow_down,
@@ -515,7 +504,7 @@ class _StatusSelectState extends State<_StatusSelect> {
           ],
         ),
         if (_open) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.gap6),
           Material(
             color: colorScheme.surfaceContainerLowest,
             shape: RoundedRectangleBorder(
@@ -523,7 +512,7 @@ class _StatusSelectState extends State<_StatusSelect> {
               side: BorderSide(color: appColors.border, width: 1),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(AppSpacing.gap6),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -537,7 +526,7 @@ class _StatusSelectState extends State<_StatusSelect> {
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
+                          horizontal: AppSpacing.gap12,
                           vertical: 11,
                         ),
                         decoration: BoxDecoration(
@@ -548,14 +537,12 @@ class _StatusSelectState extends State<_StatusSelect> {
                         ),
                         child: Text(
                           option,
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontUi,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: option == widget.value
-                                ? colorScheme.primary
-                                : colorScheme.onSurface,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleSmall!.copyWith(
+                                    color: option == widget.value
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurface,
+                                  ),
                         ),
                       ),
                     ),
@@ -587,8 +574,7 @@ class _FeedbackEntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final titleStyle =
-        theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700) ??
-            const TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
+        theme.textTheme.titleMedium!.copyWith(fontWeight: FontWeight.w700);
     final bodyStyle = theme.textTheme.bodyMedium;
     final rawStatus = (data['status'] as String? ?? 'unknown');
     final status = rawStatus.toLowerCase();
@@ -600,30 +586,31 @@ class _FeedbackEntryCard extends StatelessWidget {
     final email = data['email'] as String?;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap8),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.gap16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(data['title'] as String? ?? 'Untitled', style: titleStyle),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             if (timestamp != null)
               Text('Submitted: $timestamp', style: bodyStyle),
             if (updatedAt != null)
               Text('Updated: $updatedAt', style: bodyStyle),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             Text(
               data['description'] as String? ?? 'No description',
               style: bodyStyle,
             ),
             if (steps != null && steps.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.gap12),
               Text('Reproduction steps:', style: bodyStyle),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.gap4),
               Text(steps, style: bodyStyle),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             Text(
               'Status: $rawStatus',
               key: ValueKey('feedbackStatus_${document.id}'),
@@ -639,14 +626,14 @@ class _FeedbackEntryCard extends StatelessWidget {
               ),
             if (notes == null || notes.isEmpty)
               const Text('Resolution notes: —'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             Text(
               'Reporter: ${(data['displayName'] as String?) ?? 'Anonymous'}',
               style: bodyStyle,
             ),
             if (email != null && email.isNotEmpty)
               Text('Email: $email', style: bodyStyle),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             Wrap(
               spacing: 12,
               runSpacing: 8,

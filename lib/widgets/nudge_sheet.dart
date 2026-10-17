@@ -122,7 +122,8 @@ class _NudgeSheetState extends State<_NudgeSheet> {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
+          AppSpacing.gap20, AppSpacing.gap24),
       child: _sent ? _buildConfirmation(theme) : _buildComposer(theme),
     );
   }
@@ -150,7 +151,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
           textAlign: TextAlign.center,
           style: theme.textTheme.titleLarge,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.gap8),
         Text(
           'A gentle note just landed. No pressure on them — or you.',
           textAlign: TextAlign.center,
@@ -158,7 +159,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
             color: colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.gap20),
         SizedBox(
           height: 48,
           child: FilledButton.tonal(
@@ -202,7 +203,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.gap16),
         Container(
           padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
@@ -218,7 +219,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
                 size: 16,
                 color: colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.gap8),
               Expanded(
                 child: Text(
                   'A nudge is a soft tap on the shoulder — never a reminder of '
@@ -234,7 +235,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
         const SizedBox(height: AppSpacing.gap12),
         if (_writing) _buildCustomField(theme) else _buildPresets(theme),
         if (_error != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
           Text(
             _error!,
             style: theme.textTheme.bodySmall?.copyWith(
@@ -271,7 +272,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
       children: [
         for (var i = 0; i < kNudgePresets.length; i++)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: AppSpacing.gap8),
             child: _PresetTile(
               text: kNudgePresets[i],
               selected: _choice == i,
@@ -315,7 +316,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
             hintText: 'Say something kind…',
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.gap8),
         TextButton.icon(
           onPressed: () => setState(() {
             _writing = false;

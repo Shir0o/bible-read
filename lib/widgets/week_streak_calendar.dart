@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'common_styles.dart';
+import '../theme/app_theme.dart';
 
 /// Displays a week streak calendar with arrow navigation.
 class WeekStreakCalendar extends StatelessWidget {
@@ -88,14 +89,15 @@ class WeekStreakCalendar extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(7, (i) {
               final date = DateTime(sunday.year, sunday.month, sunday.day + i);
               final filled = readDates.any((d) => _isSameDay(d, date));
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.gap4),
                 child: Semantics(
                   label: '${fullDays[i]}, ${filled ? "Read" : "Not read"}',
                   excludeSemantics: true,
@@ -117,7 +119,7 @@ class WeekStreakCalendar extends StatelessWidget {
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.gap4),
                         Tooltip(
                           message: filled ? 'Read' : 'Not read',
                           child: Icon(

@@ -295,11 +295,12 @@ class _LoginPageState extends State<LoginPage> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.gap32),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 40),
+                      const SizedBox(height: AppSpacing.gap40),
                       // Header Icon
                       Container(
                         width: 64, // h-16
@@ -338,7 +339,7 @@ class _LoginPageState extends State<LoginPage> {
                           height: 1.25,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.gap8),
 
                       // Subtitle
                       Container(
@@ -351,7 +352,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 40), // mb-10
+                      const SizedBox(height: AppSpacing.gap40), // mb-10
                       // Form
                       Form(
                         key: _formKey,
@@ -393,7 +394,7 @@ class _LoginPageState extends State<LoginPage> {
                                   },
                                 ),
                               ),
-                              const SizedBox(height: 16), // gap-4
+                              const SizedBox(height: AppSpacing.gap16), // gap-4
                               // Password
                               _buildStyledInput(
                                 context: context,
@@ -438,7 +439,7 @@ class _LoginPageState extends State<LoginPage> {
                         alignment: Alignment.centerRight,
                         child: Padding(
                           padding: const EdgeInsets.only(
-                            top: 12.0,
+                            top: AppSpacing.gap12,
                           ), // -mt-1 in HTML but cleaner here
                           child: Semantics(
                             key: const Key('forgotPasswordSemantics'),
@@ -459,7 +460,8 @@ class _LoginPageState extends State<LoginPage> {
                                     _handleForgotPassword();
                                   },
                                   child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding:
+                                        const EdgeInsets.all(AppSpacing.gap8),
                                     child: Text(
                                       'Forgot password?',
                                       style: textTheme.bodyMedium?.copyWith(
@@ -475,7 +477,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.gap16),
 
                       // Login Button
                       SizedBox(
@@ -506,7 +508,8 @@ class _LoginPageState extends State<LoginPage> {
 
                       // OR Divider
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24.0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.gap24),
                         child: Row(
                           children: [
                             Expanded(
@@ -518,7 +521,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
+                                horizontal: AppSpacing.gap16,
                               ),
                               child: Text(
                                 'OR',
@@ -544,7 +547,7 @@ class _LoginPageState extends State<LoginPage> {
                           service: widget.appleSignInService,
                           onPressed: _handleAppleSignIn,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.gap12),
                       ],
 
                       // Continue with Google Button
@@ -572,7 +575,7 @@ class _LoginPageState extends State<LoginPage> {
                                       size: 20,
                                       color: colorScheme.onSurface,
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.gap12),
                                     Text(
                                       'Continue with Google',
                                       style: textTheme.labelLarge?.copyWith(
@@ -584,11 +587,12 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: AppSpacing.gap40),
 
                       // Sign up link
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 40.0, top: 20),
+                        padding: const EdgeInsets.only(
+                            bottom: AppSpacing.gap40, top: AppSpacing.gap20),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -631,7 +635,8 @@ class _LoginPageState extends State<LoginPage> {
                                       );
                                     },
                                     child: Padding(
-                                      padding: const EdgeInsets.all(4.0),
+                                      padding:
+                                          const EdgeInsets.all(AppSpacing.gap4),
                                       child: Text(
                                         'Sign up',
                                         style: textTheme.bodyMedium?.copyWith(
@@ -736,7 +741,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           const Text(
             'Enter your email address to receive a password reset link.',
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           TextField(
             key: const Key('forgotPasswordEmailField'),
             controller: _controller,

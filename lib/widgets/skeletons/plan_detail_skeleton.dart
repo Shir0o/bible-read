@@ -8,18 +8,21 @@ class PlanDetailSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.gap16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Description
           const Padding(
-            padding: EdgeInsets.only(bottom: 24, left: 8, right: 8),
+            padding: EdgeInsets.only(
+                bottom: AppSpacing.gap24,
+                left: AppSpacing.gap8,
+                right: AppSpacing.gap8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Skeleton(width: double.infinity, height: 16),
-                SizedBox(height: 8),
+                SizedBox(height: AppSpacing.gap8),
                 Skeleton(width: 200, height: 16),
               ],
             ),
@@ -28,7 +31,7 @@ class PlanDetailSkeleton extends StatelessWidget {
           // Today Section Header
           _buildSectionHeader(context),
           _buildSkeletonItem(context, isToday: true),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
 
           // Upcoming Section Header
           _buildSectionHeader(context),
@@ -40,14 +43,15 @@ class PlanDetailSkeleton extends StatelessWidget {
 
   Widget _buildSectionHeader(BuildContext context) {
     return const Padding(
-      padding: EdgeInsets.only(left: 8, bottom: 8, top: 8),
+      padding: EdgeInsets.only(
+          left: AppSpacing.gap8, bottom: AppSpacing.gap8, top: AppSpacing.gap8),
       child: Skeleton(width: 100, height: 12),
     );
   }
 
   Widget _buildSkeletonItem(BuildContext context, {bool isToday = false}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap8),
       decoration: BoxDecoration(
         color: isToday
             ? Theme.of(context).colorScheme.surfaceContainer
@@ -62,7 +66,7 @@ class PlanDetailSkeleton extends StatelessWidget {
               )
             : null,
       ),
-      padding: EdgeInsets.all(isToday ? 20 : 16),
+      padding: EdgeInsets.all(isToday ? AppSpacing.gap20 : AppSpacing.gap16),
       child: Row(
         children: [
           const SizedBox(
@@ -71,18 +75,18 @@ class PlanDetailSkeleton extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Skeleton(width: 40, height: 10),
-                SizedBox(height: 4),
+                SizedBox(height: AppSpacing.gap4),
                 Skeleton(width: 30, height: 10),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppSpacing.gap16),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Skeleton(width: 60, height: 10),
-                SizedBox(height: 6),
+                SizedBox(height: AppSpacing.gap6),
                 Skeleton(width: double.infinity, height: 14),
               ],
             ),

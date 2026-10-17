@@ -10,6 +10,7 @@ import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/join_code_keys.dart';
+import '../theme/app_theme.dart';
 
 /// Redeems a join code: the reader types it, previews which group it lands
 /// in, and joins — directly for public groups, as a join request otherwise.
@@ -149,7 +150,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                 decoration: CommonStyles.backgroundDecoration(colorScheme),
                 child: SafeArea(
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.gap16),
                     children: [
                       TextField(
                         key: JoinCodeKeys.codeField,
@@ -164,7 +165,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                           hintText: 'e.g. HK2N9P',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.gap16),
                       FilledButton(
                         key: JoinCodeKeys.findButton,
                         onPressed: _lookingUp ? null : _findGroup,
@@ -181,7 +182,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                             : const Text('Find group'),
                       ),
                       if (_error != null) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.gap12),
                         Text(
                           _error!,
                           key: JoinCodeKeys.errorText,
@@ -191,7 +192,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                         ),
                       ],
                       if (_match != null) ...[
-                        const SizedBox(height: 24),
+                        const SizedBox(height: AppSpacing.gap24),
                         KeyedSubtree(
                           key: JoinCodeKeys.previewCard,
                           child: CommonStyles.buildCard(
@@ -205,7 +206,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: AppSpacing.gap4),
                                 Text(
                                   _memberCountText(_match!.group.memberCount),
                                   style:
@@ -214,7 +215,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                                   ),
                                 ),
                                 if (_match!.isMember) ...[
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: AppSpacing.gap12),
                                   Text(
                                     "You're already in this group",
                                     key: JoinCodeKeys.memberNote,
@@ -224,7 +225,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                                     ),
                                   ),
                                 ] else ...[
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: AppSpacing.gap16),
                                   SizedBox(
                                     width: double.infinity,
                                     child: FilledButton(
@@ -238,7 +239,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                                     ),
                                   ),
                                   if (!_match!.group.isPublic) ...[
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: AppSpacing.gap8),
                                     Text(
                                       'An owner will approve your request before '
                                       "you're in.",

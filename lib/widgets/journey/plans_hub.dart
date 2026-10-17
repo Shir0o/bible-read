@@ -799,7 +799,7 @@ class PlansHubState extends State<PlansHub> {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.hPadding, 4, AppSpacing.hPadding, 0),
+          AppSpacing.hPadding, AppSpacing.gap4, AppSpacing.hPadding, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -815,7 +815,7 @@ class PlansHubState extends State<PlansHub> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.gap16),
                 if (personalActive.isNotEmpty) ...[
                   _sectionHeading(
                     context,
@@ -841,9 +841,9 @@ class PlansHubState extends State<PlansHub> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
           _trashShortcut(context),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
         ],
       ),
     );
@@ -863,7 +863,7 @@ class PlansHubState extends State<PlansHub> {
         children: [
           Icon(icon,
               size: AppSpacing.iconSm, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.gap8),
           Text(
             title,
             style: theme.textTheme.titleMedium?.copyWith(
@@ -891,7 +891,7 @@ class PlansHubState extends State<PlansHub> {
           ),
           if (pinned) _primaryOnHomeTag(context),
           _progressBlock(context, row.status),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
           CatchUpStatusRow(
             status: row.status,
             onTrackLabel: "You're on track",
@@ -983,7 +983,7 @@ class PlansHubState extends State<PlansHub> {
             ),
           ],
           _progressBlock(context, row.status),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
           CatchUpStatusRow(
             status: row.status,
             onTrackLabel:
@@ -1113,7 +1113,7 @@ class PlansHubState extends State<PlansHub> {
     final pct = total > 0 ? done / total : 0.0;
     return Column(
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.gap16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -1132,7 +1132,7 @@ class PlansHubState extends State<PlansHub> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.gap8),
         ClipRRect(
           borderRadius: BorderRadius.circular(AppSpacing.rSmall),
           child: LinearProgressIndicator(
@@ -1218,7 +1218,8 @@ class PlansHubState extends State<PlansHub> {
     final colorScheme = theme.colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
@@ -1248,7 +1249,7 @@ class PlansHubState extends State<PlansHub> {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall,
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSpacing.gap2),
                 Text(
                   subtitle,
                   maxLines: 1,
@@ -1334,7 +1335,8 @@ class PlansHubState extends State<PlansHub> {
     final isOwner = uid != null && uid == group.ownerUid;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
@@ -1368,7 +1370,7 @@ class PlansHubState extends State<PlansHub> {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall,
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSpacing.gap2),
                 Text(
                   isOwner ? 'Group archived' : 'Your participation archived',
                   maxLines: 1,
@@ -1403,7 +1405,8 @@ class PlansHubState extends State<PlansHub> {
     final colorScheme = theme.colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainer.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
@@ -1437,7 +1440,7 @@ class PlansHubState extends State<PlansHub> {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall,
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSpacing.gap2),
                 Text(
                   'All ${row.status.total} readings kept',
                   maxLines: 1,
@@ -1499,7 +1502,8 @@ class PlansHubState extends State<PlansHub> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 48, 24, 0),
+      padding:
+          const EdgeInsets.fromLTRB(AppSpacing.gap24, 48, AppSpacing.gap24, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1508,7 +1512,7 @@ class PlansHubState extends State<PlansHub> {
             size: 56,
             color: colorScheme.outline,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           Text(
             'No active plans yet',
             textAlign: TextAlign.center,
@@ -1516,7 +1520,7 @@ class PlansHubState extends State<PlansHub> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.gap6),
           Text(
             'Start a plan to give your reading a gentle rhythm.',
             textAlign: TextAlign.center,
@@ -1524,12 +1528,12 @@ class PlansHubState extends State<PlansHub> {
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.gap24),
           _enrollButton(context),
           const SizedBox(height: AppSpacing.gap8),
           _trashShortcut(context),
           if (_archived.isNotEmpty || _archivedGroups.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             _archivedSection(context),
           ],
         ],
@@ -1595,7 +1599,7 @@ class PlansHubState extends State<PlansHub> {
             child: Row(
               children: [
                 Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.gap12),
                 Text(label),
               ],
             ),
@@ -1705,7 +1709,7 @@ class _PlanCardShell extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.gap20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),

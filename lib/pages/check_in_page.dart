@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../services/vibration_service.dart';
+import '../theme/check_in_sky.dart';
 
 enum CheckInTimeOfDay { dawn, day, dusk, night }
 
@@ -208,46 +209,24 @@ class _CheckInPageState extends State<CheckInPage>
   List<Color> _getSkyGradientColors() {
     switch (_tod) {
       case CheckInTimeOfDay.dawn:
-        return const [
-          Color(0xFFFFD3A6),
-          Color(0xFFFFB4B8),
-          Color(0xFFD9BDE8),
-          Color(0xFFC3BCEE),
-        ];
+        return CheckInSky.dawn;
       case CheckInTimeOfDay.day:
-        return const [
-          Color(0xFFBFE6F7),
-          Color(0xFFD8ECF6),
-          Color(0xFFEFE6D8),
-          Color(0xFFF6E9D4),
-        ];
+        return CheckInSky.day;
       case CheckInTimeOfDay.dusk:
-        return const [
-          Color(0xFFF9B98A),
-          Color(0xFFE997AE),
-          Color(0xFF9A7FCB),
-          Color(0xFF6C5EA8),
-        ];
+        return CheckInSky.dusk;
       case CheckInTimeOfDay.night:
-        return const [
-          Color(0xFF241F3C),
-          Color(0xFF332A55),
-          Color(0xFF463A72),
-          Color(0xFF5A4B8C),
-        ];
+        return CheckInSky.night;
     }
   }
 
   Color get _textColor {
-    return _tod == CheckInTimeOfDay.night
-        ? const Color(0xFFFFF3DE)
-        : const Color(0xFF2A2438);
+    return _tod == CheckInTimeOfDay.night ? CheckInSky.cream : CheckInSky.ink;
   }
 
   Color get _sunBorderColor {
     return _tod == CheckInTimeOfDay.night
-        ? const Color(0xFF1A1630)
-        : const Color(0xFF2A2438);
+        ? CheckInSky.nightSunBorder
+        : CheckInSky.ink;
   }
 
   @override
@@ -296,11 +275,7 @@ class _CheckInPageState extends State<CheckInPage>
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
-                        colors: [
-                          Color(0xFFFFF2C4),
-                          Color(0xFFFFD470),
-                          Color(0xFFF6A93C),
-                        ],
+                        colors: CheckInSky.flood,
                         stops: [0.0, 0.45, 1.0],
                       ),
                     ),
@@ -374,7 +349,7 @@ class _CheckInPageState extends State<CheckInPage>
                           gradient: const LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Color(0xFFFFE9A8), Color(0xFFFFC24D)],
+                            colors: CheckInSky.sun,
                           ),
                           boxShadow: [
                             BoxShadow(
@@ -390,7 +365,7 @@ class _CheckInPageState extends State<CheckInPage>
                             Icon(
                               Icons.check_rounded,
                               size: 42,
-                              color: const Color(0xFF2A2438),
+                              color: CheckInSky.ink,
                             ),
                             const SizedBox(height: 2),
                             const Text(
@@ -399,7 +374,7 @@ class _CheckInPageState extends State<CheckInPage>
                                 fontSize: 14,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1.2,
-                                color: Color(0xFF2A2438),
+                                color: CheckInSky.ink,
                               ),
                             ),
                           ],
@@ -438,7 +413,7 @@ class _CheckInPageState extends State<CheckInPage>
                                       style: const TextStyle(
                                         fontSize: 68,
                                         fontWeight: FontWeight.w900,
-                                        color: Color(0xFF2A2438),
+                                        color: CheckInSky.ink,
                                         height: 1.0,
                                         letterSpacing: -1.5,
                                       ),
@@ -449,7 +424,7 @@ class _CheckInPageState extends State<CheckInPage>
                                       style: TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.w800,
-                                        color: Color(0xFF2A2438),
+                                        color: CheckInSky.ink,
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -459,9 +434,8 @@ class _CheckInPageState extends State<CheckInPage>
                                         fontFamily: 'Spectral',
                                         fontSize: 21,
                                         fontWeight: FontWeight.w500,
-                                        color: const Color(
-                                          0xFF2A2438,
-                                        ).withValues(alpha: 0.75),
+                                        color: CheckInSky.ink
+                                            .withValues(alpha: 0.75),
                                         fontStyle: FontStyle.italic,
                                       ),
                                     ),
@@ -491,13 +465,11 @@ class _CheckInPageState extends State<CheckInPage>
                                       child: OutlinedButton(
                                         onPressed: widget.onReflect,
                                         style: OutlinedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFFFFFDF8,
-                                          ).withValues(alpha: 0.75),
-                                          foregroundColor:
-                                              const Color(0xFF2A2438),
+                                          backgroundColor: CheckInSky.buttonFill
+                                              .withValues(alpha: 0.75),
+                                          foregroundColor: CheckInSky.ink,
                                           side: const BorderSide(
-                                            color: Color(0xFF2A2438),
+                                            color: CheckInSky.ink,
                                             width: 3,
                                           ),
                                           shape: RoundedRectangleBorder(
@@ -527,12 +499,10 @@ class _CheckInPageState extends State<CheckInPage>
                                     child: ElevatedButton(
                                       onPressed: widget.onClose,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            const Color(0xFF2A2438),
-                                        foregroundColor:
-                                            const Color(0xFFFFF3DE),
+                                        backgroundColor: CheckInSky.ink,
+                                        foregroundColor: CheckInSky.cream,
                                         side: const BorderSide(
-                                          color: Color(0xFF2A2438),
+                                          color: CheckInSky.ink,
                                           width: 3,
                                         ),
                                         shape: RoundedRectangleBorder(

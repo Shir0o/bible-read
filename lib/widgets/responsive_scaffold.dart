@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_nav_bar.dart';
+import '../theme/app_theme.dart';
 
 /// A scaffold that adapts its navigation UI to the screen width.
 ///
@@ -96,7 +97,7 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
-                    leading: const SizedBox(height: 16),
+                    leading: const SizedBox(height: AppSpacing.gap16),
                     destinations: widget.destinations.asMap().entries.map((
                       entry,
                     ) {

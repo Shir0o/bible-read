@@ -12,19 +12,19 @@ class PlansHubSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.gap16),
         // Section Heading Skeleton
         Row(
           children: const [
             Skeleton(width: 20, height: 20, radius: 4),
-            SizedBox(width: 8),
+            SizedBox(width: AppSpacing.gap8),
             Skeleton(width: 120, height: 16),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.gap12),
         // Plan Card Skeleton
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.gap16),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(AppSpacing.rInset),
@@ -37,22 +37,22 @@ class PlansHubSkeleton extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Skeleton(width: 48, height: 48, radius: 12),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.gap12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
                         Skeleton(width: 140, height: 18),
-                        SizedBox(height: 6),
+                        SizedBox(height: AppSpacing.gap6),
                         Skeleton(width: 100, height: 12),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.gap16),
               const Skeleton(width: double.infinity, height: 6, radius: 3),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.gap16),
               Row(
                 children: const [
                   Expanded(
@@ -62,9 +62,9 @@ class PlansHubSkeleton extends StatelessWidget {
                       radius: 10,
                     ),
                   ),
-                  SizedBox(width: 8),
+                  SizedBox(width: AppSpacing.gap8),
                   Skeleton(width: 38, height: 38, radius: 10),
-                  SizedBox(width: 8),
+                  SizedBox(width: AppSpacing.gap8),
                   Skeleton(width: 38, height: 38, radius: 10),
                 ],
               ),

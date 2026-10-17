@@ -45,7 +45,7 @@ class GroupMembersList extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.gap12),
         Container(
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainer,
@@ -63,7 +63,7 @@ class GroupMembersList extends StatelessWidget {
             builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return const Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(AppSpacing.gap16),
                   child: Text('Failed to load members'),
                 );
               }
@@ -73,7 +73,7 @@ class GroupMembersList extends StatelessWidget {
                 builder: (context, members) {
                   if (members.isEmpty) {
                     return const Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(AppSpacing.gap16),
                       child: Text('No members'),
                     );
                   }
@@ -96,7 +96,7 @@ class GroupMembersList extends StatelessWidget {
                         label: '${member.name}, $statusText',
                         container: true,
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.gap16),
                           child: Row(
                             children: [
                               Container(
@@ -124,7 +124,7 @@ class GroupMembersList extends StatelessWidget {
                                       : const Icon(Icons.person),
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: AppSpacing.gap16),
                               Expanded(
                                 child: Semantics(
                                   excludeSemantics: true,

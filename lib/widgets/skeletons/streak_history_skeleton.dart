@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../common_styles.dart';
 import '../skeleton.dart';
+import '../../theme/app_theme.dart';
 
 class StreakHistorySkeleton extends StatelessWidget {
   const StreakHistorySkeleton({super.key});
@@ -8,7 +9,8 @@ class StreakHistorySkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -16,23 +18,23 @@ class StreakHistorySkeleton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: const [Skeleton(width: 200, height: 40, radius: 20)],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
           CommonStyles.buildCard(
             context: context,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Skeleton(width: 150, height: 16),
-                SizedBox(height: 8),
+                SizedBox(height: AppSpacing.gap8),
                 Skeleton(width: 150, height: 16),
-                SizedBox(height: 8),
+                SizedBox(height: AppSpacing.gap8),
                 Skeleton(width: 150, height: 16),
-                SizedBox(height: 8),
+                SizedBox(height: AppSpacing.gap8),
                 Skeleton(width: 150, height: 16),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           // Calendar placeholder
           CommonStyles.buildCard(
             context: context,
@@ -46,7 +48,7 @@ class StreakHistorySkeleton extends StatelessWidget {
                     Skeleton(width: 24, height: 24),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.gap16),
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'common_styles.dart';
+import '../theme/app_theme.dart';
 
 /// Standard section header with consistent styling and spacing.
 class SectionHeader extends StatelessWidget {
@@ -12,12 +13,12 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.only(top: AppSpacing.gap24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: AppTextStyles.subtitle(context)),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
         ],
       ),
     );

@@ -6,6 +6,7 @@ import '../services/error_logger.dart';
 import 'animated_action_button.dart';
 import 'success_animation.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 
 /// Form widget used to sign up a new user with email and password.
 class SignupForm extends StatefulWidget {
@@ -131,7 +132,7 @@ class _SignupFormState extends State<SignupForm> {
             textInputAction: TextInputAction.next,
             decoration: const InputDecoration(labelText: 'Email'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           TextField(
             key: const Key('signupPasswordField'),
             controller: _passwordController,
@@ -153,7 +154,7 @@ class _SignupFormState extends State<SignupForm> {
             ),
             obscureText: !_isPasswordVisible,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           TextField(
             key: const Key('signupConfirmField'),
             controller: _confirmController,
@@ -180,7 +181,7 @@ class _SignupFormState extends State<SignupForm> {
             ),
             obscureText: !_isConfirmPasswordVisible,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           AnimatedActionButton(
             onPressed: _submit,
             isLoading: _loading,

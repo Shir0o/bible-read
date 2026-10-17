@@ -187,7 +187,7 @@ class _Card extends StatelessWidget {
               if (counts.wholeBible == 0 &&
                   counts.newTestament == 0 &&
                   counts.oldTestament == 0) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.gap12),
                 Text(
                   'Finish a testament and it lands here.',
                   style: textTheme.bodySmall,

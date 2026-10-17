@@ -105,10 +105,7 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
                   children: [
                     Text(
                       'Start at',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontFamily: AppTheme.fontSerif,
-                        fontSize: 24,
-                      ),
+                      style: theme.textTheme.headlineSmall,
                     ),
                     const SizedBox(height: AppSpacing.gap4),
                     Text(
@@ -163,7 +160,8 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
         Divider(height: 1, thickness: 1, color: appColors.border),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.gap20,
+                AppSpacing.gap16, AppSpacing.gap20, AppSpacing.gap20),
             children: [
               Text(
                 '${_openBook.toUpperCase()} · $openChapters CHAPTERS',
@@ -276,7 +274,7 @@ class _Pill extends StatelessWidget {
       child: Container(
         height: 44,
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap16),
         decoration: BoxDecoration(
           color: selected
               ? colorScheme.primary

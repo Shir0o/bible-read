@@ -41,12 +41,12 @@ class ReadStatusSection extends StatelessWidget {
           vibrationService: vibrationService,
         ),
         if (streakFreezesLeft != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('Streak freezes left: $streakFreezesLeft'),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSpacing.gap4),
               IconButton(
                 icon: const Icon(Icons.info_outline, size: 16),
                 tooltip: 'About streak freezes',

@@ -76,7 +76,7 @@ class AppHeader extends StatelessWidget {
                     color: colorScheme.outline,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.gap4),
                 Text(
                   title,
                   maxLines: 1,
@@ -233,7 +233,8 @@ class _Avatar extends StatelessWidget {
                     child: Container(
                       constraints:
                           const BoxConstraints(minWidth: 18, minHeight: 18),
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.gap4),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: colorScheme.tertiary,

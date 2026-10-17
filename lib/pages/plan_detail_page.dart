@@ -141,7 +141,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       context: context,
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.gap24, AppSpacing.gap16,
+              AppSpacing.gap24, AppSpacing.gap24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,7 +151,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 'When would you like to start?',
                 style: AppTextStyles.subtitle(context),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.gap24),
               ListTile(
                 leading: const Icon(Icons.today),
                 title: const Text('Start Today'),
@@ -161,7 +162,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 ),
               ),
               if (jan1.isBefore(now)) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.gap8),
                 ListTile(
                   leading: const Icon(Icons.calendar_today),
                   title: const Text('Start on January 1st'),
@@ -172,7 +173,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                   ),
                 ),
               ],
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.gap8),
               ListTile(
                 leading: const Icon(Icons.edit_calendar),
                 title: const Text('Pick a Date'),
@@ -314,13 +315,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.gap8),
           Text(
             '$count ${count == 1 ? 'reader' : 'readers'} on this schedule',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 13,
-            ),
+            style: theme.textTheme.bodySmall,
           ),
         ],
       ),
@@ -772,7 +770,10 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
         if (days.isNotEmpty) widget.onMarkMonth?.call(days);
       },
       header: Padding(
-        padding: const EdgeInsets.only(bottom: 4, left: 4, right: 4),
+        padding: const EdgeInsets.only(
+            bottom: AppSpacing.gap4,
+            left: AppSpacing.gap4,
+            right: AppSpacing.gap4),
         child: Text(
           widget.plan.description,
           style: AppTextStyles.body(
@@ -789,12 +790,12 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
 
   Widget _buildNotStartedState(BuildContext context, ColorScheme colorScheme) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.gap16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(AppSpacing.gap16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -804,7 +805,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                     context,
                   ).copyWith(color: colorScheme.onSurfaceVariant),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.gap24),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
@@ -817,7 +818,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
             ),
           ),
           const Divider(),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           SchedulePreview(
             status: CatchUpEngine.forPersonalPlan(
               widget.plan,
@@ -835,7 +836,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                 : () => setState(() => _showFullSchedule = true),
           ),
           if (_showFullSchedule) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.gap16),
             _buildSectionHeader(context, 'Full Schedule'),
             ...widget.plan.schedule.map(
               (day) => _buildScheduleItem(
@@ -860,7 +861,8 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8, top: 8),
+      padding: const EdgeInsets.only(
+          left: AppSpacing.gap8, bottom: AppSpacing.gap8, top: AppSpacing.gap8),
       child: Text(
         title.toUpperCase(),
         style: theme.textTheme.labelMedium?.copyWith(
@@ -891,7 +893,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
       key: key,
       opacity: opacity,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.only(bottom: AppSpacing.gap8),
         decoration: BoxDecoration(
           color: isCompleted
               ? colorScheme.surfaceContainerHigh
@@ -904,7 +906,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
               : () => widget.onToggleDay(day.day, isCompleted, completedDays),
           borderRadius: BorderRadius.circular(AppSpacing.rInset),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.gap16),
             child: Row(
               children: [
                 SizedBox(
@@ -927,7 +929,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.gap16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -938,7 +940,7 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                           color: colorScheme.primary,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSpacing.gap2),
                       Text(
                         day.readings.join(', '),
                         style: theme.textTheme.bodyLarge?.copyWith(
@@ -1006,7 +1008,7 @@ class _TodayAnchorCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap8),
       padding: const EdgeInsets.all(AppSpacing.cardPadding),
       decoration: BoxDecoration(
         color: AppColors.of(context).primarySoft,
@@ -1034,14 +1036,14 @@ class _TodayAnchorCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           Text(
             schedule.chapters.join(', '),
             style: theme.textTheme.headlineSmall,
           ),
           const SizedBox(height: AppSpacing.gap12),
           _buildPresence(context),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           if (isMember) _buildAction(context),
         ],
       ),
@@ -1138,7 +1140,7 @@ class _TodayAnchorCard extends StatelessWidget {
               child: Icon(Icons.check,
                   size: AppSpacing.iconSm, color: colorScheme.onPrimary),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.gap12),
             Expanded(
               child: Text(
                 'You read with your group today.',
@@ -1152,7 +1154,7 @@ class _TodayAnchorCard extends StatelessWidget {
               children: [
                 Icon(Icons.close,
                     size: AppSpacing.iconSm, color: colorScheme.primary),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSpacing.gap4),
                 Text(
                   'Undo',
                   style: theme.textTheme.labelMedium?.copyWith(

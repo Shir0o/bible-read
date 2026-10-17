@@ -29,7 +29,8 @@ class SyncSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap24, AppSpacing.gap16,
+          AppSpacing.gap24, AppSpacing.gap24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,7 +59,7 @@ class SyncSheet extends StatelessWidget {
                       "You finished today's reading",
                       style: AppTextStyles.subtitle(context),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       'One question, just this once',
                       style: Theme.of(context)
@@ -71,7 +72,7 @@ class SyncSheet extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           Text(
             'When you finish a reading from a plan, should it also count as '
             'showing up for the day? Your daily habit can stand on its own — '
@@ -98,7 +99,7 @@ class SyncSheet extends StatelessWidget {
                   size: AppSpacing.iconSm,
                   color: colorScheme.outline,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.gap8),
                 Expanded(
                   child: Text(
                     'You can change this anytime in Settings › Reading '
@@ -112,7 +113,7 @@ class SyncSheet extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           FilledButton.icon(
             onPressed: () => Navigator.of(context).pop(true),
             icon: const Icon(Icons.check, size: 18),

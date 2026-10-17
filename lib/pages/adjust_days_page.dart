@@ -88,7 +88,7 @@ class _AdjustDaysPageState extends State<AdjustDaysPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.hPadding,
-                4,
+                AppSpacing.gap4,
                 AppSpacing.hPadding,
                 AppSpacing.gap12,
               ),
@@ -125,7 +125,7 @@ class _AdjustDaysPageState extends State<AdjustDaysPage> {
                   AppSpacing.hPadding,
                   0,
                   AppSpacing.hPadding,
-                  20,
+                  AppSpacing.gap20,
                 ),
                 child: PlanDayList(
                   days: _plan.days,
@@ -142,9 +142,9 @@ class _AdjustDaysPageState extends State<AdjustDaysPage> {
               ),
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.hPadding,
-                12,
+                AppSpacing.gap12,
                 AppSpacing.hPadding,
-                20,
+                AppSpacing.gap20,
               ),
               child: FilledButton(
                 key: GroupPlanKeys.submitButton,
@@ -177,14 +177,9 @@ class _AdjustDaysPageState extends State<AdjustDaysPage> {
           children: [
             Text(
               value,
-              style: TextStyle(
-                fontFamily: AppTheme.fontSerif,
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 1),
+            const SizedBox(height: AppSpacing.gap2),
             Text(
               label,
               style: AppTextStyles.eyebrow(context).copyWith(

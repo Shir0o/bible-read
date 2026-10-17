@@ -45,7 +45,7 @@ class SeasonalChallengesView extends StatelessWidget {
   Widget _buildSeason(Season? season) {
     if (season == null) {
       return ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.gap16),
         children: [
           const _GentleIntroCard(),
           const SizedBox(height: 120),
@@ -65,7 +65,7 @@ class SeasonalChallengesView extends StatelessWidget {
         final challenges = snapshot.data ?? [];
         if (challenges.isEmpty) {
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.gap16),
             children: [
               const _GentleIntroCard(),
               const SizedBox(height: 120),
@@ -77,17 +77,17 @@ class SeasonalChallengesView extends StatelessWidget {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.gap16),
           itemCount: challenges.length + 1,
           itemBuilder: (context, index) {
             if (index == 0) {
               return Padding(
-                padding: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.only(bottom: AppSpacing.gap24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _GentleIntroCard(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.gap24),
                     Text(
                       season.title,
                       style: Theme.of(context).textTheme.headlineSmall,
@@ -152,7 +152,7 @@ class _GentleIntroCard extends StatelessWidget {
                     color: colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.gap2),
                 Text(
                   'Challenges are gentle nudges — join only what helps.',
                   style: theme.textTheme.bodySmall?.copyWith(

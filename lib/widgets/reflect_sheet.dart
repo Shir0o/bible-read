@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_bottom_sheet.dart';
 import 'common_styles.dart';
+import '../theme/app_theme.dart';
 
 /// Gentle reflection prompts — rotate day to day, never demanding.
 const List<String> kReflectionPrompts = [
@@ -113,7 +114,8 @@ class _ReflectSheetState extends State<_ReflectSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
+            AppSpacing.gap20, AppSpacing.gap24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -125,14 +127,14 @@ class _ReflectSheetState extends State<_ReflectSheet> {
                 letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             Text(
               widget.prompt,
               style: AppTextStyles.title(
                 context,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.gap16),
             TextField(
               controller: _controller,
               autofocus: !_isEditing,
@@ -144,7 +146,7 @@ class _ReflectSheetState extends State<_ReflectSheet> {
                 hintText: 'A sentence is plenty…',
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             Row(
               key: const ValueKey('reflect_sheet_share_toggle'),
               children: [
@@ -158,7 +160,7 @@ class _ReflectSheetState extends State<_ReflectSheet> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSpacing.gap2),
                       Text(
                         _share
                             ? 'On — the people you read with can read '
@@ -183,7 +185,7 @@ class _ReflectSheetState extends State<_ReflectSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             SizedBox(
               height: 50,
               child: FilledButton.icon(
@@ -201,7 +203,7 @@ class _ReflectSheetState extends State<_ReflectSheet> {
                 label: Text(_saving ? 'Saving…' : 'Save'),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.gap8),
             TextButton(
               onPressed: _saving ? null : _skip,
               style: TextButton.styleFrom(

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'skeleton.dart';
 import '../services/vibration_service.dart';
 import '../widgets/navigation_menu_scope.dart';
+import '../theme/app_theme.dart';
 
 class ProfileButton extends StatelessWidget {
   final FirebaseAuth auth;
@@ -26,7 +27,7 @@ class ProfileButton extends StatelessWidget {
         NavigationMenuScope.maybeOf(context)?.showMenu(context);
       },
       child: Padding(
-        padding: const EdgeInsets.only(right: 16.0),
+        padding: const EdgeInsets.only(right: AppSpacing.gap16),
         child: CircleAvatar(
           radius: 16,
           backgroundColor: Theme.of(

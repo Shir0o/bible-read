@@ -141,7 +141,8 @@ class EmptyGroupState extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         border: Border.all(color: appColors.border, width: 1),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap24, AppSpacing.gap32,
+          AppSpacing.gap24, AppSpacing.gap24),
       alignment: Alignment.center,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -165,7 +166,7 @@ class EmptyGroupState extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineSmall,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 250),
             child: Text(
@@ -224,7 +225,8 @@ class _FindGroupSheetContent extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap20, vertical: AppSpacing.gap12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -232,14 +234,14 @@ class _FindGroupSheetContent extends StatelessWidget {
             'Find a group',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.gap4),
           Text(
             'Join an open group to read together.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           Expanded(
             child: StreamBuilder<List<Group>>(
               stream: groupService.allGroups(),

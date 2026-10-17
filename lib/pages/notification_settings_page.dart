@@ -217,7 +217,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                   _groupedCard(context, _buildRows(context)),
                   const SizedBox(height: AppSpacing.gap16),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.gap8),
                     child: Text(
                       'We keep notifications quiet and few — only what '
                       'helps you keep showing up.',

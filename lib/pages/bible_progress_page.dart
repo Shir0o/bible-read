@@ -353,7 +353,11 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                   for (final entry in _categories) ...[
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.gap16,
+                            AppSpacing.gap24,
+                            AppSpacing.gap16,
+                            AppSpacing.gap12),
                         child: Row(
                           children: [
                             Expanded(
@@ -365,7 +369,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                             ),
                             Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
+                                horizontal: AppSpacing.gap8,
                               ),
                               child: Text(
                                 entry.key.toUpperCase(),
@@ -387,7 +391,8 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                       ),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.gap16),
                       sliver: SliverGrid(
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
@@ -420,7 +425,8 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                   ],
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.gap16,
+                          AppSpacing.gap20, AppSpacing.gap16, 0),
                       child: Text(
                         '$completedBooks of 66 books this lap. '
                         'Read in your own Bible — mark books as you go.',
@@ -432,7 +438,8 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                       ),
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.gap32)),
                 ],
               ),
             ),
@@ -485,7 +492,8 @@ class _BookGridItem extends StatelessWidget {
             : 'Not read yet';
 
     Widget tile = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap8, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
@@ -514,11 +522,10 @@ class _BookGridItem extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: ink,
-            ),
+            style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: ink,
+                ),
           ),
         ],
       ),
@@ -569,7 +576,8 @@ class _LapBanner extends StatelessWidget {
     final progress = booksThisLap / 66;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap16, AppSpacing.gap6, AppSpacing.gap16, 0),
       child: Container(
         padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
             AppSpacing.gap20, AppSpacing.gap20),
@@ -595,7 +603,7 @@ class _LapBanner extends StatelessWidget {
                         '${counts.currentLap(ReadThroughScope.newTestament)}',
                         style: textTheme.labelSmall,
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppSpacing.gap6),
                       Text(
                         bibles == 0
                             ? 'Working through it'
@@ -607,7 +615,7 @@ class _LapBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.gap12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -618,13 +626,13 @@ class _LapBanner extends StatelessWidget {
                         color: colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.gap4),
                     Text('of 66 books', style: textTheme.bodySmall),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.gap16),
             ClipRRect(
               borderRadius: BorderRadius.circular(
                   8), // token-exempt: capsule radius = half of 16px bar height
@@ -679,7 +687,7 @@ class _LapLegend extends StatelessWidget {
             ),
             'Read this lap',
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppSpacing.gap16),
           key(
             CustomPaint(
               foregroundPainter: DashedRoundedBorderPainter(

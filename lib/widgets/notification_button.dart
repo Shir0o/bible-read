@@ -5,6 +5,7 @@ import '../services/notification_service.dart';
 import '../services/vibration_service.dart';
 import '../pages/notification_center_page.dart';
 import '../models/app_notification.dart';
+import '../theme/app_theme.dart';
 
 class NotificationButton extends StatelessWidget {
   final NotificationService service;
@@ -38,7 +39,7 @@ class NotificationButton extends StatelessWidget {
                   top: 0,
                   child: Container(
                     key: ValueKey(unreadCount),
-                    padding: const EdgeInsets.all(2),
+                    padding: const EdgeInsets.all(AppSpacing.gap2),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.error,
                       shape: BoxShape.circle,

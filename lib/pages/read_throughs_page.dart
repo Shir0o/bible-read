@@ -76,7 +76,11 @@ class _ReadThroughsPageState extends State<ReadThroughsPage> {
                         final ordered = rows.reversed.toList();
 
                         return ListView(
-                          padding: const EdgeInsets.fromLTRB(20, 6, 20, 32),
+                          padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.gap20,
+                              AppSpacing.gap6,
+                              AppSpacing.gap20,
+                              AppSpacing.gap32),
                           children: [
                             _CountRow(counts: counts),
                             const SizedBox(height: AppSpacing.gap24),
@@ -84,16 +88,16 @@ class _ReadThroughsPageState extends State<ReadThroughsPage> {
                               const _EmptyState()
                             else ...[
                               const _SectionRule('Every time through'),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: AppSpacing.gap12),
                               for (final row in ordered) ...[
                                 _ReadThroughTile(
                                   readThrough: row,
                                   onTap: () => _open(existing: row),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppSpacing.gap8),
                               ],
                             ],
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.gap8),
                             _AddRow(onTap: _open),
                           ],
                         );
@@ -273,7 +277,7 @@ class _ReadThroughTile extends StatelessWidget {
                       '${readThrough.ordinalLabel}',
                       style: textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       readThrough.subtitle,
                       style: textTheme.bodySmall?.copyWith(
@@ -286,7 +290,7 @@ class _ReadThroughTile extends StatelessWidget {
                 ),
               ),
               if (isHandEntered) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.gap8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.gap8, vertical: AppSpacing.gap4),
@@ -354,7 +358,7 @@ class _SectionRule extends StatelessWidget {
       children: [
         line,
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap8),
           child: Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall,
@@ -419,7 +423,7 @@ class _EmptyState extends StatelessWidget {
             'No times through yet.',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           Text(
             'Finish a testament and it lands here. Read one before you used '
             'the app? Add it below.',

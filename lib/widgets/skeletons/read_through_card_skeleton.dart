@@ -84,7 +84,7 @@ class _CountBox extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Skeleton(width: 44, height: 24),
-          SizedBox(height: 8),
+          SizedBox(height: AppSpacing.gap8),
           Skeleton(width: 72, height: 12),
         ],
       ),

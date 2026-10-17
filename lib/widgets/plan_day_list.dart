@@ -213,7 +213,7 @@ class _DayRow extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.gap4),
                 Text(
                   formatChapterRun(day.chapters),
                   style: theme.textTheme.titleLarge?.copyWith(height: 1.3),
