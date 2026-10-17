@@ -21,7 +21,10 @@ void main() {
   late UserPreferencesService prefsService;
   late ReadingPlanService planService;
 
-  final today = DateTime(2026, 10, 16);
+  // The real calendar day: maybeCoupleHabit and burst paths mark
+  // DateTime.now(), so a fixed date breaks once the clock passes it.
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
   final todayKey = ReadLogService.dateKeyFor(today);
 
   setUp(() async {
