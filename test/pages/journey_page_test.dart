@@ -84,7 +84,7 @@ void main() {
     expect(offenders, isEmpty);
   });
 
-  testWidgets('the tab carries the plan hub, tiles and calendar', (
+  testWidgets('the tab carries the plan hub and the consistency card', (
     tester,
   ) async {
     await pumpPage(tester);
@@ -92,8 +92,8 @@ void main() {
     expect(find.byType(AppHeader), findsOneWidget);
     expect(find.byType(PlansHub), findsOneWidget);
     expect(find.byType(ConsistencyCalendar), findsOneWidget);
-    expect(find.text('Shown up'), findsOneWidget);
-    expect(find.text('Showing up'), findsOneWidget);
+    expect(find.text('Consistency'), findsOneWidget);
+    expect(find.text('Current streak'), findsOneWidget);
   });
 
   testWidgets('solo and shared plans list together on the tab', (
@@ -149,13 +149,12 @@ void main() {
         findsOneWidget);
     expect(find.text('Enroll in a new plan'), findsOneWidget);
     // The Showing-up record renders beside the invitation.
-    expect(find.text('Shown up'), findsOneWidget);
-    expect(find.text('Day streak'), findsOneWidget);
+    expect(find.text('Current streak'), findsOneWidget);
     expect(find.byType(ConsistencyCalendar), findsOneWidget);
   });
 
   testWidgets(
-      '"Shown up · this month" counts the calendar month, including '
+      '"Shown up in <month>" counts the calendar month, including '
       'feed-only days, like the calendar', (tester) async {
     final userRef = firestore.collection('users').doc('u1');
     // Last month's days fall inside a rolling 30-day window but are not
@@ -179,12 +178,7 @@ void main() {
 
     await pumpPage(tester, dateProvider: () => DateTime(2026, 9, 24, 9));
 
-    final tile = find
-        .ancestor(of: find.text('Shown up'), matching: find.byType(Column))
-        .first;
-    expect(
-      find.descendant(of: tile, matching: find.text('3')),
-      findsOneWidget,
-    );
+    expect(find.text('Shown up in September'), findsOneWidget);
+    expect(find.text('3 days'), findsOneWidget);
   });
 }

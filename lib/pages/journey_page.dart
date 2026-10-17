@@ -9,15 +9,13 @@ import '../services/reading_plan_service.dart';
 import '../services/user_preferences_service.dart';
 
 import '../theme/app_theme.dart';
-import '../widgets/journey/badge_strip.dart';
-import '../widgets/journey/consistency_calendar.dart';
+import '../widgets/journey/consistency_card.dart';
 import '../widgets/journey/plans_hub.dart';
 import '../widgets/journey/read_through_card.dart';
+import '../widgets/journey/seasonal_challenge_card.dart';
 import '../services/vibration_service.dart';
 import '../services/reading_status_service.dart';
 import '../widgets/app_header.dart';
-import '../widgets/skeleton_loader.dart';
-import '../widgets/skeletons/stat_tiles_skeleton.dart';
 
 class JourneyPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -158,63 +156,15 @@ class _JourneyPageState extends State<JourneyPage>
     super.dispose();
   }
 
-  /// A single stat tile ("value unit" + label + sub), paired side-by-side on
-  /// the Path screen (design: `path.jsx`).
-  Widget _buildStatTile(
-    BuildContext context, {
-    required String value,
-    required String unit,
-    required String label,
-    required String sub,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.cardPadding),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(AppSpacing.rInset),
-          border: Border.all(color: AppColors.of(context).border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  value,
-                  style: textTheme.headlineSmall?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  unit,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: textTheme.titleSmall?.copyWith(
-                color: colorScheme.onSurface,
-              ),
-            ),
-            Text(
-              sub,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+  Widget _sectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.hPadding,
+        0,
+        AppSpacing.hPadding,
+        AppSpacing.gap12,
       ),
+      child: Text(title, style: Theme.of(context).textTheme.titleLarge),
     );
   }
 
@@ -246,74 +196,67 @@ class _JourneyPageState extends State<JourneyPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.gap8),
                       // The unified plan list — solo and shared in one place
                       // — is the tab itself now (#808).
-                      PlansHub(
-                        key: _hubKey,
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                        groupService: GroupService(
-                          firestore: widget.firestore,
-                        ),
-                        readingPlanService: ReadingPlanService(
-                          firestore: widget.firestore,
-                        ),
-                        userPreferencesService: UserPreferencesService(
-                          firestore: widget.firestore,
-                        ),
-                        vibrationService: widget.vibrationService,
-                        dateProvider: widget.dateProvider,
-                      ),
-                      const SizedBox(height: 16),
-                      SkeletonLoader(
-                        loading: _isLoading || !_streakLoaded,
-                        minTime: const Duration(milliseconds: 1000),
-                        skeleton: const StatTilesSkeleton(),
-                        child: Padding(
-                          padding: AppSpacing.horizontal,
-                          child: IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildStatTile(
-                                  context,
-                                  value: '${_readDates?.length ?? 0}',
-                                  unit: 'days',
-                                  label: 'Shown up',
-                                  sub: 'this month',
-                                ),
-                                const SizedBox(width: 12),
-                                _buildStatTile(
-                                  context,
-                                  value: '$_streak',
-                                  unit: _streak == 1 ? 'day' : 'days',
-                                  label: 'Day streak',
-                                  sub: 'current',
-                                ),
-                              ],
-                            ),
+                      Column(
+                        key: const Key('path-plans'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _sectionTitle(context, 'Plans'),
+                          PathChallengeCard(
+                            firestore: widget.firestore,
+                            auth: widget.auth,
+                            vibrationService: widget.vibrationService,
+                            dateProvider: widget.dateProvider,
                           ),
-                        ),
+                          PlansHub(
+                            key: _hubKey,
+                            firestore: widget.firestore,
+                            auth: widget.auth,
+                            groupService: GroupService(
+                              firestore: widget.firestore,
+                            ),
+                            readingPlanService: ReadingPlanService(
+                              firestore: widget.firestore,
+                            ),
+                            userPreferencesService: UserPreferencesService(
+                              firestore: widget.firestore,
+                            ),
+                            vibrationService: widget.vibrationService,
+                            dateProvider: widget.dateProvider,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: AppSpacing.gap32),
                       // The Showing-up record sits beneath the plan list,
                       // and renders even for a reader with no plans (#808).
-                      ConsistencyCalendar(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                        initialReadDates: _readDates,
-                        isLoading: _isLoading,
+                      Column(
+                        key: const Key('path-consistency'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _sectionTitle(context, 'Consistency'),
+                          ConsistencyCard(
+                            firestore: widget.firestore,
+                            auth: widget.auth,
+                            loading: _isLoading || !_streakLoaded,
+                            streak: _streak,
+                            readDates: _readDates,
+                            now: widget.dateProvider(),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 32),
-                      ReadThroughCard(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
-                      ),
-                      const SizedBox(height: 32),
-                      BadgeStrip(
-                        firestore: widget.firestore,
-                        auth: widget.auth,
+                      const SizedBox(height: AppSpacing.gap32),
+                      Column(
+                        key: const Key('path-read-throughs'),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _sectionTitle(context, 'Read-throughs'),
+                          ReadThroughCard(
+                            firestore: widget.firestore,
+                            auth: widget.auth,
+                          ),
+                        ],
                       ),
                     ],
                   ),
