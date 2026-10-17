@@ -96,28 +96,6 @@ void main() {
     );
   });
 
-  testWidgets('buildAppBar uses configured colors', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) {
-            return Scaffold(appBar: CommonStyles.buildAppBar(context, 'Title'));
-          },
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final appBar = tester.widget<AppBar>(find.byType(AppBar));
-    final colorScheme = Theme.of(
-      tester.element(find.byType(AppBar)),
-    ).colorScheme;
-    expect(appBar.backgroundColor, colorScheme.surface);
-
-    final title = tester.widget<Text>(find.text('Title'));
-    expect(title.style?.color, colorScheme.onSurface);
-  });
-
   testWidgets('app theme defines restrained Material 3 surfaces', (
     tester,
   ) async {

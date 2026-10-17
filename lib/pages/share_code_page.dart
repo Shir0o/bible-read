@@ -8,6 +8,7 @@ import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 import '../widgets/join_code_keys.dart';
 
 /// Shows the group's join code so any member can share it, and offers
@@ -136,11 +137,22 @@ class _ShareCodePageState extends State<ShareCodePage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: CommonStyles.buildAppBar(context, 'Share code'),
-      body: Container(
-        decoration: CommonStyles.backgroundDecoration(colorScheme),
-        child: SafeArea(
-          child: _buildBody(context),
+      body: SafeArea(
+        child: Column(
+          children: [
+            SubHeader(
+              title: 'Share code',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            Expanded(
+              child: Container(
+                decoration: CommonStyles.backgroundDecoration(colorScheme),
+                child: SafeArea(
+                  child: _buildBody(context),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -10,14 +10,6 @@ class CommonStyles {
   static BoxDecoration backgroundDecoration(ColorScheme colorScheme) =>
       BoxDecoration(color: colorScheme.surface);
 
-  static TextStyle appBarTitleText(BuildContext context) =>
-      Theme.of(context).textTheme.titleLarge!.copyWith(
-            fontFamily: AppTheme.fontSerif,
-            fontSize: 24,
-            letterSpacing: -0.2,
-            color: Theme.of(context).colorScheme.onSurface,
-          );
-
   /// Builds a card with the app's standard padding and rounded corners.
   ///
   /// [child] is placed inside the card.
@@ -104,32 +96,6 @@ class CommonStyles {
         side: BorderSide(color: AppColors.of(context).border, width: 1),
       ),
       child: child,
-    );
-  }
-
-  /// Creates an [AppBar] with the application's default styling.
-  ///
-  /// [title] is displayed as the app bar's title.
-  /// [actions] are optional widgets shown on the right.
-  /// [leading] is an optional widget displayed before the title.
-  /// [automaticallyImplyLeading] determines whether to automatically include a
-  /// back button when possible.
-  ///
-  /// Returns a [PreferredSizeWidget] configured app bar.
-  static PreferredSizeWidget buildAppBar(
-    BuildContext context,
-    String title, {
-    List<Widget>? actions,
-    Widget? leading,
-    bool automaticallyImplyLeading = true,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return AppBar(
-      title: Text(title, style: appBarTitleText(context)),
-      backgroundColor: colorScheme.surface,
-      actions: actions,
-      leading: leading,
-      automaticallyImplyLeading: automaticallyImplyLeading,
     );
   }
 }

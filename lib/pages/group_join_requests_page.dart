@@ -9,6 +9,7 @@ import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 
 /// Page displaying pending join requests for a specific group.
 class GroupJoinRequestsPage extends StatelessWidget {
@@ -41,154 +42,166 @@ class GroupJoinRequestsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonStyles.buildAppBar(
-        context,
-        'Join Requests',
-        leading: BackButton(
-          onPressed: () {
-            unawaited(vibrationService.lightImpact());
-            Navigator.of(context).pop();
-          },
-        ),
-        automaticallyImplyLeading: true,
-      ),
-      body: Container(
-        decoration: CommonStyles.backgroundDecoration(
-          Theme.of(context).colorScheme,
-        ),
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Approving a request lets the newcomer see what everyone in the '
-              'group has read, and send them encouragement.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+            SubHeader(
+              title: 'Join Requests',
+              onBack: () {
+                unawaited(vibrationService.lightImpact());
+                Navigator.of(context).pop();
+              },
             ),
-            const SizedBox(height: 12),
             Expanded(
-              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: joinRequestsStream ??
-                    groupService.firestore
-                        .collection(GroupCollections.groups)
-                        .doc(groupId)
-                        .collection(GroupCollections.joinRequests)
-                        .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Center(
-                        child: Text('Failed to load join requests'));
-                  }
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final requests = snapshot.data!.docs;
-                  if (requests.isEmpty) {
-                    return const Center(child: Text('No pending requests'));
-                  }
-                  return ListView.builder(
-                    itemCount: requests.length,
-                    itemBuilder: (context, i) {
-                      final d = requests[i];
-                      final data = d.data();
-                      final uid = data['uid'] as String? ?? d.id;
-                      final name = data['name'] as String? ?? '';
-                      return CommonStyles.buildTappableCard(
-                        context: context,
-                        onTap: () {},
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(name.isEmpty ? uid : name),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Semantics(
-                                label: 'Approve join request from $name',
-                                child: IconButton(
-                                  icon: const Icon(Icons.check),
-                                  tooltip: 'Approve',
-                                  onPressed: () async {
-                                    try {
-                                      await groupService.approveJoinRequest(
-                                        groupId: groupId,
-                                        uid: uid,
-                                      );
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Request approved'),
-                                          ),
-                                        );
-                                      }
-                                    } catch (e, st) {
-                                      if (kDebugMode) {
-                                        debugPrint(
-                                            'Failed to approve request: $e');
-                                      }
-                                      ErrorLogger.log(e, st);
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Failed to approve request',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                ),
-                              ),
-                              Semantics(
-                                label: 'Deny join request from $name',
-                                child: IconButton(
-                                  icon: const Icon(Icons.close),
-                                  tooltip: 'Deny',
-                                  onPressed: () async {
-                                    try {
-                                      await groupService.denyJoinRequest(
-                                        groupId: groupId,
-                                        uid: uid,
-                                      );
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Request denied'),
-                                          ),
-                                        );
-                                      }
-                                    } catch (e, st) {
-                                      if (kDebugMode) {
-                                        debugPrint(
-                                            'Failed to deny request: $e');
-                                      }
-                                      ErrorLogger.log(e, st);
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content:
-                                                Text('Failed to deny request'),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
+              child: Container(
+                decoration: CommonStyles.backgroundDecoration(
+                  Theme.of(context).colorScheme,
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Approving a request lets the newcomer see what everyone in the '
+                      'group has read, and send them encouragement.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: joinRequestsStream ??
+                            groupService.firestore
+                                .collection(GroupCollections.groups)
+                                .doc(groupId)
+                                .collection(GroupCollections.joinRequests)
+                                .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return const Center(
+                                child: Text('Failed to load join requests'));
+                          }
+                          if (!snapshot.hasData) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                          final requests = snapshot.data!.docs;
+                          if (requests.isEmpty) {
+                            return const Center(
+                                child: Text('No pending requests'));
+                          }
+                          return ListView.builder(
+                            itemCount: requests.length,
+                            itemBuilder: (context, i) {
+                              final d = requests[i];
+                              final data = d.data();
+                              final uid = data['uid'] as String? ?? d.id;
+                              final name = data['name'] as String? ?? '';
+                              return CommonStyles.buildTappableCard(
+                                context: context,
+                                onTap: () {},
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(name.isEmpty ? uid : name),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Semantics(
+                                        label:
+                                            'Approve join request from $name',
+                                        child: IconButton(
+                                          icon: const Icon(Icons.check),
+                                          tooltip: 'Approve',
+                                          onPressed: () async {
+                                            try {
+                                              await groupService
+                                                  .approveJoinRequest(
+                                                groupId: groupId,
+                                                uid: uid,
+                                              );
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        'Request approved'),
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e, st) {
+                                              if (kDebugMode) {
+                                                debugPrint(
+                                                    'Failed to approve request: $e');
+                                              }
+                                              ErrorLogger.log(e, st);
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Failed to approve request',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      Semantics(
+                                        label: 'Deny join request from $name',
+                                        child: IconButton(
+                                          icon: const Icon(Icons.close),
+                                          tooltip: 'Deny',
+                                          onPressed: () async {
+                                            try {
+                                              await groupService
+                                                  .denyJoinRequest(
+                                                groupId: groupId,
+                                                uid: uid,
+                                              );
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content:
+                                                        Text('Request denied'),
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e, st) {
+                                              if (kDebugMode) {
+                                                debugPrint(
+                                                    'Failed to deny request: $e');
+                                              }
+                                              ErrorLogger.log(e, st);
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        'Failed to deny request'),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

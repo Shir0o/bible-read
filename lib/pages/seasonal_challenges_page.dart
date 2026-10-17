@@ -5,7 +5,7 @@ import '../models/season.dart';
 import '../models/seasonal_challenge.dart';
 import '../services/seasonal_challenge_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 import '../models/seasonal_challenge_progress.dart';
 import '../widgets/seasonal_challenge_card.dart';
 
@@ -172,8 +172,19 @@ class SeasonalChallengesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CommonStyles.buildAppBar(context, 'Seasonal Challenges'),
-      body: SeasonalChallengesView(auth: auth, service: service),
+      body: SafeArea(
+        child: Column(
+          children: [
+            SubHeader(
+              title: 'Seasonal Challenges',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            Expanded(
+              child: SeasonalChallengesView(auth: auth, service: service),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -9,6 +9,7 @@ import '../services/join_code_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 import '../widgets/join_code_keys.dart';
 
 /// Redeems a join code: the reader types it, previews which group it lands
@@ -137,124 +138,138 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: CommonStyles.buildAppBar(context, 'Join with a code'),
-      body: Container(
-        decoration: CommonStyles.backgroundDecoration(colorScheme),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              TextField(
-                key: JoinCodeKeys.codeField,
-                controller: _controller,
-                textCapitalization: TextCapitalization.characters,
-                autocorrect: false,
-                enableSuggestions: false,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _findGroup(),
-                decoration: const InputDecoration(
-                  labelText: 'Join code',
-                  hintText: 'e.g. HK2N9P',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                key: JoinCodeKeys.findButton,
-                onPressed: _lookingUp ? null : _findGroup,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.rChip),
-                  ),
-                ),
-                child: _lookingUp
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colorScheme.onPrimary,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SubHeader(
+              title: 'Join with a code',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            Expanded(
+              child: Container(
+                decoration: CommonStyles.backgroundDecoration(colorScheme),
+                child: SafeArea(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      TextField(
+                        key: JoinCodeKeys.codeField,
+                        controller: _controller,
+                        textCapitalization: TextCapitalization.characters,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _findGroup(),
+                        decoration: const InputDecoration(
+                          labelText: 'Join code',
+                          hintText: 'e.g. HK2N9P',
+                          border: OutlineInputBorder(),
                         ),
-                      )
-                    : const Text('Find group'),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _error!,
-                  key: JoinCodeKeys.errorText,
-                  style: AppTextStyles.bodySmall(context).copyWith(
-                    color: colorScheme.error,
-                  ),
-                ),
-              ],
-              if (_match != null) ...[
-                const SizedBox(height: 24),
-                KeyedSubtree(
-                  key: JoinCodeKeys.previewCard,
-                  child: CommonStyles.buildCard(
-                    context: context,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _match!.group.name,
-                          style: AppTextStyles.title(context).copyWith(
-                            fontWeight: FontWeight.w700,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        key: JoinCodeKeys.findButton,
+                        onPressed: _lookingUp ? null : _findGroup,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.rChip),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        child: _lookingUp
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colorScheme.onPrimary,
+                                ),
+                              )
+                            : const Text('Find group'),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 12),
                         Text(
-                          _memberCountText(_match!.group.memberCount),
+                          _error!,
+                          key: JoinCodeKeys.errorText,
                           style: AppTextStyles.bodySmall(context).copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                            color: colorScheme.error,
                           ),
                         ),
-                        if (_match!.isMember) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            "You're already in this group",
-                            key: JoinCodeKeys.memberNote,
-                            style: AppTextStyles.bodySmall(context).copyWith(
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                        ] else ...[
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton(
-                              key: JoinCodeKeys.confirmButton,
-                              onPressed: _joining ? null : _confirmJoin,
-                              child: Text(
-                                _match!.group.isPublic
-                                    ? 'Join group'
-                                    : 'Ask to join',
-                              ),
-                            ),
-                          ),
-                          if (!_match!.group.isPublic) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'An owner will approve your request before '
-                              "you're in.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
+                      ],
+                      if (_match != null) ...[
+                        const SizedBox(height: 24),
+                        KeyedSubtree(
+                          key: JoinCodeKeys.previewCard,
+                          child: CommonStyles.buildCard(
+                            context: context,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _match!.group.name,
+                                  style: AppTextStyles.title(context).copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _memberCountText(_match!.group.memberCount),
+                                  style:
+                                      AppTextStyles.bodySmall(context).copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
+                                ),
+                                if (_match!.isMember) ...[
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    "You're already in this group",
+                                    key: JoinCodeKeys.memberNote,
+                                    style: AppTextStyles.bodySmall(context)
+                                        .copyWith(
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                ] else ...[
+                                  const SizedBox(height: 16),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton(
+                                      key: JoinCodeKeys.confirmButton,
+                                      onPressed: _joining ? null : _confirmJoin,
+                                      child: Text(
+                                        _match!.group.isPublic
+                                            ? 'Join group'
+                                            : 'Ask to join',
+                                      ),
+                                    ),
+                                  ),
+                                  if (!_match!.group.isPublic) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'An owner will approve your request before '
+                                      "you're in.",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ],
+                              ],
                             ),
-                          ],
-                        ],
+                          ),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
-              ],
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );

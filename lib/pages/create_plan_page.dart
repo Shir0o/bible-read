@@ -833,6 +833,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
     return Scaffold(
       appBar: AppBar(
+        // token-exempt: slice 8 rebuild (#988)
         title: Text(
           _isEditing ? 'Edit Plan' : 'Enroll in New Plan',
           style: const TextStyle(fontWeight: FontWeight.w600),

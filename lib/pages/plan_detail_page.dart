@@ -19,6 +19,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_bottom_sheet.dart';
 import '../widgets/burst_undo_controller.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/sub_header.dart';
 import '../widgets/member_presence_stack.dart';
 import '../widgets/schedule_preview.dart';
 import '../widgets/schedule_screen_view.dart';
@@ -334,25 +335,21 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: colorScheme.surface.withValues(alpha: 0.95),
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(title, style: theme.textTheme.titleLarge),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
-            height: 1,
-          ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            SubHeader(
+              title: title,
+              onBack: () => Navigator.of(context).pop(),
+            ),
+            Expanded(
+              child: _isGroupMode
+                  ? _buildGroupBody(context)
+                  : _buildPersonalBody(context),
+            ),
+          ],
         ),
       ),
-      body:
-          _isGroupMode ? _buildGroupBody(context) : _buildPersonalBody(context),
     );
   }
 
