@@ -121,6 +121,55 @@ describe('groups/{groupId}/read_log/{date}/entries/{userId}/likes', () => {
   });
 });
 
+describe('groups/{groupId}/badge_log/{awardId}', () => {
+  const AWARD = 'groups/g4/badge_log/alice_first_book';
+
+  before(async () => {
+    await seedGroup('g4', 'alice', ['bob']);
+    await seed(AWARD, { uid: 'alice', badgeId: 'first_book', type: 'achievement' });
+  });
+
+  it('lets co-members read and query the week\'s badges', async () => {
+    const bob = await asUser('bob');
+    await assertSucceeds(bob.doc(AWARD).get());
+    await assertSucceeds(
+      bob.collection('groups/g4/badge_log').where('dateUnlocked', '>=', new Date(0)).get(),
+    );
+  });
+
+  it('denies a non-member', async () => {
+    const carol = await asUser('carol');
+    await assertFails(carol.doc(AWARD).get());
+    await assertFails(carol.collection('groups/g4/badge_log').get());
+  });
+
+  it('denies every client write, even the badge holder\'s', async () => {
+    const alice = await asUser('alice');
+    await assertFails(alice.doc(AWARD).set({ uid: 'alice', badgeId: 'bible_5' }));
+    await assertFails(alice.doc('groups/g4/badge_log/alice_bible_5').set({ uid: 'alice' }));
+    await assertFails(alice.doc(AWARD).delete());
+  });
+
+  it('lets a co-member Amen and undo their own Amen on a Badge', async () => {
+    const bob = await asUser('bob');
+    await assertSucceeds(bob.doc(`${AWARD}/likes/bob`).set({ name: 'Bob' }));
+    await assertSucceeds(bob.doc(`${AWARD}/likes/bob`).get());
+    await assertSucceeds(bob.doc(`${AWARD}/likes/bob`).delete());
+  });
+
+  it('denies an Amen written as someone else', async () => {
+    const bob = await asUser('bob');
+    await assertFails(bob.doc(`${AWARD}/likes/alice`).set({ name: 'Alice' }));
+  });
+
+  it('denies a non-member Amen or reading who Amen\'d', async () => {
+    await seed(`${AWARD}/likes/bob`, { name: 'Bob' });
+    const carol = await asUser('carol');
+    await assertFails(carol.doc(`${AWARD}/likes/carol`).set({ name: 'Carol' }));
+    await assertFails(carol.doc(`${AWARD}/likes/bob`).get());
+  });
+});
+
 describe('retired global read_logs', () => {
   it('denies everything on the retired path', async () => {
     // A legacy entry is seeded so the read assertions are evaluated against

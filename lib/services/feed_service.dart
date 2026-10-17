@@ -31,25 +31,21 @@ class FeedService {
           ),
       ];
 
-  DocumentReference<Map<String, dynamic>> _entry(
-    String groupId,
-    String dateKey,
-    String uid,
-  ) =>
-      firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection('read_log')
-          .doc(dateKey)
-          .collection('entries')
-          .doc(uid);
+  /// The server's per-award badge history under each Group.
+  static const String badgeLog = 'badge_log';
 
   /// Live raw Feed data across [groupIds] for the week ending [today]. Emits
-  /// once every Group's entries and badge mirror have reported; a Group that
-  /// errors contributes nothing rather than blocking the rest.
+  /// once every Group's entries and badge log have reported, along with the
+  /// likes of every update they hold; a Group that errors contributes
+  /// nothing rather than blocking the rest.
+  ///
+  /// Likes are watched live, one listener per update in the week (an entry
+  /// or a logged badge), so another reader's Amen shows at once. Listeners
+  /// follow the updates: one whose update is gone is cancelled.
   Stream<FeedSource> watch(List<String> groupIds, {required DateTime today}) {
     if (groupIds.isEmpty) return Stream.value(const FeedSource());
     final dateKeys = dateKeysFor(today);
+    final oldest = DateTime(today.year, today.month, today.day - (days - 1));
 
     return Stream<FeedSource>.multi((controller) {
       final entries = <String, List<FeedEntryCopy>>{};
@@ -57,33 +53,72 @@ class FeedService {
       final generation = <String, int>{};
       final expected = groupIds.length * (dateKeys.length + 1);
       final subs = <StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>[];
+      final likeSubs =
+          <String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>{};
+      final likers = <String, Set<String>>{};
 
       void emit() {
         if (controller.isClosed) return;
         if (entries.length + badges.length < expected) return;
+        if (likeSubs.keys.any((path) => !likers.containsKey(path))) return;
         controller.add(FeedSource(
-          entries: [for (final list in entries.values) ...list],
-          badges: [for (final list in badges.values) ...list],
+          entries: [
+            for (final list in entries.values)
+              for (final e in list) e.withLikers(likers[e.likesPath] ?? {}),
+          ],
+          badges: [
+            for (final list in badges.values)
+              for (final b in list) b.withLikers(likers[b.likesPath] ?? {}),
+          ],
         ));
       }
 
+      /// Matches the likes listeners to the updates now held.
+      void syncLikes() {
+        final wanted = {
+          for (final list in entries.values)
+            for (final e in list) e.likesPath,
+          for (final list in badges.values)
+            for (final b in list) b.likesPath,
+        };
+        for (final path in likeSubs.keys.toList()) {
+          if (wanted.contains(path)) continue;
+          unawaited(likeSubs.remove(path)!.cancel());
+          likers.remove(path);
+        }
+        for (final path in wanted) {
+          if (likeSubs.containsKey(path)) continue;
+          likeSubs[path] = firestore.collection(path).snapshots().listen(
+            (snap) {
+              likers[path] = {for (final d in snap.docs) d.id};
+              emit();
+            },
+            onError: (Object e, StackTrace st) {
+              unawaited(ErrorLogger.log(e, st));
+              likers[path] = const {};
+              emit();
+            },
+          );
+        }
+      }
+
+      void put<T>(Map<String, List<T>> into, String key, List<T> value) {
+        into[key] = value;
+        syncLikes();
+        emit();
+      }
+
       /// Runs [load] for [key], keeping only the newest snapshot's result.
-      void hydrate<T>(
-        String key,
-        Map<String, List<T>> into,
-        Future<List<T>> Function() load,
-      ) {
+      void hydrate(String key, Future<List<FeedEntryCopy>> Function() load) {
         final gen = (generation[key] ?? 0) + 1;
         generation[key] = gen;
         load().then((value) {
           if (generation[key] != gen) return;
-          into[key] = value;
-          emit();
+          put(entries, key, value);
         }, onError: (Object e, StackTrace st) {
           unawaited(ErrorLogger.log(e, st));
           if (generation[key] != gen) return;
-          into[key] = const [];
-          emit();
+          put(entries, key, const <FeedEntryCopy>[]);
         });
       }
 
@@ -100,13 +135,11 @@ class FeedService {
               .listen(
             (snap) => hydrate(
               key,
-              entries,
               () => _entryCopies(groupId, dateKey, snap.docs),
             ),
             onError: (Object e, StackTrace st) {
               unawaited(ErrorLogger.log(e, st));
-              entries[key] = const [];
-              emit();
+              put(entries, key, const <FeedEntryCopy>[]);
             },
           ));
         }
@@ -114,34 +147,29 @@ class FeedService {
         subs.add(firestore
             .collection(GroupCollections.groups)
             .doc(groupId)
-            .collection('badges')
+            .collection(badgeLog)
+            .where('dateUnlocked',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(oldest))
             .snapshots()
             .listen(
-          (snap) => hydrate(
-            groupId,
+          (snap) => put(
             badges,
-            () => _badgeCopies(groupId, dateKeys.toSet(), snap.docs),
+            groupId,
+            _badgeCopies(groupId, dateKeys.toSet(), snap.docs),
           ),
           onError: (Object e, StackTrace st) {
             unawaited(ErrorLogger.log(e, st));
-            badges[groupId] = const [];
-            emit();
+            put(badges, groupId, const <FeedBadgeCopy>[]);
           },
         ));
       }
 
       controller.onCancel = () {
-        for (final sub in subs) {
+        for (final sub in [...subs, ...likeSubs.values]) {
           unawaited(sub.cancel());
         }
       };
     });
-  }
-
-  Future<Set<String>> _likers(
-      String groupId, String dateKey, String uid) async {
-    final likes = await _entry(groupId, dateKey, uid).collection('likes').get();
-    return likes.docs.map((d) => d.id).toSet();
   }
 
   /// What each person read on [dateKey] in [groupId]: the day's scheduled
@@ -184,55 +212,49 @@ class FeedService {
   ) async {
     if (docs.isEmpty) return const [];
     final readings = await _readings(groupId, dateKey);
-    return Future.wait([
+    return [
       for (final doc in docs)
-        _likers(groupId, dateKey, doc.id).then((likers) {
-          final data = doc.data();
-          final reflection = data['sharedReflection'];
-          return FeedEntryCopy(
-            groupId: groupId,
-            dateKey: dateKey,
-            uid: doc.id,
-            name: data['name'] as String?,
-            timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
-            sharedReflection:
-                reflection is String && reflection.trim().isNotEmpty
-                    ? reflection.trim()
-                    : null,
-            milestone: FeedMilestone.fromMap(data['milestone']),
-            reading: readings[doc.id],
-            likerUids: likers,
-          );
-        }),
-    ]);
+        FeedEntryCopy(
+          groupId: groupId,
+          dateKey: dateKey,
+          uid: doc.id,
+          name: doc.data()['name'] as String?,
+          timestamp: (doc.data()['timestamp'] as Timestamp?)?.toDate(),
+          sharedReflection: _reflection(doc.data()['sharedReflection']),
+          milestone: FeedMilestone.fromMap(doc.data()['milestone']),
+          reading: readings[doc.id],
+        ),
+    ];
   }
 
-  Future<List<FeedBadgeCopy>> _badgeCopies(
+  static String? _reflection(Object? value) =>
+      value is String && value.trim().isNotEmpty ? value.trim() : null;
+
+  List<FeedBadgeCopy> _badgeCopies(
     String groupId,
     Set<String> dateKeys,
     List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
-  ) async {
-    final inWeek = [
-      for (final doc in docs) BadgeMirror.fromFirestore(doc.id, doc),
-    ].where((m) =>
-        m.dateUnlocked != null &&
-        dateKeys.contains(ReadLogService.dateKeyFor(m.dateUnlocked!)));
-    return Future.wait([
-      for (final mirror in inWeek)
-        _likers(
-          groupId,
-          ReadLogService.dateKeyFor(mirror.dateUnlocked!),
-          mirror.uid,
-        ).then((likers) => FeedBadgeCopy(
-              groupId: groupId,
-              mirror: mirror,
-              likerUids: likers,
-            )),
-    ]);
-  }
+  ) =>
+      [
+        for (final doc in docs)
+          FeedBadgeCopy(
+            groupId: groupId,
+            awardId: doc.id,
+            mirror: BadgeMirror.fromFirestore(
+              (doc.data()['uid'] as String?) ?? '',
+              doc,
+            ),
+          ),
+      ]
+          .where((b) =>
+              b.mirror.uid.isNotEmpty &&
+              b.mirror.dateUnlocked != null &&
+              dateKeys
+                  .contains(ReadLogService.dateKeyFor(b.mirror.dateUnlocked!)))
+          .toList();
 
-  /// Writes (or, with [amen] false, deletes) [uid]'s Amen on every entry in
-  /// [targets] — one like per Group the update came from.
+  /// Writes (or, with [amen] false, deletes) [uid]'s Amen on every entry or
+  /// logged badge in [targets] — one like per Group the update came from.
   Future<void> setAmen({
     required List<AmenTarget> targets,
     required String uid,
@@ -241,8 +263,7 @@ class FeedService {
   }) async {
     final batch = firestore.batch();
     for (final t in targets) {
-      final ref =
-          _entry(t.groupId, t.dateKey, t.uid).collection('likes').doc(uid);
+      final ref = firestore.collection(t.likesPath).doc(uid);
       if (amen) {
         batch.set(ref, {'timestamp': Timestamp.now(), 'name': name});
       } else {
@@ -276,20 +297,52 @@ class FeedEntryCopy {
     this.reading,
     this.likerUids = const {},
   });
+
+  String get likesPath => AmenTarget(groupId, dateKey, uid).likesPath;
+
+  FeedEntryCopy withLikers(Set<String> likers) => FeedEntryCopy(
+        groupId: groupId,
+        dateKey: dateKey,
+        uid: uid,
+        name: name,
+        timestamp: timestamp,
+        sharedReflection: sharedReflection,
+        milestone: milestone,
+        reading: reading,
+        likerUids: likers,
+      );
 }
 
-/// One Group's mirror of a member's latest badge, with the Amens on that
-/// member's entry for the unlock day.
+/// One Group's log of a badge a member was awarded, with the Amens on that
+/// badge alone.
 class FeedBadgeCopy {
   final String groupId;
+
+  /// The badge log document id, `{uid}_{badgeId}`.
+  final String awardId;
   final BadgeMirror mirror;
   final Set<String> likerUids;
 
   const FeedBadgeCopy({
     required this.groupId,
+    required this.awardId,
     required this.mirror,
     this.likerUids = const {},
   });
+
+  String get dateKey => ReadLogService.dateKeyFor(mirror.dateUnlocked!);
+
+  AmenTarget get target =>
+      AmenTarget(groupId, dateKey, mirror.uid, awardId: awardId);
+
+  String get likesPath => target.likesPath;
+
+  FeedBadgeCopy withLikers(Set<String> likers) => FeedBadgeCopy(
+        groupId: groupId,
+        awardId: awardId,
+        mirror: mirror,
+        likerUids: likers,
+      );
 }
 
 /// Everything the Feed is built from, across the reader's Groups.
@@ -300,13 +353,18 @@ class FeedSource {
   const FeedSource({this.entries = const [], this.badges = const []});
 }
 
-/// A read-log entry an Amen is written on.
+/// A read-log entry, or with [awardId] a logged badge, an Amen is written on.
 class AmenTarget {
   final String groupId;
   final String dateKey;
   final String uid;
+  final String? awardId;
 
-  const AmenTarget(this.groupId, this.dateKey, this.uid);
+  const AmenTarget(this.groupId, this.dateKey, this.uid, {this.awardId});
+
+  String get likesPath => awardId == null
+      ? '${GroupCollections.groups}/$groupId/read_log/$dateKey/entries/$uid/likes'
+      : '${GroupCollections.groups}/$groupId/${FeedService.badgeLog}/$awardId/likes';
 }
 
 enum FeedUpdateKind { day, grouped, milestone, badge }
@@ -334,7 +392,8 @@ class FeedPerson {
 class FeedUpdate {
   final FeedUpdateKind kind;
 
-  /// Stable id: `dateKey/uid`, or `dateKey/grouped`.
+  /// Stable id: `dateKey/uid`, `dateKey/grouped`, or `dateKey/awardId` for
+  /// a Badge.
   final String key;
   final String dateKey;
   final DateTime? time;
@@ -376,10 +435,11 @@ class FeedDay {
 /// reader shares one of those Groups with.
 ///
 /// One update per person per day, deduplicated across Groups: a Milestone
-/// takes the day, then a Badge, then the person's day (keeping a shared
-/// Reflection if any copy carries one). Two or more same-day people with no
-/// Reflection collapse into one grouped update. Days run newest first and
-/// days with nothing are left out.
+/// takes the day, else the person's day (keeping a shared Reflection if any
+/// copy carries one). Each Badge earned is an update of its own, with its
+/// own Amens. Two or more same-day people with no Reflection collapse into
+/// one grouped update. Days run newest first and days with nothing are left
+/// out.
 List<FeedDay> assembleFeed({
   required FeedSource source,
   required String myUid,
@@ -423,30 +483,31 @@ List<FeedDay> assembleFeed({
   final badgeCopies = <String, List<FeedBadgeCopy>>{};
   for (final b in source.badges) {
     if (!visible(b.mirror.uid, b.groupId)) continue;
-    final dateKey = ReadLogService.dateKeyFor(b.mirror.dateUnlocked!);
-    badgeCopies.putIfAbsent('$dateKey/${b.mirror.uid}', () => []).add(b);
+    badgeCopies.putIfAbsent('${b.dateKey}/${b.awardId}', () => []).add(b);
   }
 
   final byDay = <String, List<FeedUpdate>>{};
-  for (final key in {...copies.keys, ...badgeCopies.keys}) {
+  for (final MapEntry(:key, value: badges) in badgeCopies.entries) {
+    final badge = badges.first;
+    byDay.putIfAbsent(badge.dateKey, () => []).add(FeedUpdate(
+          kind: FeedUpdateKind.badge,
+          key: key,
+          dateKey: badge.dateKey,
+          time: badge.mirror.dateUnlocked,
+          people: [person(badge.mirror.uid, null)],
+          groupIds: {for (final b in badges) b.groupId},
+          badgeTitle: badge.mirror.title,
+          targets: [for (final b in badges) b.target],
+          likerUids: {for (final b in badges) ...b.likerUids},
+        ));
+  }
+  for (final MapEntry(:key, value: entryCopies) in copies.entries) {
     final [dateKey, uid] = key.split('/');
-    final entryCopies = copies[key] ?? const <FeedEntryCopy>[];
-    final badges = badgeCopies[key] ?? const <FeedBadgeCopy>[];
-    final groups = {
-      for (final c in entryCopies) c.groupId,
-      for (final b in badges) b.groupId,
-    };
+    final groups = {for (final c in entryCopies) c.groupId};
     final milestone = entryCopies.map((c) => c.milestone).nonNulls.firstOrNull;
-    final badge = badges.firstOrNull?.mirror;
-    final times = [
-      ...entryCopies.map((c) => c.timestamp).nonNulls,
-      if (badge?.dateUnlocked != null) badge!.dateUnlocked!,
-    ];
-    final kind = milestone != null
-        ? FeedUpdateKind.milestone
-        : badge != null
-            ? FeedUpdateKind.badge
-            : FeedUpdateKind.day;
+    final times = entryCopies.map((c) => c.timestamp).nonNulls;
+    final kind =
+        milestone != null ? FeedUpdateKind.milestone : FeedUpdateKind.day;
     byDay.putIfAbsent(dateKey, () => []).add(FeedUpdate(
           kind: kind,
           key: key,
@@ -460,12 +521,8 @@ List<FeedDay> assembleFeed({
           reflection:
               entryCopies.map((c) => c.sharedReflection).nonNulls.firstOrNull,
           milestone: milestone,
-          badgeTitle: kind == FeedUpdateKind.badge ? badge!.title : null,
           targets: [for (final g in groups) AmenTarget(g, dateKey, uid)],
-          likerUids: {
-            for (final c in entryCopies) ...c.likerUids,
-            for (final b in badges) ...b.likerUids,
-          },
+          likerUids: {for (final c in entryCopies) ...c.likerUids},
         ));
   }
 

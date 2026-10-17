@@ -348,6 +348,19 @@ describe('backfillUser — mirror and silence', () => {
     assert.strictEqual(mirror.badgeId, 'first_bible');
   });
 
+  it('logs nothing to the Feed — old milestones are not news', async () => {
+    const db = new FakeFirestore();
+    await seed(db, 'groups/g1/members/alice', { uid: 'alice', role: 'member' });
+    await seed(db, 'users/alice/read_throughs/nt-0', { scope: 'nt' });
+
+    await backfillUser(db, 'alice');
+
+    assert.deepStrictEqual(
+      [...db._docs.keys()].filter((k) => k.includes('/badge_log/')),
+      [],
+    );
+  });
+
   it('notifies nobody — old milestones do not burst the inbox', async () => {
     const db = new FakeFirestore();
     await seed(db, 'users/alice/summary/data', { totalReadDays: 365 });

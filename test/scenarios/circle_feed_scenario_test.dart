@@ -145,6 +145,26 @@ void main() {
           .collection('likes')
           .doc(likerUid);
 
+  /// Seeds [uid]'s [badgeId] in [groupId]'s badge log, as the server's
+  /// badge awarding writes it.
+  Future<void> seedBadge(
+    String groupId,
+    String uid,
+    String badgeId,
+    int daysAgo,
+  ) =>
+      firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('badge_log')
+          .doc('${uid}_$badgeId')
+          .set({
+        'uid': uid,
+        'badgeId': badgeId,
+        'dateUnlocked': Timestamp.fromDate(
+            DateTime(today.year, today.month, today.day - daysAgo, 12)),
+      });
+
   Future<void> pumpCircle(
     WidgetTester tester, {
     FeedService? feedService,
@@ -380,24 +400,56 @@ void main() {
       (tester) async {
     await seedGroup(
         'g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
-    Future<void> seedBadge(String uid, String badgeId, int daysAgo) => firestore
-            .collection('groups')
-            .doc('g1')
-            .collection('badges')
-            .doc(uid)
-            .set({
-          'badgeId': badgeId,
-          'dateUnlocked': Timestamp.fromDate(
-              DateTime(today.year, today.month, today.day - daysAgo, 12)),
-        });
-    await seedBadge('bob', 'first_book', 1);
-    await seedBadge('cara', 'first_nt', 9);
+    await seedBadge('g1', 'bob', 'first_book', 1);
+    await seedBadge('g1', 'cara', 'first_nt', 9);
 
     await pumpCircle(tester);
 
     expect(find.text('YESTERDAY'), findsOneWidget);
     expect(feedText('Bob earned the First Book badge'), findsOneWidget);
     expect(find.textContaining('First New Testament'), findsNothing);
+  });
+
+  testWidgets('two Badges earned in one week both show', (tester) async {
+    await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
+    await seedBadge('g1', 'bob', 'first_book', 1);
+    await seedBadge('g1', 'bob', 'first_nt', 3);
+
+    await pumpCircle(tester);
+
+    expect(feedText('Bob earned the First Book badge'), findsOneWidget);
+    expect(
+        feedText('Bob earned the First New Testament badge'), findsOneWidget);
+  });
+
+  testWidgets(
+      'a Badge Amen is its own, apart from the Amen on that person\'s day',
+      (tester) async {
+    await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
+    await seedEntry('bob', ['g1'], hour: 8);
+    await seedBadge('g1', 'bob', 'first_book', 0);
+    await likeRef('g1', 'bob', 'zed').set({'name': 'Zed'});
+    final badgeLike =
+        firestore.doc('groups/g1/badge_log/bob_first_book/likes/alice');
+
+    await pumpCircle(tester);
+
+    final day = find.byKey(ValueKey('amen_$todayKey/bob'));
+    final badge = find.byKey(ValueKey('amen_$todayKey/bob_first_book'));
+    expect(feedText('Bob showed up'), findsOneWidget);
+    expect(feedText('Bob earned the First Book badge'), findsOneWidget);
+    expect(find.descendant(of: day, matching: find.text('1')), findsOneWidget);
+    expect(find.descendant(of: badge, matching: find.text('1')), findsNothing);
+
+    await tester.tap(badge);
+    await tester.pumpAndSettle();
+
+    expect((await badgeLike.get()).exists, isTrue);
+    expect((await likeRef('g1', 'bob', 'alice').get()).exists, isFalse);
+    expect(
+        find.descendant(of: badge, matching: find.text('1')), findsOneWidget);
+    expect(find.descendant(of: day, matching: find.text('1')), findsOneWidget);
+    expect(notified, ['bob']);
   });
 
   testWidgets('the Feed covers today and the seven days before it',
@@ -455,6 +507,34 @@ void main() {
     await tester.pumpAndSettle();
     expect((await likeRef('g1', 'bob', 'alice').get()).exists, isFalse);
     expect((await likeRef('g2', 'bob', 'alice').get()).exists, isFalse);
+  });
+
+  testWidgets('another reader\'s Amen appears live', (tester) async {
+    await seedGroup(
+        'g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
+    await seedEntry('bob', ['g1']);
+    await seedBadge('g1', 'bob', 'first_book', 1);
+
+    await pumpCircle(tester);
+
+    final day = find.byKey(ValueKey('amen_$todayKey/bob'));
+    final badge = find.byKey(ValueKey('amen_${keyFor(1)}/bob_first_book'));
+    expect(find.descendant(of: day, matching: find.text('1')), findsNothing);
+    expect(find.descendant(of: badge, matching: find.text('1')), findsNothing);
+
+    await likeRef('g1', 'bob', 'cara').set({'name': 'Cara'});
+    await firestore
+        .doc('groups/g1/badge_log/bob_first_book/likes/cara')
+        .set({'name': 'Cara'});
+    await tester.pumpAndSettle();
+
+    expect(find.descendant(of: day, matching: find.text('1')), findsOneWidget);
+    expect(
+        find.descendant(of: badge, matching: find.text('1')), findsOneWidget);
+
+    await likeRef('g1', 'bob', 'cara').delete();
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: day, matching: find.text('1')), findsNothing);
   });
 
   testWidgets('a failed Amen rolls back with a notice', (tester) async {
