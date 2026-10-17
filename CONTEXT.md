@@ -113,6 +113,16 @@ It invites them to read; it never refers to a schedule they are Behind on, and i
 not tied to any one Group.
 _Avoid_: Poke, reminder, ping
 
+**Feed**:
+The stream of updates from a reader's Circle: each person's day (Shown up, with
+their Reflection when they chose to share it), Milestones, and Badges earned.
+Read only by people who share a Group with the author.
+_Avoid_: Timeline, activity, wall
+
+**Amen**:
+The one reaction a reader can give a Feed update. There are no comments.
+_Avoid_: Like, heart, encouragement (as a noun for the reaction)
+
 ### Read-throughs
 
 **Coverage**:
@@ -216,6 +226,10 @@ the app as it is. See `docs/community_journey_ia.md`,
   card now owns the plan lifecycle outright; Circle is people only; the legacy
   Groups surface, the group detail page and the duplicate schedule and
   catch-up pages are deleted. See the "Second pass" section of
+  `docs/community_journey_ia.md`.
+- **Third pass (2026-10-16).** Circle becomes the Feed (ADR-0011); Path is one
+  page; the avatar menu shrinks to notifications and Settings. Until built, the
+  Circle tab is still the roster. See the "Third pass" section of
   `docs/community_journey_ia.md`.
 - **The three tabs are Today / Circle / Path** (#813). The bar, the wide-layout
   rail and every user-facing string use the new names; internal class names
