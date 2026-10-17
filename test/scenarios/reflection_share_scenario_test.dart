@@ -185,7 +185,8 @@ void main() {
   );
 
   testWidgets(
-    'Reflect Scenario: a shared Reflection appears on the author\'s row and '
+    'Reflect Scenario: a shared Reflection appears in the author\'s Feed '
+    'update, '
     'a co-member\'s view of it, marked as shared; unshared text appears nowhere',
     (tester) async {
       await seeder.seedUser(uid: 'alice', name: 'Alice');
@@ -207,6 +208,7 @@ void main() {
             .set({
           'uid': member,
           'role': member == 'alice' ? 'owner' : 'member',
+          'name': member == 'alice' ? 'Alice' : 'Bob',
         });
       }
       await seedShowingUp(['alice', 'bob']);
@@ -221,9 +223,8 @@ void main() {
 
       await pumpCircle(tester);
       expect(find.text('A private first thought.'), findsNothing);
-      expect(find.textContaining('Shared reflection'), findsNothing);
-      // A row with no shared Reflection still renders complete.
-      expect(find.text('Showed up'), findsWidgets);
+      // Neither has a shared Reflection, so their days group into one.
+      expect(find.text('Bob and you read today'), findsOneWidget);
 
       // Sharing copies it onto the read-log entry: Alice's own row shows it
       // (CommunityPage renders the reader's own row too).
@@ -245,7 +246,7 @@ void main() {
 
       await pumpCircle(tester);
       expect(find.text('A line worth sharing.'), findsOneWidget);
-      expect(find.text('Shared reflection'), findsOneWidget);
+      expect(find.text('You showed up'), findsOneWidget);
 
       // Unsharing removes the copy promptly and leaves the private original.
       await service.saveReflection(
@@ -266,7 +267,7 @@ void main() {
 
       await pumpCircle(tester);
       expect(find.text('A line worth sharing.'), findsNothing);
-      expect(find.text('Shared reflection'), findsNothing);
+      expect(find.text('Bob and you read today'), findsOneWidget);
 
       final original = await service.fetchReflection('alice', todayKey);
       expect(original?.text, 'A line worth sharing.',

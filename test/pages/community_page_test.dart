@@ -74,7 +74,8 @@ void main() {
     expect(find.text('Create a group'), findsOneWidget);
   });
 
-  testWidgets('renders people-first with no groups beneath, no reading hero', (
+  testWidgets('renders the status row with no groups beneath, no reading hero',
+      (
     tester,
   ) async {
     await firestore.collection('groups').doc('g1').set({
@@ -114,7 +115,7 @@ void main() {
 
     await pumpPage(tester);
 
-    // The reader's own row leads the people list.
+    // The reader's own avatar leads the status row.
     expect(find.text('You'), findsOneWidget);
     // Co-members render from Group membership.
     expect(find.text('Bea'), findsOneWidget);
