@@ -161,11 +161,10 @@ class _ShareCodePageState extends State<ShareCodePage> {
   }
 
   Widget _buildBody(BuildContext context) {
-    final busy = _loading || _regenerating;
     return SkeletonLoader(
-      loading: busy,
+      loading: _loading,
       skeleton: const _JoinCodeSkeleton(),
-      child: busy ? const SizedBox.shrink() : _buildLoadedBody(context),
+      child: _loading ? const SizedBox.shrink() : _buildLoadedBody(context),
     );
   }
 
@@ -257,8 +256,17 @@ class _ShareCodePageState extends State<ShareCodePage> {
         const SizedBox(height: 24),
         OutlinedButton.icon(
           key: JoinCodeKeys.regenerateButton,
-          onPressed: _regenerate,
-          icon: const Icon(Icons.refresh, size: 18),
+          onPressed: _regenerating ? null : _regenerate,
+          icon: _regenerating
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    // token-exempt: button submitting
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Icon(Icons.refresh, size: 18),
           label: const Text('Regenerate code'),
         ),
         const SizedBox(height: 8),

@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'skeleton_loader.dart';
-import 'skeletons/list_rows_skeleton.dart';
 import 'read_switch_tile.dart';
 import '../theme/app_theme.dart';
 import '../services/vibration_service.dart';
@@ -27,14 +25,14 @@ class ReadStatusSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SkeletonLoader(
-      loading: toggleLoading,
-      skeleton: const ListRowsSkeleton(count: 1, showAvatar: false),
-      child: _buildContent(context),
-    );
-  }
+    if (toggleLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+            // token-exempt: toggle submitting (tap-triggered, not content loading)
+            ),
+      );
+    }
 
-  Widget _buildContent(BuildContext context) {
     return Column(
       children: [
         ReadSwitchTile(
