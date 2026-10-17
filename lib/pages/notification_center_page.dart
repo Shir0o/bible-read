@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/skeleton_loader.dart';
-import '../widgets/skeletons/list_rows_skeleton.dart';
+import '../widgets/skeletons/notification_list_skeleton.dart';
 import '../models/app_notification.dart';
 import '../models/notification_preferences.dart';
 import '../theme/app_theme.dart';
@@ -110,7 +110,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                         }
                         return SnapshotSkeleton<List<AppNotification>>(
                           snapshot: snapshot,
-                          skeleton: const ListRowsSkeleton(count: 5),
+                          skeleton: const NotificationListSkeleton(),
                           builder: (context, notifications) {
                             if (notifications.isEmpty) {
                               return Center(
