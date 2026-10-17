@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/connectivity_service.dart';
+import '../theme/app_theme.dart';
 
 class OfflineBanner extends StatelessWidget {
   final ConnectivityService connectivityService;
@@ -27,7 +28,7 @@ class OfflineBanner extends StatelessWidget {
                         size: 16,
                         color: Theme.of(context).colorScheme.onErrorContainer,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.gap8),
                       Text(
                         'Offline Mode - Using Cached Data',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(

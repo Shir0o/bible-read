@@ -239,9 +239,9 @@ class _ReschedulePageState extends State<ReschedulePage> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.hPadding,
-                  4,
+                  AppSpacing.gap4,
                   AppSpacing.hPadding,
-                  20,
+                  AppSpacing.gap20,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -253,14 +253,14 @@ class _ReschedulePageState extends State<ReschedulePage> {
                         letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.gap16),
                     _warningCard(context, memberCount, memberLabel),
                     const SizedBox(height: AppSpacing.gap20),
                     for (final option in PaceOption.values) ...[
                       _optionCard(context, option),
                       const SizedBox(height: AppSpacing.gap8),
                     ],
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.gap12),
                     Divider(color: appColors.border),
                     const SizedBox(height: AppSpacing.gap12),
                     Text(
@@ -270,7 +270,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
                         letterSpacing: 1.6,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.gap8),
                     Text(
                       'If it is only your own week that got away from you, '
                       'Adjust pace re-dates your copy and leaves the group\'s '
@@ -300,9 +300,9 @@ class _ReschedulePageState extends State<ReschedulePage> {
         ),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.hPadding,
-          12,
+          AppSpacing.gap12,
           AppSpacing.hPadding,
-          20,
+          AppSpacing.gap20,
         ),
         child: FilledButton(
           onPressed: _selected == null || _saving || _isOwner == false
@@ -327,7 +327,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
     final theme = Theme.of(context);
     final appColors = AppColors.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.gap16),
       decoration: BoxDecoration(
         color: appColors.accentSoft,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -339,7 +339,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
             children: [
               Icon(Icons.warning_amber_rounded,
                   size: 18, color: theme.colorScheme.onTertiaryContainer),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.gap8),
               Text(
                 'This changes everyone\'s dates',
                 style: theme.textTheme.titleSmall?.copyWith(
@@ -349,7 +349,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.gap6),
           Text(
             'All $count $label follow this schedule. Their readings move too, '
             'including ones they have already marked.',
@@ -393,7 +393,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
             },
       borderRadius: BorderRadius.circular(AppSpacing.rCard),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.gap16),
         decoration: BoxDecoration(
           color: selected
               ? appColors.primarySoft
@@ -412,7 +412,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
               size: AppSpacing.iconLg,
               color: selected ? colorScheme.primary : colorScheme.outline,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.gap12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,7 +432,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
                       height: 1.45,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.gap8),
                   Text(
                     _previewLine(option),
                     style: theme.textTheme.labelMedium?.copyWith(

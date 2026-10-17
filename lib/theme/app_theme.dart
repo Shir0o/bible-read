@@ -595,6 +595,7 @@ class AppSpacing {
   static const double gap20 = 20;
   static const double gap24 = 24;
   static const double gap32 = 32;
+  static const double gap40 = 40;
 
   // card-surface padding, from DESIGN.md (components.card-surface.padding).
   static const double cardPadding = 18;

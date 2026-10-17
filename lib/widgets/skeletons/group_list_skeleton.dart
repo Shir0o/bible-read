@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../common_styles.dart';
 import '../skeleton.dart';
+import '../../theme/app_theme.dart';
 
 class GroupListSkeleton extends StatelessWidget {
   const GroupListSkeleton({super.key});
@@ -8,18 +9,19 @@ class GroupListSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap8),
       itemCount: 5,
       separatorBuilder: (_, __) => const Divider(height: 0),
       itemBuilder: (context, index) {
         return CommonStyles.buildTappableCard(
           context: context,
           onTap: () {},
-          margin: const EdgeInsets.symmetric(vertical: 4.0),
+          margin: const EdgeInsets.symmetric(vertical: AppSpacing.gap4),
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 12.0,
+              horizontal: AppSpacing.gap16,
+              vertical: AppSpacing.gap12,
             ),
             child: Row(
               children: [
@@ -28,12 +30,12 @@ class GroupListSkeleton extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
                       Skeleton(width: 140, height: 16),
-                      SizedBox(height: 8),
+                      SizedBox(height: AppSpacing.gap8),
                       Skeleton(width: 80, height: 12),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.gap16),
                 const Skeleton(
                   width: 40,
                   height: 12,

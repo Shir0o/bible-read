@@ -71,21 +71,21 @@ class _RebuildConfirmDialog extends StatelessWidget {
               _leadIn(newPlan),
               style: textTheme.bodyMedium,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             Text(
               'Everything the group has already read stays marked — '
               'Jeremiah 3 will still be ticked wherever it lands.',
               style: textTheme.bodyMedium,
             ),
             if (droppedByBook.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.gap16),
               Text(
                 _booksLeavingLine(droppedByBook),
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.error,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.gap4),
               Text(
                 _chaptersLeavingLine(totalDroppedRefs),
                 style: textTheme.bodySmall,

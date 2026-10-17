@@ -12,6 +12,7 @@ import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/join_code_keys.dart';
+import '../theme/app_theme.dart';
 
 /// Shows the group's join code so any member can share it, and offers
 /// regeneration for a code that has been shared too widely.
@@ -184,7 +185,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             TextButton(
               onPressed: _loadCode,
               child: const Text('Try again'),
@@ -196,12 +197,13 @@ class _ShareCodePageState extends State<ShareCodePage> {
 
     final code = _code!;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.gap16),
       children: [
         CommonStyles.buildCard(
           context: context,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.gap24, horizontal: AppSpacing.gap16),
             child: Column(
               children: [
                 Text(
@@ -211,7 +213,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
                     color: colorScheme.primary,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.gap16),
                 Text(
                   code,
                   key: JoinCodeKeys.codeText,
@@ -221,7 +223,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
                     color: colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.gap16),
                 Text(
                   'People can enter this code to join ${widget.group.name}.',
                   style: AppTextStyles.bodySmall(context).copyWith(
@@ -230,7 +232,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
                   textAlign: TextAlign.center,
                 ),
                 if (!widget.group.isPublic) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.gap8),
                   Text(
                     "You'll approve their request before they're in.",
                     style: AppTextStyles.bodySmall(context).copyWith(
@@ -239,7 +241,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
                     textAlign: TextAlign.center,
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.gap24),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
@@ -253,7 +255,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.gap24),
         OutlinedButton.icon(
           key: JoinCodeKeys.regenerateButton,
           onPressed: _regenerating ? null : _regenerate,
@@ -269,7 +271,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
               : const Icon(Icons.refresh, size: 18),
           label: const Text('Regenerate code'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.gap8),
         Text(
           'The old code stops working.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -290,20 +292,21 @@ class _JoinCodeSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.gap16),
       children: [
         CommonStyles.buildCard(
           context: context,
           child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            padding: EdgeInsets.symmetric(
+                vertical: AppSpacing.gap24, horizontal: AppSpacing.gap16),
             child: Column(
               children: [
                 Skeleton(width: 120, height: 12),
-                SizedBox(height: 16),
+                SizedBox(height: AppSpacing.gap16),
                 Skeleton(width: 200, height: 32),
-                SizedBox(height: 16),
+                SizedBox(height: AppSpacing.gap16),
                 Skeleton(width: double.infinity, height: 12),
-                SizedBox(height: 24),
+                SizedBox(height: AppSpacing.gap24),
                 Skeleton(width: double.infinity, height: 40),
               ],
             ),

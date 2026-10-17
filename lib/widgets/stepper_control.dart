@@ -64,7 +64,7 @@ class StepperControl extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSpacing.rField),
         border: Border.all(color: appColors.border),
       ),
-      padding: const EdgeInsets.all(2),
+      padding: const EdgeInsets.all(AppSpacing.gap2),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -81,12 +81,7 @@ class StepperControl extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '$value',
-              style: TextStyle(
-                fontFamily: AppTheme.fontSerif,
-                fontSize: size == StepperSize.large ? 20 : 17,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
           _StepButton(

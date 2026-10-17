@@ -185,7 +185,7 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
                         selected: _scope == scope,
                         onTap: () => setState(() => _scope = scope),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.gap8),
                     ],
                     const SizedBox(height: AppSpacing.gap20),
                   ],
@@ -210,7 +210,7 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.gap8),
                   _Hint(switch (_precision) {
                     DatePrecision.year =>
                       'Only remember the year? That is enough.',
@@ -237,7 +237,7 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.gap8),
                   const _Hint(
                     "A city, a church, a season of life — whatever you'll "
                     'recognise later.',
@@ -260,7 +260,8 @@ class _AddReadThroughPageState extends State<AddReadThroughPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.gap20, 0, AppSpacing.gap20, AppSpacing.gap20),
               child: SizedBox(
                 width: double.infinity,
                 height: AppSpacing.buttonHeight,
@@ -313,7 +314,7 @@ class _FieldBox extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final box = Container(
       height: AppSpacing.buttonHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap16),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppSpacing.rField),
@@ -361,7 +362,7 @@ class _ScopeOption extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSpacing.rField),
         child: Container(
           height: AppSpacing.buttonHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap16),
           decoration: BoxDecoration(
             color: selected
                 ? appColors.primarySoft
@@ -382,7 +383,7 @@ class _ScopeOption extends StatelessWidget {
                     ? colorScheme.primary
                     : colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.gap12),
               Text(
                 scope.label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -416,7 +417,7 @@ class _PrecisionTabs extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(AppSpacing.gap4),
       decoration: BoxDecoration(
         color: AppColors.of(context).bg2,
         borderRadius: BorderRadius.circular(AppSpacing.rField),

@@ -89,7 +89,7 @@ class SchedulePreview extends StatelessWidget {
     final laterHidden = count - end;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.gap20),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -98,14 +98,14 @@ class SchedulePreview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildHeader(context),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           if (earlierHidden > 0)
             _buildEllipsis(context, '$earlierHidden earlier'),
           for (var i = start; i < end; i++)
             _buildRow(context, entries[i], status.statuses[i]),
           if (laterHidden > 0) _buildEllipsis(context, '$laterHidden more'),
           if (onViewFull != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.gap4),
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
@@ -152,21 +152,21 @@ class SchedulePreview extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.gap4),
         Text(
           '${entries.length} readings · ${_paceText()}',
           style: theme.textTheme.bodySmall?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSpacing.gap2),
         Text(
           '${_formatDate(first)} – ${_formatDate(last)}, ${last.year}',
           style: theme.textTheme.bodySmall?.copyWith(
             color: colorScheme.outline,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.gap6),
         Text(
           statusLine,
           style: theme.textTheme.labelMedium?.copyWith(
@@ -180,7 +180,8 @@ class SchedulePreview extends StatelessWidget {
   Widget _buildEllipsis(BuildContext context, String label) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+      padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.gap4, horizontal: AppSpacing.gap4),
       child: Text(
         '··· $label',
         style: theme.textTheme.labelSmall?.copyWith(
@@ -210,7 +211,7 @@ class SchedulePreview extends StatelessWidget {
             : colorScheme.onSurfaceVariant;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap8),
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
@@ -240,7 +241,7 @@ class SchedulePreview extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Text(
               entry.readings.join(', '),
@@ -253,7 +254,7 @@ class SchedulePreview extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.gap8),
           _buildStatusMarker(context, readingStatus),
         ],
       ),

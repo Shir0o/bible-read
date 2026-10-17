@@ -303,7 +303,7 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
                           button: true,
                           label: 'Add $option',
                           child: Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(AppSpacing.gap16),
                             child: Text(option),
                           ),
                         ),
@@ -595,7 +595,8 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
         color: colorScheme.surfaceContainerLow,
         border: Border(top: BorderSide(color: appColors.border)),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap16, AppSpacing.gap4, AppSpacing.gap8, AppSpacing.gap4),
       child: Row(
         children: [
           Expanded(
@@ -661,7 +662,7 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: theme.textTheme.titleSmall),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.gap2),
                 Text(subtitle, style: theme.textTheme.bodySmall),
               ],
             ),

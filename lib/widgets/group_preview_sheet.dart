@@ -119,7 +119,7 @@ class _GroupPreviewSheetState extends State<GroupPreviewSheet> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.hPadding,
-        4,
+        AppSpacing.gap4,
         AppSpacing.hPadding,
         AppSpacing.gap24,
       ),

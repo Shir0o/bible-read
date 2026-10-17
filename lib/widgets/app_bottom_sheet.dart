@@ -62,7 +62,7 @@ class AppSheetSurface extends StatelessWidget {
           mainAxisSize: fullHeight ? MainAxisSize.max : MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.gap12),
             Center(
               child: Container(
                 width: 48,

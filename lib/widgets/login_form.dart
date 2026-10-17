@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/error_logger.dart';
 import 'animated_action_button.dart';
+import '../theme/app_theme.dart';
 
 /// Simple email/password sign-in form.
 class LoginForm extends StatefulWidget {
@@ -82,7 +83,7 @@ class _LoginFormState extends State<LoginForm> {
             autofillHints: const [AutofillHints.email],
             decoration: const InputDecoration(labelText: 'Email'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           TextField(
             key: const Key('loginPasswordField'),
             controller: _passwordController,
@@ -105,7 +106,7 @@ class _LoginFormState extends State<LoginForm> {
             ),
             obscureText: !_isPasswordVisible,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           AnimatedActionButton(
             onPressed: _submit,
             isLoading: _loading,

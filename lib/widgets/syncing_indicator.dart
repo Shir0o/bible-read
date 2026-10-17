@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class SyncingIndicator extends StatelessWidget {
   final FirebaseFirestore firestore;
@@ -30,7 +31,8 @@ class SyncingIndicator extends StatelessWidget {
           child: hasPendingWrites
               ? Container(
                   key: const ValueKey('syncing'),
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: AppSpacing.gap4),
                   width: double.infinity,
                   color: Theme.of(
                     context,
@@ -46,7 +48,7 @@ class SyncingIndicator extends StatelessWidget {
                           strokeWidth: 2,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.gap8),
                       Text(
                         'Syncing...',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(

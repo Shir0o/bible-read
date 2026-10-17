@@ -87,11 +87,12 @@ class CatchUpStatusRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.gap12, vertical: AppSpacing.gap12),
           child: Row(
             children: [
               leadingTile,
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +106,7 @@ class CatchUpStatusRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -117,7 +118,7 @@ class CatchUpStatusRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.gap8),
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,

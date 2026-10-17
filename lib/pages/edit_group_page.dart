@@ -369,7 +369,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
                 loading: _isLoading,
                 skeleton: const ListRowsSkeleton(count: 4, showAvatar: false),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.gap16, AppSpacing.gap8, AppSpacing.gap16, 120),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -384,10 +385,10 @@ class _EditGroupPageState extends State<EditGroupPage> {
                           labelText: 'Group name',
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.gap16),
                       _publicCard(context),
                       if (_isOwner) ...[
-                        const SizedBox(height: 24),
+                        const SizedBox(height: AppSpacing.gap24),
                         _sectionTitle(context, 'Schedule'),
                         const SizedBox(height: AppSpacing.gap8),
                         _rescheduleTile(context),
@@ -402,7 +403,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                           label: 'Archive Group',
                           onPressed: _archiveGroup,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.gap12),
                         _lifecycleButton(
                           context,
                           icon: Icons.delete_outline,
@@ -417,7 +418,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
                           label: 'Archive Participation',
                           onPressed: _archiveParticipation,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.gap12),
                         _lifecycleButton(
                           context,
                           icon: Icons.logout,
@@ -453,7 +454,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.gap20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border.all(
@@ -471,16 +472,14 @@ class _EditGroupPageState extends State<EditGroupPage> {
                   'Public Group',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w500,
-                    fontSize: 18,
                     color: colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.gap4),
                 Text(
                   'Visible in group search results',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
-                    fontSize: 14,
                   ),
                 ),
               ],
@@ -505,7 +504,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
       onTap: _openReschedule,
       borderRadius: BorderRadius.circular(AppSpacing.rInset),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.gap16),
         decoration: BoxDecoration(
           color: colorScheme.surface,
           border: Border.all(color: appColors.border),
@@ -514,7 +513,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
         child: Row(
           children: [
             Icon(Icons.edit_calendar, color: colorScheme.primary),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.gap12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,7 +569,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
           top: BorderSide(color: colorScheme.outlineVariant),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.gap16, AppSpacing.gap12,
+          AppSpacing.gap16, AppSpacing.gap20),
       child: FilledButton(
         key: const Key('group-settings-save'),
         onPressed: _isSaving ? null : _saveChanges,

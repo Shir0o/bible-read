@@ -224,7 +224,7 @@ class _GroupFilterChips extends StatelessWidget {
       required VoidCallback onTap,
     }) {
       return Padding(
-        padding: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.only(right: AppSpacing.gap8),
         child: FilterChip(
           label: Text(label),
           selected: selected,

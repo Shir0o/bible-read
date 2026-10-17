@@ -47,12 +47,7 @@ class SubHeader extends StatelessWidget {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontFamily: AppTheme.fontSerif,
-                    fontSize: 24,
-                    letterSpacing: -0.2,
-                    color: colorScheme.onSurface,
-                  ),
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
           ),
           if (right != null) right!,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/auth/auth_background.dart';
+import '../theme/app_theme.dart';
 
 class WelcomePage extends StatelessWidget {
   final VoidCallback onGetStarted;
@@ -20,7 +21,8 @@ class WelcomePage extends StatelessWidget {
         final textTheme = Theme.of(context).textTheme;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.gap24, vertical: AppSpacing.gap40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -53,7 +55,7 @@ class WelcomePage extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.gap16),
 
               // Description
               Text(
@@ -64,7 +66,7 @@ class WelcomePage extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: AppSpacing.gap40),
 
               // Get Started Button
               SizedBox(
@@ -81,7 +83,7 @@ class WelcomePage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.gap16),
 
               // I already have an account Button
               SizedBox(
@@ -97,7 +99,7 @@ class WelcomePage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.gap24),
             ],
           ),
         );

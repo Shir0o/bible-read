@@ -280,7 +280,8 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
             ),
             if (!_loading && _items.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.gap16, AppSpacing.gap4, AppSpacing.gap16, 0),
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(
@@ -297,7 +298,11 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
                 child: _items.isEmpty
                     ? _emptyState(context)
                     : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.gap16,
+                            AppSpacing.gap8,
+                            AppSpacing.gap16,
+                            AppSpacing.gap24),
                         itemCount: _items.length,
                         itemBuilder: (context, index) =>
                             _trashRow(context, _items[index]),
@@ -322,12 +327,12 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
             size: 56,
             color: colorScheme.outline,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           Text(
             'Nothing here',
             style: theme.textTheme.titleMedium,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.gap6),
           Text(
             'Plans and groups you delete wait here for 30 days.',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -345,7 +350,8 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
     final days = item.daysLeft(widget.dateProvider());
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
@@ -377,7 +383,7 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall,
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSpacing.gap2),
                 Text(
                   '$days day${days == 1 ? '' : 's'} left',
                   maxLines: 1,

@@ -16,6 +16,7 @@ import '../../models/read_log.dart';
 import '../skeleton_loader.dart';
 import '../skeletons/read_log_skeleton.dart';
 import '../skeletons/read_log_empty_skeleton.dart';
+import '../../theme/app_theme.dart';
 
 class ReadLogView extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -268,7 +269,7 @@ class _ReadLogViewState extends State<ReadLogView>
           child: _loadError
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(32.0),
+                    padding: const EdgeInsets.all(AppSpacing.gap32),
                     child: Text(
                       'Unable to load today\'s readers.\nPlease check your connection.',
                       style: AppTextStyles.body(context).copyWith(
@@ -281,7 +282,7 @@ class _ReadLogViewState extends State<ReadLogView>
               : widget.auth.currentUser == null
                   ? Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(32.0),
+                        padding: const EdgeInsets.all(AppSpacing.gap32),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -291,7 +292,7 @@ class _ReadLogViewState extends State<ReadLogView>
                               color:
                                   Theme.of(context).colorScheme.outlineVariant,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.gap16),
                             Text(
                               'Sign in to see who\'s reading today',
                               style: AppTextStyles.subtitle(context).copyWith(
@@ -299,7 +300,7 @@ class _ReadLogViewState extends State<ReadLogView>
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.gap8),
                             Text(
                               'Join a group and encourage others.',
                               style: AppTextStyles.body(context).copyWith(
@@ -327,7 +328,7 @@ class _ReadLogViewState extends State<ReadLogView>
                                       .colorScheme
                                       .outlineVariant,
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: AppSpacing.gap16),
                                 Text(
                                   'Be the first light today',
                                   style:
@@ -337,7 +338,7 @@ class _ReadLogViewState extends State<ReadLogView>
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: AppSpacing.gap8),
                                 Text(
                                   'Read your passage and be an encouragement to others.',
                                   style: AppTextStyles.body(context).copyWith(
@@ -354,10 +355,10 @@ class _ReadLogViewState extends State<ReadLogView>
                         )
                       : Padding(
                           padding: const EdgeInsets.only(
-                            top: 16.0,
+                            top: AppSpacing.gap16,
                             bottom: 48.0,
-                            left: 16,
-                            right: 16,
+                            left: AppSpacing.gap16,
+                            right: AppSpacing.gap16,
                           ),
                           child: ReadLogList(
                             logs: _logs,

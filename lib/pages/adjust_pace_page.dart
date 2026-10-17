@@ -41,7 +41,7 @@ class _OptionCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final appColors = AppColors.of(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
       decoration: BoxDecoration(
         color: selected
             ? appColors.primarySoft
@@ -55,7 +55,7 @@ class _OptionCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.rCard),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.gap16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -81,7 +81,7 @@ class _OptionCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.gap6),
               Text(
                 description,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -249,9 +249,9 @@ class _AdjustPacePageState extends State<AdjustPacePage> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.hPadding,
-                  4,
+                  AppSpacing.gap4,
                   AppSpacing.hPadding,
-                  20,
+                  AppSpacing.gap20,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -276,7 +276,8 @@ class _AdjustPacePageState extends State<AdjustPacePage> {
                       ),
                       if (_selected == option)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.gap4, 0,
+                              AppSpacing.gap4, AppSpacing.gap12),
                           child: Text(
                             _effectLine(option),
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -314,9 +315,9 @@ class _AdjustPacePageState extends State<AdjustPacePage> {
               ),
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.hPadding,
-                12,
+                AppSpacing.gap12,
                 AppSpacing.hPadding,
-                20,
+                AppSpacing.gap20,
               ),
               child: FilledButton(
                 onPressed: _selected == null

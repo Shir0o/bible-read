@@ -25,7 +25,8 @@ class ProfileSummaryCard extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.gap16, vertical: AppSpacing.gap24),
         child: GestureDetector(
           onTap: () {
             unawaited(vibrationService.lightImpact());
@@ -71,7 +72,7 @@ class ProfileSummaryCard extends StatelessWidget {
                         ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.gap16),
 
               // Name
               Text(
@@ -80,13 +81,13 @@ class ProfileSummaryCard extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.gap12),
 
               // "View Profile" Affordance (Subtle)
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+                  horizontal: AppSpacing.gap12,
+                  vertical: AppSpacing.gap6,
                 ),
                 decoration: BoxDecoration(
                   color: colorScheme.surfaceContainerLow,
@@ -101,7 +102,7 @@ class ProfileSummaryCard extends StatelessWidget {
                             color: colorScheme.primary.withValues(alpha: 0.8),
                           ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.gap4),
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 16,

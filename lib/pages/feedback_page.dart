@@ -48,21 +48,13 @@ class FeedbackPage extends StatelessWidget {
                 title: 'Feedback',
                 onBack: () => Navigator.of(context).maybePop(),
               ),
-              const TabBar(
+              TabBar(
                 tabs: [
                   Tab(text: 'Report a Bug'),
                   Tab(text: 'Request a Feature'),
                 ],
-                labelStyle: TextStyle(
-                  fontFamily: AppTheme.fontUi,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-                unselectedLabelStyle: TextStyle(
-                  fontFamily: AppTheme.fontUi,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                labelStyle: Theme.of(context).textTheme.titleSmall,
+                unselectedLabelStyle: Theme.of(context).textTheme.titleSmall,
                 indicatorSize: TabBarIndicatorSize.label,
                 indicatorWeight: 2.5,
                 labelPadding: EdgeInsets.symmetric(vertical: AppSpacing.gap12),

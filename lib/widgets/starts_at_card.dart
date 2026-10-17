@@ -53,14 +53,10 @@ class StartsAtCard extends StatelessWidget {
                     Text(
                       startRef.isEmpty ? 'The beginning' : startRef,
                       key: GroupPlanKeys.startRefText,
-                      style: TextStyle(
-                        fontFamily: AppTheme.fontSerif,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: -0.4,
-                        height: 1.1,
-                        color: colorScheme.onSurface,
-                      ),
+                      style:
+                          Theme.of(context).textTheme.headlineMedium!.copyWith(
+                                height: 1.1,
+                              ),
                     ),
                   ],
                 ),

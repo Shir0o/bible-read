@@ -7,6 +7,7 @@ import '../models/seasonal_challenge.dart';
 import '../models/seasonal_challenge_progress.dart';
 import '../models/seasonal_reward.dart';
 import 'common_styles.dart';
+import '../theme/app_theme.dart';
 
 /// Card widget that displays the user's status for a seasonal challenge.
 ///
@@ -135,27 +136,27 @@ class SeasonalChallengeCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(challenge.title, style: titleStyle),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           Text(challenge.description, style: bodyStyle),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           LinearProgressIndicator(value: completion, minHeight: 8),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.gap8),
           Text(progressText, style: subtleStyle),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.schedule, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.gap8),
               Expanded(child: Text(remainingText, style: subtleStyle)),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.gap12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.card_giftcard, color: theme.colorScheme.secondary),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.gap8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,13 +166,13 @@ class SeasonalChallengeCard extends StatelessWidget {
                       style: bodyStyle.copyWith(fontWeight: FontWeight.w600),
                     ),
                     if (reward.description.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.gap4),
                       Text(reward.description, style: subtleStyle),
                     ],
                     if (_rewardAmountText(
                       materialLocalizations,
                     ).isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.gap4),
                       Text(
                         _rewardAmountText(materialLocalizations),
                         style: subtleStyle,
@@ -182,7 +183,7 @@ class SeasonalChallengeCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.gap16),
           Align(
             alignment: Alignment.centerRight,
             child: FilledButton(

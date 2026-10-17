@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../skeleton.dart';
+import '../../theme/app_theme.dart';
 
 /// Generic placeholder for a short vertical list of rows (members, requests,
 /// notifications, settings toggles...). Non-scrolling so it can sit inside any
@@ -10,7 +11,7 @@ class ListRowsSkeleton extends StatelessWidget {
     super.key,
     this.count = 4,
     this.showAvatar = true,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(AppSpacing.gap16),
   });
 
   final int count;
@@ -26,7 +27,7 @@ class ListRowsSkeleton extends StatelessWidget {
         children: [
           for (var i = 0; i < count; i++)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap8),
               child: Row(
                 children: [
                   if (showAvatar) ...[
@@ -35,14 +36,14 @@ class ListRowsSkeleton extends StatelessWidget {
                       height: 40,
                       shape: CircleBorder(),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.gap12),
                   ],
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Skeleton(width: 140, height: 14),
-                        SizedBox(height: 8),
+                        SizedBox(height: AppSpacing.gap8),
                         Skeleton(width: 90, height: 12),
                       ],
                     ),

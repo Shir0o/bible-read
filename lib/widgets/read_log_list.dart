@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/read_log.dart';
 import '../services/vibration_service.dart';
 import 'feed_card.dart';
+import '../theme/app_theme.dart';
 
 /// Displays a list of read log entries using the new FeedCard design.
 class ReadLogList extends StatelessWidget {
@@ -33,7 +34,7 @@ class ReadLogList extends StatelessWidget {
           vibrationService: vibrationService,
         );
       },
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: AppSpacing.gap24),
     );
   }
 }

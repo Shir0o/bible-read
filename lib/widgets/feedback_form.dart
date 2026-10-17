@@ -151,7 +151,8 @@ class _FeedbackFormState extends State<FeedbackForm> {
       child: Align(
         alignment: Alignment.topCenter,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.gap20, AppSpacing.gap20, AppSpacing.gap20, 0),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: Form(
@@ -177,7 +178,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.gap12),
                   TextFormField(
                     key: ValueKey('${_formPrefix}DescriptionField'),
                     controller: _descriptionController,
@@ -204,7 +205,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.gap12),
                   TextFormField(
                     key: ValueKey('${_formPrefix}StepsField'),
                     controller: _stepsController,
@@ -233,7 +234,7 @@ class _FeedbackFormState extends State<FeedbackForm> {
                     vibrationService: widget.vibrationService,
                     child: Text(_submitLabel),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.gap12),
                   VibrationButton(
                     key: ValueKey('${_formPrefix}CancelButton'),
                     vibrationService: widget.vibrationService,

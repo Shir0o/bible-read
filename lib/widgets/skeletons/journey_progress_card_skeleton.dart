@@ -7,7 +7,7 @@ class JourneyProgressCardSkeleton extends StatelessWidget {
 
   const JourneyProgressCardSkeleton({
     super.key,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16),
+    this.padding = const EdgeInsets.symmetric(horizontal: AppSpacing.gap16),
   });
 
   @override
@@ -15,7 +15,7 @@ class JourneyProgressCardSkeleton extends StatelessWidget {
     return Padding(
       padding: padding,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.gap20),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(AppSpacing.rCard),
@@ -27,22 +27,22 @@ class JourneyProgressCardSkeleton extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Skeleton(width: 80, height: 100, radius: 16),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.gap16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Skeleton(width: double.infinity, height: 20),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.gap8),
                       const Skeleton(width: 100, height: 12),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.gap16),
                       const Skeleton(width: double.infinity, height: 8),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.gap20),
             const Skeleton(width: double.infinity, height: 48, radius: 16),
           ],
         ),

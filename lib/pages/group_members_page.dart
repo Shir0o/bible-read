@@ -121,10 +121,10 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             m.uid: m.completion,
         };
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.gap16),
           children: [
             _buildRoster(roster, readByUid),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.gap20),
             _buildPendingInvites(roster),
             _buildGroupSettingsLink(),
           ],
@@ -199,7 +199,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.gap12),
         _card(
           child: Column(
             children: [
@@ -238,7 +238,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             size: 38,
             read: isRead,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.gap12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +258,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                     RoleBadge(role: member.role),
                   ],
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSpacing.gap2),
                 Text(
                   isRead ? 'Read today' : 'Not yet today',
                   style: theme.textTheme.labelSmall?.copyWith(
@@ -320,7 +320,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                             size: 36,
                             read: false,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.gap12),
                           Expanded(
                             child: Text(
                               invites[i].recipientUid,
@@ -395,7 +395,8 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         final colorScheme = Theme.of(sheetContext).colorScheme;
         final theme = Theme.of(sheetContext);
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
+              AppSpacing.gap20, AppSpacing.gap24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -428,7 +429,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.gap16),
               _ActionRow(
                 icon: Icons.waving_hand_outlined,
                 label: 'Send a nudge',
@@ -589,12 +590,12 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
     final colorScheme = theme.colorScheme;
     final appColors = AppColors.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 20),
+      padding: const EdgeInsets.only(top: AppSpacing.gap20),
       child: InkWell(
         onTap: _openGroupSettings,
         borderRadius: BorderRadius.circular(AppSpacing.rInset),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.gap16),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(AppSpacing.rInset),
@@ -603,7 +604,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
           child: Row(
             children: [
               Icon(Icons.settings_outlined, color: colorScheme.primary),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.gap12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,7 +613,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                       'Group settings',
                       style: theme.textTheme.titleSmall,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.gap2),
                     Text(
                       'Name, visibility, reschedule',
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -659,7 +660,8 @@ class RoleBadge extends StatelessWidget {
     final isOwner = role == 'owner';
     final color = isOwner ? colorScheme.primary : colorScheme.onSurfaceVariant;
     return Container(
-      padding: const EdgeInsets.fromLTRB(6, 2, 8, 2),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap6, AppSpacing.gap2, AppSpacing.gap8, AppSpacing.gap2),
       decoration: BoxDecoration(
         color: isOwner
             ? colorScheme.primaryContainer
@@ -674,7 +676,7 @@ class RoleBadge extends StatelessWidget {
             size: 11,
             color: color,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.gap4),
           Text(
             isOwner ? 'OWNER' : 'ADMIN',
             style:
@@ -731,7 +733,7 @@ class _ActionRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final color = danger ? colorScheme.error : colorScheme.onSurface;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.gap8),
       child: Material(
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppSpacing.rInset),

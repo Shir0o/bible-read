@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'common_styles.dart';
+import '../theme/app_theme.dart';
 
 /// Displays a month streak calendar with arrow navigation.
 class MonthStreakCalendar extends StatelessWidget {
@@ -151,7 +152,8 @@ class MonthStreakCalendar extends StatelessWidget {
                           .map(
                             (d) => Container(
                               alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.gap4),
                               child: Text(
                                 d,
                                 style: Theme.of(context)

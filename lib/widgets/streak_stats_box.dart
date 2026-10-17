@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'common_styles.dart';
+import '../theme/app_theme.dart';
 
 /// Displays streak statistics in a card.
 class StreakStatsBox extends StatelessWidget {
@@ -64,7 +65,10 @@ class StreakStatsBox extends StatelessWidget {
               'Grace credits remaining: $remainingGraceCredits',
               style: AppTextStyles.body(context),
             ),
-          if (description != null) ...[const SizedBox(height: 8), description!],
+          if (description != null) ...[
+            const SizedBox(height: AppSpacing.gap8),
+            description!
+          ],
         ],
       ),
     );

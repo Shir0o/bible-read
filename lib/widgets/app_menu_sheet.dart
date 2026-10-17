@@ -268,7 +268,7 @@ class _ProfileRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium,
               ),
-              const SizedBox(height: 1),
+              const SizedBox(height: AppSpacing.gap2),
               if (user != null && firestore != null)
                 StreamBuilder<int>(
                   stream: ReadingStatusService(firestore: firestore!)
@@ -416,7 +416,7 @@ class _SheetRow extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.gap8,
-                  vertical: 2,
+                  vertical: AppSpacing.gap2,
                 ),
                 decoration: BoxDecoration(
                   color: colorScheme.secondaryContainer,
