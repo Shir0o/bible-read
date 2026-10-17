@@ -29,7 +29,8 @@ const {
 // badge or moves its unlock time. The unlock notification document is written
 // in the same batch, so an awarded badge is always announced exactly once.
 // The member's latest badge is mirrored into groups/{g}/badges/{uid} for each
-// of their groups — the path co-members can read (ADR-0004).
+// of their groups — the path co-members can read (ADR-0004) — and each new
+// badge is logged at groups/{g}/badge_log/{uid}_{badgeId} for the Feed.
 // ---------------------------------------------------------------------------
 // The achievements backfill (backfill-achievements.js) reuses awardBadges
 // but must stay silent: awarding a reader milestones they earned long ago
@@ -255,30 +256,43 @@ async function pushBadgeUnlock(db, uid, badges) {
 
 /**
  * Points groups/{g}/badges/{uid} at the biggest badge just awarded — the
- * read-time answer to "latest" for the member's co-members.
+ * read-time answer to "latest" for the member's co-members — and logs every
+ * new badge at groups/{g}/badge_log/{uid}_{badgeId}, one document per award
+ * with its own `likes`, so the Feed keeps each badge of the week and a Badge
+ * Amen stands apart from the day's (ADR-0011). A backfill awards milestones
+ * earned long ago, which are not news, so it writes no log entries.
  * @param {FirebaseFirestore.Firestore} db Firestore handle.
  * @param {string} uid Reader id.
  * @param {Array<{id: string, type: string, rank: number}>} missing New badges.
  */
 async function mirrorLatestBadge(db, uid, missing) {
   const latest = missing.reduce((a, b) => (b.rank > a.rank ? b : a));
+  const logged = isBackfillQuiet() ? [] : missing;
   const memberships = await db
     .collectionGroup('members')
     .where('uid', '==', uid)
     .get();
   await Promise.all(
-    memberships.docs.map((doc) => {
-      const groupId = doc.ref.parent.parent.id;
-      return db
-        .collection('groups')
-        .doc(groupId)
-        .collection('badges')
-        .doc(uid)
-        .set({
+    memberships.docs.flatMap((doc) => {
+      const group = db.collection('groups').doc(doc.ref.parent.parent.id);
+      return [
+        group.collection('badges').doc(uid).set({
           badgeId: latest.id,
           type: latest.type,
           dateUnlocked: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        }),
+        ...logged.map((badge) =>
+          group
+            .collection('badge_log')
+            .doc(`${uid}_${badge.id}`)
+            .set({
+              uid,
+              badgeId: badge.id,
+              type: badge.type,
+              dateUnlocked: admin.firestore.FieldValue.serverTimestamp(),
+            })
+        ),
+      ];
     })
   );
 }

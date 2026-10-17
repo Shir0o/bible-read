@@ -343,6 +343,20 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // The Feed's badge history (ADR-0011): the server logs each badge a
+      // member is awarded, one document per award, so the week's badges all
+      // stay visible. Its likes are Amens on that Badge alone, gated like the
+      // read_log ones; the award itself stays server-only.
+      match /badge_log/{awardId} {
+        allow read: if isMember();
+        allow write: if false;
+
+        match /likes/{likerId} {
+          allow read: if isMember();
+          allow write: if isMember() && request.auth != null && request.auth.uid == likerId;
+        }
+      }
+
       match /joinRequests/{uid} {
         allow create: if request.auth != null && request.auth.uid == uid;
         // Allow owners/admins to read all requests for their group, and allow

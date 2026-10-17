@@ -106,9 +106,10 @@ void main() {
     await firestore
         .collection('groups')
         .doc('g1')
-        .collection('badges')
-        .doc('ben')
+        .collection('badge_log')
+        .doc('ben_first_book')
         .set({
+      'uid': 'ben',
       'badgeId': 'first_book',
       'dateUnlocked': Timestamp.fromDate(
           DateTime(today.year, today.month, today.day - 2, 9)),

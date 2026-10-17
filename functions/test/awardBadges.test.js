@@ -287,6 +287,33 @@ describe('settleReadThroughBadges', () => {
     );
   });
 
+  it('logs every new badge, one document per award, in each group', async () => {
+    const db = new FakeFirestore();
+    await seed(db, 'groups/g1/members/alice', { uid: 'alice', role: 'member' });
+    await seed(db, 'groups/g2/members/alice', { uid: 'alice', role: 'member' });
+    await testamentLedger(db, 'alice', 'nt', 0, 1);
+    await settleReadThroughBadges(db, 'alice');
+
+    await testamentLedger(db, 'alice', 'ot', 0, 1);
+    await settleReadThroughBadges(db, 'alice');
+
+    for (const groupId of ['g1', 'g2']) {
+      const logged = [...db._docs.keys()]
+        .filter((k) => k.startsWith(`groups/${groupId}/badge_log/`))
+        .sort();
+      assert.deepStrictEqual(logged, [
+        `groups/${groupId}/badge_log/alice_first_bible`,
+        `groups/${groupId}/badge_log/alice_first_nt`,
+        `groups/${groupId}/badge_log/alice_first_ot`,
+      ]);
+      const entry = db._docs.get(`groups/${groupId}/badge_log/alice_first_nt`);
+      assert.strictEqual(entry.uid, 'alice');
+      assert.strictEqual(entry.badgeId, 'first_nt');
+      assert.strictEqual(entry.type, 'read_through');
+      assert.ok(entry.dateUnlocked, 'a logged badge carries its unlock time');
+    }
+  });
+
   it('handles a reader in no groups', async () => {
     const db = new FakeFirestore();
     await testamentLedger(db, 'alice', 'nt', 0, 1);

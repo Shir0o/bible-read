@@ -27,3 +27,11 @@ entries, likes and badge mirrors of ADR-0004.
 - The Feed is bounded to today plus the last seven days, newest first.
 - The Group page is reached from Circle's action sheet as well as from the Path
   card's "Manage members" — one page, two doorways.
+- Badges come from a per-Group badge log, `groups/{g}/badge_log/{uid}_{badgeId}`,
+  which the badge-awarding function writes once per award (the latest-badge
+  mirror alone dropped earlier badges of the week). Each Badge is its own
+  update with its own `likes`, so a Badge Amen never lands on the day's entry.
+  The log is keyed by award, not by day: the server does not know the reader's
+  local date, so the client places it by `dateUnlocked`.
+- Amens are live: the Feed listens to the `likes` of each update in its week
+  and drops a listener once its update leaves.
