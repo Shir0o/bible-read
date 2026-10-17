@@ -17,6 +17,9 @@ void main() {
     );
 
     await tester.pump();
+    // Skeleton holds for its 1000ms minimum, then fades to content.
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Members'), findsOneWidget);
     expect(find.text('Alice'), findsOneWidget);

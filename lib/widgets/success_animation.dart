@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
+import 'skeleton.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 
@@ -43,10 +44,10 @@ class SuccessAnimation extends StatelessWidget {
           repeat: false,
           frameBuilder: (context, child, composition) {
             if (composition == null) {
-              return const SizedBox(
+              return const Skeleton(
                 width: 120,
                 height: 120,
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                shape: CircleBorder(),
               );
             }
             return child;

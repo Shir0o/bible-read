@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/list_rows_skeleton.dart';
 import '../models/notification_preferences.dart';
 import '../services/error_logger.dart';
 import '../services/notification_preferences_service.dart';
@@ -201,9 +203,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   Widget _buildBody(BuildContext context, ColorScheme colorScheme) {
     if (_loadFailed) return _buildLoadError(context, colorScheme);
-    return _loading
-        ? const Center(child: CircularProgressIndicator())
-        : (_prefs == null
+    return SkeletonLoader(
+        loading: _loading,
+        skeleton: const ListRowsSkeleton(count: 6, showAvatar: false),
+        child: (_prefs == null
             ? const Center(child: Text('Please sign in'))
             : ListView(
                 padding: const EdgeInsets.symmetric(
@@ -226,7 +229,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                     ),
                   ),
                 ],
-              ));
+              )));
   }
 
   /// Bordered card grouping all notification rows, separated by dividers.

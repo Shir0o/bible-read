@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/list_rows_skeleton.dart';
 import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/catch_up_engine.dart';
@@ -352,10 +354,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -370,65 +368,69 @@ class _EditGroupPageState extends State<EditGroupPage> {
               onBack: () => Navigator.pop(context),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _sectionTitle(context, 'Group Settings'),
-                    const SizedBox(height: AppSpacing.gap8),
-                    TextField(
-                      key: const Key('group-settings-name'),
-                      controller: _nameController,
-                      enabled: _isOwner,
-                      textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                        labelText: 'Group name',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _publicCard(context),
-                    if (_isOwner) ...[
-                      const SizedBox(height: 24),
-                      _sectionTitle(context, 'Schedule'),
+              child: SkeletonLoader(
+                loading: _isLoading,
+                skeleton: const ListRowsSkeleton(count: 4, showAvatar: false),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _sectionTitle(context, 'Group Settings'),
                       const SizedBox(height: AppSpacing.gap8),
-                      _rescheduleTile(context),
+                      TextField(
+                        key: const Key('group-settings-name'),
+                        controller: _nameController,
+                        enabled: _isOwner,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          labelText: 'Group name',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _publicCard(context),
+                      if (_isOwner) ...[
+                        const SizedBox(height: 24),
+                        _sectionTitle(context, 'Schedule'),
+                        const SizedBox(height: AppSpacing.gap8),
+                        _rescheduleTile(context),
+                      ],
+                      const SizedBox(height: AppSpacing.gap32),
+                      _sectionTitle(context, 'Manage group'),
+                      const SizedBox(height: AppSpacing.gap8),
+                      if (_isOwner) ...[
+                        _lifecycleButton(
+                          context,
+                          icon: Icons.inventory_2,
+                          label: 'Archive Group',
+                          onPressed: _archiveGroup,
+                        ),
+                        const SizedBox(height: 12),
+                        _lifecycleButton(
+                          context,
+                          icon: Icons.delete_outline,
+                          label: 'Delete Group',
+                          onPressed: _deleteGroup,
+                          destructive: true,
+                        ),
+                      ] else ...[
+                        _lifecycleButton(
+                          context,
+                          icon: Icons.inventory_2,
+                          label: 'Archive Participation',
+                          onPressed: _archiveParticipation,
+                        ),
+                        const SizedBox(height: 12),
+                        _lifecycleButton(
+                          context,
+                          icon: Icons.logout,
+                          label: 'Leave Group',
+                          onPressed: _leaveGroup,
+                          destructive: true,
+                        ),
+                      ],
                     ],
-                    const SizedBox(height: AppSpacing.gap32),
-                    _sectionTitle(context, 'Manage group'),
-                    const SizedBox(height: AppSpacing.gap8),
-                    if (_isOwner) ...[
-                      _lifecycleButton(
-                        context,
-                        icon: Icons.inventory_2,
-                        label: 'Archive Group',
-                        onPressed: _archiveGroup,
-                      ),
-                      const SizedBox(height: 12),
-                      _lifecycleButton(
-                        context,
-                        icon: Icons.delete_outline,
-                        label: 'Delete Group',
-                        onPressed: _deleteGroup,
-                        destructive: true,
-                      ),
-                    ] else ...[
-                      _lifecycleButton(
-                        context,
-                        icon: Icons.inventory_2,
-                        label: 'Archive Participation',
-                        onPressed: _archiveParticipation,
-                      ),
-                      const SizedBox(height: 12),
-                      _lifecycleButton(
-                        context,
-                        icon: Icons.logout,
-                        label: 'Leave Group',
-                        onPressed: _leaveGroup,
-                        destructive: true,
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
               ),
             ),

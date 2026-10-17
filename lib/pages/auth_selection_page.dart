@@ -198,6 +198,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                           height: 24,
                           width: 24,
                           child: CircularProgressIndicator(
+                            // token-exempt: button submitting
                             strokeWidth: 2,
                             color: colorScheme.onSurface,
                           ),

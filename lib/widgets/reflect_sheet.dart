@@ -203,7 +203,10 @@ class _ReflectSheetState extends State<_ReflectSheet> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+// token-exempt: button submitting
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Icon(Icons.check_rounded, size: 18),
                 label: Text(_saving ? 'Saving…' : 'Save'),

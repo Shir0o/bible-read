@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/list_rows_skeleton.dart';
 import '../models/group.dart';
 import '../models/reading_plan_progress.dart';
 import '../services/error_logger.dart';
@@ -292,16 +294,18 @@ class _RecentlyDeletedPageState extends State<RecentlyDeletedPage> {
                 ),
               ),
             Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _items.isEmpty
-                      ? _emptyState(context)
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                          itemCount: _items.length,
-                          itemBuilder: (context, index) =>
-                              _trashRow(context, _items[index]),
-                        ),
+              child: SkeletonLoader(
+                loading: _loading,
+                skeleton: const ListRowsSkeleton(),
+                child: _items.isEmpty
+                    ? _emptyState(context)
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        itemCount: _items.length,
+                        itemBuilder: (context, index) =>
+                            _trashRow(context, _items[index]),
+                      ),
+              ),
             ),
           ],
         ),

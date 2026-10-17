@@ -181,6 +181,7 @@ class _GroupPreviewSheetState extends State<GroupPreviewSheet> {
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
+                        // token-exempt: button submitting
                         strokeWidth: 2,
                         color: colorScheme.onPrimary,
                       ),

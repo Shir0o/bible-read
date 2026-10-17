@@ -361,79 +361,84 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         if (scheduleSnapshot.hasError) {
           return Center(child: Text('Error: ${scheduleSnapshot.error}'));
         }
-        if (!scheduleSnapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        return SnapshotSkeleton<List<GroupSchedule>>(
+          snapshot: scheduleSnapshot,
+          skeleton: const PlanDetailSkeleton(),
+          builder: (context, fullSchedule) {
+            if (fullSchedule.isEmpty) {
+              return const Center(child: Text('No schedule available'));
+            }
 
-        final fullSchedule = scheduleSnapshot.data!;
-        if (fullSchedule.isEmpty) {
-          return const Center(child: Text('No schedule available'));
-        }
+            fullSchedule.sort((a, b) => a.date.compareTo(b.date));
+            final cadenceLabel = _cadenceLabel(fullSchedule);
 
-        fullSchedule.sort((a, b) => a.date.compareTo(b.date));
-        final cadenceLabel = _cadenceLabel(fullSchedule);
+            return StreamBuilder<Map<String, int>>(
+              stream: _groupProgressStream,
+              builder: (context, progressSnapshot) {
+                final remoteProgress = progressSnapshot.data ?? {};
 
-        return StreamBuilder<Map<String, int>>(
-          stream: _groupProgressStream,
-          builder: (context, progressSnapshot) {
-            final remoteProgress = progressSnapshot.data ?? {};
-
-            if (progressSnapshot.hasData) {
-              final toRemove = <String>[];
-              _optimisticGroupProgress.forEach((dateId, value) {
-                if (remoteProgress[dateId] == value) {
-                  toRemove.add(dateId);
+                if (progressSnapshot.hasData) {
+                  final toRemove = <String>[];
+                  _optimisticGroupProgress.forEach((dateId, value) {
+                    if (remoteProgress[dateId] == value) {
+                      toRemove.add(dateId);
+                    }
+                  });
+                  for (final id in toRemove) {
+                    _optimisticGroupProgress.remove(id);
+                  }
                 }
-              });
-              for (final id in toRemove) {
-                _optimisticGroupProgress.remove(id);
-              }
-            }
 
-            final progress = {...remoteProgress, ..._optimisticGroupProgress};
+                final progress = {
+                  ...remoteProgress,
+                  ..._optimisticGroupProgress
+                };
 
-            final completedIds = <String>{};
-            for (final s in fullSchedule) {
-              final dateId = _dateId(s.date);
-              final count = progress[dateId] ?? 0;
-              final isRead =
-                  s.chapters.isEmpty ? count > 0 : count >= s.chapters.length;
-              if (isRead) completedIds.add(dateId);
-            }
+                final completedIds = <String>{};
+                for (final s in fullSchedule) {
+                  final dateId = _dateId(s.date);
+                  final count = progress[dateId] ?? 0;
+                  final isRead = s.chapters.isEmpty
+                      ? count > 0
+                      : count >= s.chapters.length;
+                  if (isRead) completedIds.add(dateId);
+                }
 
-            final status = CatchUpEngine.forGroupSchedule(
-              fullSchedule,
-              completedIds,
-              today: DateTime.now(),
-            );
+                final status = CatchUpEngine.forGroupSchedule(
+                  fullSchedule,
+                  completedIds,
+                  today: DateTime.now(),
+                );
 
-            return ScheduleScreenView(
-              status: status,
-              title: widget.group!.name,
-              isGroup: true,
-              readOnly: !widget.isMember,
-              header: _buildSharedPlanBadge(context),
-              onMarkMonth: (month) =>
-                  _markGroupMonth(month, fullSchedule, completedIds),
-              onToggle: (i) {
-                final s = fullSchedule[i];
-                final isRead = completedIds.contains(_dateId(s.date));
-                unawaited(_handleGroupToggle(s, isRead));
-              },
-              todayAnchorBuilder: (ctx) {
-                final s = fullSchedule[status.currentIndex];
-                final isRead = completedIds.contains(_dateId(s.date));
-                return _TodayAnchorCard(
-                  group: widget.group!,
-                  groupService: widget.groupService!,
-                  schedule: s,
-                  isRead: isRead,
-                  isMember: widget.isMember,
-                  currentUid: widget.auth.currentUser?.uid,
-                  cadenceLabel: cadenceLabel,
-                  dateLabel:
-                      '${_formatDayOfWeek(s.date)} ${_formatDate(s.date)}',
-                  onToggle: () => unawaited(_handleGroupToggle(s, isRead)),
+                return ScheduleScreenView(
+                  status: status,
+                  title: widget.group!.name,
+                  isGroup: true,
+                  readOnly: !widget.isMember,
+                  header: _buildSharedPlanBadge(context),
+                  onMarkMonth: (month) =>
+                      _markGroupMonth(month, fullSchedule, completedIds),
+                  onToggle: (i) {
+                    final s = fullSchedule[i];
+                    final isRead = completedIds.contains(_dateId(s.date));
+                    unawaited(_handleGroupToggle(s, isRead));
+                  },
+                  todayAnchorBuilder: (ctx) {
+                    final s = fullSchedule[status.currentIndex];
+                    final isRead = completedIds.contains(_dateId(s.date));
+                    return _TodayAnchorCard(
+                      group: widget.group!,
+                      groupService: widget.groupService!,
+                      schedule: s,
+                      isRead: isRead,
+                      isMember: widget.isMember,
+                      currentUid: widget.auth.currentUser?.uid,
+                      cadenceLabel: cadenceLabel,
+                      dateLabel:
+                          '${_formatDayOfWeek(s.date)} ${_formatDate(s.date)}',
+                      onToggle: () => unawaited(_handleGroupToggle(s, isRead)),
+                    );
+                  },
                 );
               },
             );

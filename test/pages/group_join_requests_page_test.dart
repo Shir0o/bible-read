@@ -6,6 +6,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:bible_read/widgets/skeletons/list_rows_skeleton.dart';
 import 'package:bible_read/pages/group_join_requests_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
@@ -86,7 +87,7 @@ void main() {
       groupService: GroupService(firestore: firestore),
     );
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(ListRowsSkeleton), findsOneWidget);
 
     await tester.pumpAndSettle();
   });
@@ -156,7 +157,7 @@ void main() {
       joinRequestsStream: controller.stream,
     );
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(ListRowsSkeleton), findsOneWidget);
 
     controller.addError(Exception('boom'));
     await tester.pump();

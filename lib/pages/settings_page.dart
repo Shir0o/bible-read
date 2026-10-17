@@ -6,6 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/skeleton.dart';
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/list_rows_skeleton.dart';
 import '../models/user_preferences.dart';
 import '../app_version.dart';
 import '../theme/app_theme.dart';
@@ -505,9 +508,10 @@ class SettingsPageState extends State<SettingsPage> {
                             backgroundImage: imageProvider,
                             radius: 40,
                           ),
-                          placeholder: (context, url) => const CircleAvatar(
-                            radius: 40,
-                            child: CircularProgressIndicator(),
+                          placeholder: (context, url) => const Skeleton(
+                            width: 80,
+                            height: 80,
+                            shape: CircleBorder(),
                           ),
                           errorWidget: (context, url, error) =>
                               const CircleAvatar(
@@ -552,7 +556,10 @@ class SettingsPageState extends State<SettingsPage> {
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+// token-exempt: button submitting
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Icon(Icons.logout, size: 18),
                       label: const Text('Sign out'),
@@ -570,13 +577,13 @@ class SettingsPageState extends State<SettingsPage> {
               context: context,
               child: Column(
                 children: [
-                  if (_prefsLoading)
-                    const Padding(
-                      padding: EdgeInsets.all(AppSpacing.hPadding),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else
-                    SwitchListTile(
+                  SkeletonLoader(
+                    loading: _prefsLoading,
+                    skeleton: const ListRowsSkeleton(
+                      count: 1,
+                      showAvatar: false,
+                    ),
+                    child: SwitchListTile(
                       title: const Text('Reading counts as showing up'),
                       subtitle: const Text(
                         'When you finish a reading from a plan, it also counts as showing up for the day. Marking "I read today" on its own never moves a plan.',
@@ -589,6 +596,7 @@ class SettingsPageState extends State<SettingsPage> {
                         vertical: 4,
                       ),
                     ),
+                  ),
                   Divider(
                     height: 1,
                     indent: AppSpacing.hPadding,

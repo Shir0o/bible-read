@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'skeleton.dart';
 
 /// Displays a badge image or icon with an optional locked overlay.
 ///
@@ -43,10 +44,10 @@ class BadgeIcon extends StatelessWidget {
         imageUrl: imageUrl!,
         width: size,
         height: size,
-        placeholder: (context, url) => SizedBox(
+        placeholder: (context, url) => Skeleton(
           width: size,
           height: size,
-          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          shape: const CircleBorder(),
         ),
         errorWidget: (context, url, error) =>
             Icon(Icons.image_not_supported, size: size),

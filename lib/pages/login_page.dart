@@ -501,6 +501,7 @@ class _LoginPageState extends State<LoginPage> {
                                   height: 24,
                                   width: 24,
                                   child: CircularProgressIndicator(
+                                    // token-exempt: button submitting
                                     strokeWidth: 2,
                                     color: colorScheme.onPrimary,
                                   ),
@@ -586,6 +587,7 @@ class _LoginPageState extends State<LoginPage> {
                                   height: 24,
                                   width: 24,
                                   child: CircularProgressIndicator(
+                                    // token-exempt: button submitting
                                     strokeWidth: 2,
                                     color: colorScheme.onSurface,
                                   ),
@@ -835,7 +837,10 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+// token-exempt: button submitting
+                    strokeWidth: 2,
+                  ),
                 )
               : const Text('Send Link'),
         ),

@@ -41,7 +41,10 @@ class SyncingIndicator extends StatelessWidget {
                       const SizedBox(
                         width: 12,
                         height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+// token-exempt: inline sync status chip, not content loading
+                          strokeWidth: 2,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../widgets/skeleton.dart';
+import '../widgets/skeleton_loader.dart';
 import '../models/group.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
@@ -159,12 +161,17 @@ class _ShareCodePageState extends State<ShareCodePage> {
   }
 
   Widget _buildBody(BuildContext context) {
+    return SkeletonLoader(
+      loading: _loading,
+      skeleton: const _JoinCodeSkeleton(),
+      child: _loading ? const SizedBox.shrink() : _buildLoadedBody(context),
+    );
+  }
+
+  Widget _buildLoadedBody(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    if (_loading || _regenerating) {
-      return const Center(child: CircularProgressIndicator());
-    }
     if (_error != null) {
       return Center(
         child: Column(
@@ -249,8 +256,17 @@ class _ShareCodePageState extends State<ShareCodePage> {
         const SizedBox(height: 24),
         OutlinedButton.icon(
           key: JoinCodeKeys.regenerateButton,
-          onPressed: _regenerate,
-          icon: const Icon(Icons.refresh, size: 18),
+          onPressed: _regenerating ? null : _regenerate,
+          icon: _regenerating
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    // token-exempt: button submitting
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Icon(Icons.refresh, size: 18),
           label: const Text('Regenerate code'),
         ),
         const SizedBox(height: 8),
@@ -260,6 +276,38 @@ class _ShareCodePageState extends State<ShareCodePage> {
                 color: colorScheme.onSurfaceVariant,
               ),
           textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+/// Placeholder shaped like the join-code card.
+class _JoinCodeSkeleton extends StatelessWidget {
+  const _JoinCodeSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      children: [
+        CommonStyles.buildCard(
+          context: context,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            child: Column(
+              children: [
+                Skeleton(width: 120, height: 12),
+                SizedBox(height: 16),
+                Skeleton(width: 200, height: 32),
+                SizedBox(height: 16),
+                Skeleton(width: double.infinity, height: 12),
+                SizedBox(height: 24),
+                Skeleton(width: double.infinity, height: 40),
+              ],
+            ),
+          ),
         ),
       ],
     );

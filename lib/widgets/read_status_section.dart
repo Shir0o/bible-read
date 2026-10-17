@@ -26,7 +26,11 @@ class ReadStatusSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (toggleLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+            // token-exempt: toggle submitting (tap-triggered, not content loading)
+            ),
+      );
     }
 
     return Column(

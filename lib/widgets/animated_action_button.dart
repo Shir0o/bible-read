@@ -201,6 +201,7 @@ class _AnimatedActionButtonState extends State<AnimatedActionButton>
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
+                            // token-exempt: button submitting
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               colorScheme.onPrimary,

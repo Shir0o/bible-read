@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/list_rows_skeleton.dart';
 import '../models/season.dart';
 import '../models/seasonal_challenge.dart';
 import '../services/seasonal_challenge_service.dart';
@@ -27,71 +29,79 @@ class SeasonalChallengesView extends StatelessWidget {
     return FutureBuilder<Season?>(
       future: service.fetchActiveSeason(),
       builder: (context, seasonSnapshot) {
-        if (seasonSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+        final waiting =
+            seasonSnapshot.connectionState == ConnectionState.waiting;
+        return SkeletonLoader(
+          loading: waiting,
+          skeleton: const ListRowsSkeleton(count: 3, showAvatar: false),
+          child: waiting
+              ? const SizedBox.shrink()
+              : _buildSeason(seasonSnapshot.data),
+        );
+      },
+    );
+  }
+
+  Widget _buildSeason(Season? season) {
+    if (season == null) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const _GentleIntroCard(),
+          const SizedBox(height: 120),
+          const Center(child: Text('No active season currently.')),
+        ],
+      );
+    }
+
+    return StreamBuilder<List<SeasonalChallenge>>(
+      stream: service.streamChallenges(season.id),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(
+            child: Text('Failed to load seasonal challenges.'),
+          );
         }
-        final season = seasonSnapshot.data;
-        if (season == null) {
+        final challenges = snapshot.data ?? [];
+        if (challenges.isEmpty) {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               const _GentleIntroCard(),
               const SizedBox(height: 120),
-              const Center(child: Text('No active season currently.')),
+              const Center(
+                child: Text('No active challenges at the moment.'),
+              ),
             ],
           );
         }
 
-        return StreamBuilder<List<SeasonalChallenge>>(
-          stream: service.streamChallenges(season.id),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const Center(
-                child: Text('Failed to load seasonal challenges.'),
-              );
-            }
-            final challenges = snapshot.data ?? [];
-            if (challenges.isEmpty) {
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  const _GentleIntroCard(),
-                  const SizedBox(height: 120),
-                  const Center(
-                    child: Text('No active challenges at the moment.'),
-                  ),
-                ],
-              );
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: challenges.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _GentleIntroCard(),
-                        const SizedBox(height: 24),
-                        Text(
-                          season.title,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: challenges.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _GentleIntroCard(),
+                    const SizedBox(height: 24),
+                    Text(
+                      season.title,
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                  );
-                }
-                final challenge = challenges[index - 1];
-                return _SeasonalChallengeItem(
-                  auth: auth,
-                  service: service,
-                  season: season,
-                  challenge: challenge,
-                );
-              },
+                  ],
+                ),
+              );
+            }
+            final challenge = challenges[index - 1];
+            return _SeasonalChallengeItem(
+              auth: auth,
+              service: service,
+              season: season,
+              challenge: challenge,
             );
           },
         );

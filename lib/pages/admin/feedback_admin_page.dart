@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../widgets/skeleton_loader.dart';
+import '../../widgets/skeletons/list_rows_skeleton.dart';
 import '../../services/admin_role_service.dart';
 import '../../theme/app_theme.dart';
 import '../../services/error_logger.dart';
@@ -109,63 +111,63 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                   title: 'Feedback Inbox',
                   onBack: () => Navigator.of(context).maybePop(),
                 ),
-                if (waiting)
-                  const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (!hasAccess)
-                  const Expanded(
-                    child: Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'You do not have permission to view this page.',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: DefaultTabController(
-                      length: 2,
-                      child: Column(
-                        children: [
-                          const TabBar(
-                            tabs: [
-                              Tab(text: 'Bug Reports'),
-                              Tab(text: 'Feature Requests'),
-                            ],
-                            labelStyle: TextStyle(
-                              fontFamily: AppTheme.fontUi,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            unselectedLabelStyle: TextStyle(
-                              fontFamily: AppTheme.fontUi,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            indicatorSize: TabBarIndicatorSize.label,
-                            indicatorWeight: 2.5,
-                            labelPadding: EdgeInsets.symmetric(vertical: 10),
-                          ),
-                          Expanded(
-                            child: TabBarView(
-                              children: [
-                                _buildCollectionTab(
-                                  FeedbackCollections.bugReports,
+                Expanded(
+                  child: SkeletonLoader(
+                    loading: waiting,
+                    skeleton: const ListRowsSkeleton(),
+                    child: waiting
+                        ? const SizedBox.shrink()
+                        : !hasAccess
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(24),
+                                  child: Text(
+                                    'You do not have permission to view this page.',
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
-                                _buildCollectionTab(
-                                  FeedbackCollections.featureRequests,
+                              )
+                            : DefaultTabController(
+                                length: 2,
+                                child: Column(
+                                  children: [
+                                    const TabBar(
+                                      tabs: [
+                                        Tab(text: 'Bug Reports'),
+                                        Tab(text: 'Feature Requests'),
+                                      ],
+                                      labelStyle: TextStyle(
+                                        fontFamily: AppTheme.fontUi,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      unselectedLabelStyle: TextStyle(
+                                        fontFamily: AppTheme.fontUi,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      indicatorSize: TabBarIndicatorSize.label,
+                                      indicatorWeight: 2.5,
+                                      labelPadding:
+                                          EdgeInsets.symmetric(vertical: 10),
+                                    ),
+                                    Expanded(
+                                      child: TabBarView(
+                                        children: [
+                                          _buildCollectionTab(
+                                            FeedbackCollections.bugReports,
+                                          ),
+                                          _buildCollectionTab(
+                                            FeedbackCollections.featureRequests,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                              ),
                   ),
+                ),
               ],
             ),
           ),
@@ -232,36 +234,38 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                   ),
                 );
               }
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
+              return SnapshotSkeleton<QuerySnapshot<Map<String, dynamic>>>(
+                snapshot: snapshot,
+                skeleton: const ListRowsSkeleton(),
+                builder: (context, snap) {
+                  final docs = snap.docs;
+                  final filteredDocs = docs.where((doc) {
+                    final data = _mergedData(doc);
+                    return _matchesFilter(collection, data);
+                  }).toList();
 
-              final docs = snapshot.data!.docs;
-              final filteredDocs = docs.where((doc) {
-                final data = _mergedData(doc);
-                return _matchesFilter(collection, data);
-              }).toList();
+                  if (filteredDocs.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text('No feedback matches the selected filter.'),
+                      ),
+                    );
+                  }
 
-              if (filteredDocs.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('No feedback matches the selected filter.'),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                itemCount: filteredDocs.length,
-                itemBuilder: (context, index) {
-                  final doc = filteredDocs[index];
-                  final data = _mergedData(doc);
-                  return _FeedbackEntryCard(
-                    key: ValueKey('feedbackCard_${doc.id}'),
-                    data: data,
-                    document: doc,
-                    onResolve: () => _markResolved(doc, data),
-                    onNotApplicable: () => _markNotApplicable(doc, data),
+                  return ListView.builder(
+                    itemCount: filteredDocs.length,
+                    itemBuilder: (context, index) {
+                      final doc = filteredDocs[index];
+                      final data = _mergedData(doc);
+                      return _FeedbackEntryCard(
+                        key: ValueKey('feedbackCard_${doc.id}'),
+                        data: data,
+                        document: doc,
+                        onResolve: () => _markResolved(doc, data),
+                        onNotApplicable: () => _markNotApplicable(doc, data),
+                      );
+                    },
                   );
                 },
               );

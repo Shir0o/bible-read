@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../skeleton_loader.dart';
+import '../skeletons/list_rows_skeleton.dart';
 import '../../models/group.dart';
 import '../../pages/create_plan_page.dart';
 import '../../pages/join_by_code_page.dart';
@@ -260,47 +262,55 @@ class _FindGroupSheetContent extends StatelessWidget {
             child: StreamBuilder<List<Group>>(
               stream: groupService.allGroups(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final groups =
-                    (snapshot.data ?? []).where((g) => g.isPublic).toList();
-
-                if (groups.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No public groups available at this time.',
-                      style: TextStyle(color: colorScheme.onSurfaceVariant),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: groups.length,
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    return FindGroupCard(
-                      group: group,
-                      readingSummary: GroupPreviewSheet.readingLabel(group),
-                      onTap: () {
-                        vibrationService.lightImpact();
-                        GroupPreviewSheet.show(
-                          context: context,
-                          group: group,
-                          groupService: groupService,
-                          auth: auth,
-                          vibrationService: vibrationService,
-                        );
-                      },
-                    );
-                  },
+                final waiting =
+                    snapshot.connectionState == ConnectionState.waiting;
+                return SkeletonLoader(
+                  loading: waiting,
+                  skeleton: const ListRowsSkeleton(),
+                  child: waiting
+                      ? const SizedBox.shrink()
+                      : _buildGroups(context, snapshot.data ?? []),
                 );
               },
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGroups(BuildContext context, List<Group> allGroups) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final groups = allGroups.where((g) => g.isPublic).toList();
+
+    if (groups.isEmpty) {
+      return Center(
+        child: Text(
+          'No public groups available at this time.',
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: groups.length,
+      itemBuilder: (context, index) {
+        final group = groups[index];
+        return FindGroupCard(
+          group: group,
+          readingSummary: GroupPreviewSheet.readingLabel(group),
+          onTap: () {
+            vibrationService.lightImpact();
+            GroupPreviewSheet.show(
+              context: context,
+              group: group,
+              groupService: groupService,
+              auth: auth,
+              vibrationService: vibrationService,
+            );
+          },
+        );
+      },
     );
   }
 }
