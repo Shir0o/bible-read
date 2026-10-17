@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../widgets/skeleton_loader.dart';
-import '../../widgets/skeletons/list_rows_skeleton.dart';
+import '../../widgets/skeletons/feedback_inbox_skeleton.dart';
 import '../../services/admin_role_service.dart';
 import '../../theme/app_theme.dart';
 import '../../services/error_logger.dart';
@@ -114,7 +114,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
                 Expanded(
                   child: SkeletonLoader(
                     loading: waiting,
-                    skeleton: const ListRowsSkeleton(),
+                    skeleton: const FeedbackInboxSkeleton(),
                     child: waiting
                         ? const SizedBox.shrink()
                         : !hasAccess
@@ -233,7 +233,7 @@ class _FeedbackAdminPageState extends State<FeedbackAdminPage> {
               }
               return SnapshotSkeleton<QuerySnapshot<Map<String, dynamic>>>(
                 snapshot: snapshot,
-                skeleton: const ListRowsSkeleton(),
+                skeleton: const FeedbackCardsSkeleton(),
                 builder: (context, snap) {
                   final docs = snap.docs;
                   final filteredDocs = docs.where((doc) {

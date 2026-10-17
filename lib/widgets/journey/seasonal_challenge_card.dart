@@ -8,8 +8,8 @@ import '../../services/seasonal_challenge_service.dart';
 import '../../services/vibration_service.dart';
 import '../../theme/app_theme.dart';
 
-/// The active Seasonal Challenge as a gold card in the Plans list. Renders
-/// nothing when no season is active.
+/// The active Seasonal Challenge as a gold card in the Plans list. With no
+/// season active it is a quiet row, so Challenges stays reachable.
 class PathChallengeCard extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
@@ -51,6 +51,18 @@ class _PathChallengeCardState extends State<PathChallengeCard> {
     return '$left ${left == 1 ? 'day' : 'days'} left';
   }
 
+  void _openChallenges() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChallengesPage(
+          auth: widget.auth,
+          firestore: widget.firestore,
+          vibrationService: widget.vibrationService,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -59,8 +71,11 @@ class _PathChallengeCardState extends State<PathChallengeCard> {
     return FutureBuilder<Season?>(
       future: _season,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox.shrink();
+        }
         final season = snapshot.data;
-        if (season == null) return const SizedBox.shrink();
+        if (season == null) return _NoSeasonRow(onTap: _openChallenges);
         final onGold = colorScheme.onTertiaryContainer;
         return Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -79,15 +94,7 @@ class _PathChallengeCardState extends State<PathChallengeCard> {
             ),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ChallengesPage(
-                    auth: widget.auth,
-                    firestore: widget.firestore,
-                    vibrationService: widget.vibrationService,
-                  ),
-                ),
-              ),
+              onTap: _openChallenges,
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.cardPadding),
                 child: Row(
@@ -128,6 +135,72 @@ class _PathChallengeCardState extends State<PathChallengeCard> {
           ),
         );
       },
+    );
+  }
+}
+
+class _NoSeasonRow extends StatelessWidget {
+  const _NoSeasonRow({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.hPadding,
+        AppSpacing.gap8,
+        AppSpacing.hPadding,
+        0,
+      ),
+      child: Material(
+        color: colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.rCard),
+          side: BorderSide(color: AppColors.of(context).border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: const Key('path-challenges-link'),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.cardPadding,
+              vertical: AppSpacing.gap12,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.emoji_events_outlined,
+                  size: 22,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.gap12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Seasonal challenges', style: textTheme.titleSmall),
+                      const SizedBox(height: AppSpacing.gap2),
+                      Text(
+                        'None running right now',
+                        style: textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

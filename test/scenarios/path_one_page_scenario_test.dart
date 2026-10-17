@@ -109,9 +109,16 @@ void main() {
     expect(find.byType(ChallengesPage), findsOneWidget);
   });
 
-  testWidgets('no challenge card without an active season', (tester) async {
+  testWidgets('without an active season a quiet row still opens challenges', (
+    tester,
+  ) async {
     await pumpPath(tester);
     expect(find.text('SEASONAL CHALLENGE'), findsNothing);
+    expect(find.text('None running right now'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('path-challenges-link')));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+    expect(find.byType(ChallengesPage), findsOneWidget);
   });
 
   testWidgets(
