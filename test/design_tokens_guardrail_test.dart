@@ -21,6 +21,10 @@ final _rules = <String, RegExp>{
   ),
   'raw AppBar: use SubHeader on pushed pages': RegExp(r'\bAppBar\('),
   'buildAppBar was removed: use SubHeader': RegExp(r'\bbuildAppBar\('),
+  // Content loading uses SkeletonLoader. A spinner is only for a submitting
+  // button (or another reasoned exemption), always with the marker.
+  'spinner: use SkeletonLoader, or mark a submitting button':
+      RegExp(r'\bCircularProgressIndicator(?:\.adaptive)?\('),
 };
 
 void main() {

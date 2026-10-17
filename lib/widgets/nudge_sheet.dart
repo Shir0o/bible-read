@@ -251,7 +251,10 @@ class _NudgeSheetState extends State<_NudgeSheet> {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+// token-exempt: button submitting
+                      strokeWidth: 2,
+                    ),
                   )
                 : const Icon(Icons.waving_hand_outlined, size: 18),
             label: Text(_sending ? 'Sending…' : 'Send nudge'),

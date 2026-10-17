@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
+import 'skeleton.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/navigation_menu_scope.dart';
@@ -52,12 +53,10 @@ class ProfileSummaryCard extends StatelessWidget {
                           width: 64,
                           height: 64,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => const SizedBox(
+                          placeholder: (context, url) => const Skeleton(
                             width: 64,
                             height: 64,
-                            child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
+                            shape: CircleBorder(),
                           ),
                           errorWidget: (context, url, error) => Icon(
                             Icons.person_outline,

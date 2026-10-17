@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'skeleton_loader.dart';
+import 'skeletons/list_rows_skeleton.dart';
 import '../models/group_member_progress.dart';
 import 'section_header.dart';
 import 'group_member_progress.dart';
@@ -30,22 +32,24 @@ class GroupMembersSection extends StatelessWidget {
             if (snapshot.hasError) {
               return const Text('Failed to load members');
             }
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final members = snapshot.data!;
-            if (members.isEmpty) {
-              return const Text('No members');
-            }
-            return Column(
-              children: members
-                  .map(
-                    (member) => GroupMemberProgress(
-                      name: member.name,
-                      completion: member.completion,
-                    ),
-                  )
-                  .toList(),
+            return SnapshotSkeleton<List<GroupMemberProgressData>>(
+              snapshot: snapshot,
+              skeleton: const ListRowsSkeleton(),
+              builder: (context, members) {
+                if (members.isEmpty) {
+                  return const Text('No members');
+                }
+                return Column(
+                  children: members
+                      .map(
+                        (member) => GroupMemberProgress(
+                          name: member.name,
+                          completion: member.completion,
+                        ),
+                      )
+                      .toList(),
+                );
+              },
             );
           },
         ),

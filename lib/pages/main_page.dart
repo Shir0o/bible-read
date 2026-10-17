@@ -257,7 +257,9 @@ class MainPageState extends State<MainPage> {
           // If the stream is still waiting and we don't have a currentUser yet, show loader.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              body: Center(
+                  child:
+                      CircularProgressIndicator()), // token-exempt: auth-gate splash, no content shape yet
             );
           }
 

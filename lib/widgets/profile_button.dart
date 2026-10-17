@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'skeleton.dart';
 import '../services/vibration_service.dart';
 import '../widgets/navigation_menu_scope.dart';
 
@@ -38,10 +39,10 @@ class ProfileButton extends StatelessWidget {
                     width: 32,
                     height: 32,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => const SizedBox(
+                    placeholder: (context, url) => const Skeleton(
                       width: 32,
                       height: 32,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      shape: CircleBorder(),
                     ),
                     errorWidget: (context, url, error) => Icon(
                       Icons.person,

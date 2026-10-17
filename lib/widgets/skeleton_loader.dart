@@ -202,3 +202,32 @@ class _SliverSkeletonLoaderState extends State<SliverSkeletonLoader> {
     return _showSkeleton ? widget.skeleton : widget.child;
   }
 }
+
+/// Shows [skeleton] (for at least the [SkeletonLoader] min time) until
+/// [snapshot] has data, then builds the content with [builder].
+///
+/// Keeps one [SkeletonLoader] mounted across the waiting -> data transition so
+/// the minimum skeleton duration is honoured for stream/future sections.
+class SnapshotSkeleton<T> extends StatelessWidget {
+  const SnapshotSkeleton({
+    super.key,
+    required this.snapshot,
+    required this.skeleton,
+    required this.builder,
+  });
+
+  final AsyncSnapshot<T> snapshot;
+  final Widget skeleton;
+  final Widget Function(BuildContext context, T data) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonLoader(
+      loading: !snapshot.hasData,
+      skeleton: skeleton,
+      child: snapshot.hasData
+          ? builder(context, snapshot.data as T)
+          : const SizedBox.shrink(),
+    );
+  }
+}

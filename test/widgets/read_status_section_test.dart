@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:bible_read/widgets/skeletons/list_rows_skeleton.dart';
 import 'package:bible_read/widgets/read_status_section.dart';
 import 'package:bible_read/widgets/read_switch_tile.dart';
 import 'package:bible_read/services/vibration_service.dart';
@@ -27,7 +28,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(ListRowsSkeleton), findsOneWidget);
   });
 
   testWidgets('tapping switch calls onToggle', (tester) async {

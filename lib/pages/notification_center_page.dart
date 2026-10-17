@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/skeleton_loader.dart';
+import '../widgets/skeletons/list_rows_skeleton.dart';
 import '../models/app_notification.dart';
 import '../models/notification_preferences.dart';
 import '../theme/app_theme.dart';
@@ -92,6 +94,7 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
+                            // token-exempt: button submitting
                             strokeWidth: 2,
                             color: colorScheme.primary,
                           ),
@@ -111,49 +114,49 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                             child: Text('Error loading notifications'),
                           );
                         }
-                        if (!snapshot.hasData) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
+                        return SnapshotSkeleton<List<AppNotification>>(
+                          snapshot: snapshot,
+                          skeleton: const ListRowsSkeleton(count: 5),
+                          builder: (context, notifications) {
+                            if (notifications.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.notifications_none_outlined,
+                                      size: 64,
+                                      color: colorScheme.outline,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No notifications yet',
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
 
-                        final notifications = snapshot.data!;
-                        if (notifications.isEmpty) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            return ListView(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                               children: [
-                                Icon(
-                                  Icons.notifications_none_outlined,
-                                  size: 64,
-                                  color: colorScheme.outline,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No notifications yet',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
+                                for (final n in notifications) ...[
+                                  _NotificationItem(
+                                    key: ValueKey(n.id),
+                                    notification: n,
+                                    service: widget.service,
+                                    auth: widget.auth,
+                                    vibrationService: widget.vibrationService,
                                   ),
-                                ),
+                                  const SizedBox(height: AppSpacing.gap8),
+                                ],
                               ],
-                            ),
-                          );
-                        }
-
-                        return ListView(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                          children: [
-                            for (final n in notifications) ...[
-                              _NotificationItem(
-                                key: ValueKey(n.id),
-                                notification: n,
-                                service: widget.service,
-                                auth: widget.auth,
-                                vibrationService: widget.vibrationService,
-                              ),
-                              const SizedBox(height: AppSpacing.gap8),
-                            ],
-                          ],
+                            );
+                          },
                         );
                       },
                     ),

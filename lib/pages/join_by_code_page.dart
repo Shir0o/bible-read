@@ -182,6 +182,7 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
+                                  // token-exempt: button submitting
                                   strokeWidth: 2,
                                   color: colorScheme.onPrimary,
                                 ),

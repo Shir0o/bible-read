@@ -528,6 +528,7 @@ class _SignupPageState extends State<SignupPage> {
                                 height: 24,
                                 width: 24,
                                 child: CircularProgressIndicator(
+                                  // token-exempt: button submitting
                                   strokeWidth: 2,
                                   color: colorScheme.onPrimary,
                                 ),

@@ -1404,6 +1404,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
+                          // token-exempt: slice 8 rebuild (#988)
                           color: colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),

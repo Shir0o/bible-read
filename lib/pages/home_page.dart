@@ -1455,7 +1455,10 @@ class _HomePageState extends State<HomePage>
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                            child: CircularProgressIndicator(
+// token-exempt: button submitting
+                              strokeWidth: 2.5,
+                            ),
                           )
                         : const Icon(Icons.check_rounded, size: 20),
                     label: const Text('Mark as read'),
@@ -1578,8 +1581,10 @@ class _HomePageState extends State<HomePage>
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2.5),
+                                child: CircularProgressIndicator(
+// token-exempt: button submitting
+                                  strokeWidth: 2.5,
+                                ),
                               )
                             : const Icon(Icons.check_rounded, size: 20),
                         label: const Text('Read with your group'),
