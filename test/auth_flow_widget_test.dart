@@ -152,7 +152,7 @@ void main() {
     expect(find.byType(LoginPage), findsOneWidget);
 
     // 10. Test Login Validation
-    final loginButton = find.widgetWithText(ElevatedButton, 'Log in');
+    final loginButton = find.widgetWithText(FilledButton, 'Log in');
     await tester.ensureVisible(loginButton);
     await tester.tap(loginButton);
     await tester.pumpAndSettle();

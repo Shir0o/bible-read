@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../widgets/common_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -239,9 +240,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+            style: AppButtonStyles.destructiveText(context),
             child: const Text('Delete'),
           ),
         ],
@@ -320,9 +319,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
+            style: AppButtonStyles.destructiveText(context),
             child: const Text('Leave'),
           ),
         ],
@@ -558,13 +555,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
         onPressed: onPressed,
         icon: Icon(icon, color: color),
         label: Text(label, style: TextStyle(color: color)),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: color.withValues(alpha: 0.3)),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.rButton),
-          ),
-        ),
+        style: AppButtonStyles.outlinedTone(color),
       ),
     );
   }

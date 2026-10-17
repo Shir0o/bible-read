@@ -150,3 +150,60 @@ class AppTextStyles {
   static TextStyle eyebrow(BuildContext context) =>
       Theme.of(context).textTheme.labelSmall!;
 }
+
+/// The few button variants the theme's Filled/Outlined/Text styles don't
+/// cover. Call sites use these instead of per-call `styleFrom` colours.
+class AppButtonStyles {
+  AppButtonStyles._();
+
+  /// Text button for a destructive action (delete, remove, leave).
+  static ButtonStyle destructiveText(BuildContext context) =>
+      TextButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.error);
+
+  /// Filled button for a confirmed destructive action.
+  static ButtonStyle destructiveFilled(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return FilledButton.styleFrom(
+      backgroundColor: colorScheme.error,
+      foregroundColor: colorScheme.onError,
+    );
+  }
+
+  /// De-emphasised text button ("Not now", "Create a group").
+  static ButtonStyle mutedText(BuildContext context) => TextButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
+
+  /// Inline text link with no padding or extra tap target.
+  static ButtonStyle compactText(BuildContext context) => TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      );
+
+  /// Trailing link on a fixed-height section header row.
+  static ButtonStyle sectionLink(BuildContext context, double height) =>
+      TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap8),
+        minimumSize: Size(44, height),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      );
+
+  /// Ghost-style filled button: a step above the card surface with a strong
+  /// border, so it stays distinct in dark mode.
+  static ButtonStyle ghost(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return FilledButton.styleFrom(
+      backgroundColor: colorScheme.surfaceContainerLow,
+      foregroundColor: colorScheme.onSurface,
+      side: BorderSide(color: AppColors.of(context).borderStrong),
+    );
+  }
+
+  /// Outlined button tinted to a runtime [color] (e.g. a status colour).
+  static ButtonStyle outlinedTone(Color color) => OutlinedButton.styleFrom(
+        foregroundColor: color,
+        side: BorderSide(color: color.withValues(alpha: 0.3)),
+      );
+}

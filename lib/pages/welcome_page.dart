@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 import '../widgets/auth/auth_background.dart';
 
@@ -70,19 +69,8 @@ class WelcomePage extends StatelessWidget {
               // Get Started Button
               SizedBox(
                 height: 56,
-                child: ElevatedButton(
+                child: FilledButton(
                   onPressed: onGetStarted,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    elevation: 4,
-                    shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.rCard,
-                      ), // rounded-full
-                    ),
-                  ),
                   child: Text(
                     'Get started',
                     style: textTheme.titleMedium?.copyWith(
@@ -100,17 +88,6 @@ class WelcomePage extends StatelessWidget {
                 height: 48,
                 child: OutlinedButton(
                   onPressed: onLogin,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                      width: 1,
-                    ),
-                    backgroundColor: colorScheme.surface.withValues(alpha: 0),
-                    foregroundColor: colorScheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                    ),
-                  ),
                   child: Text(
                     'I already have an account',
                     style: textTheme.titleMedium?.copyWith(

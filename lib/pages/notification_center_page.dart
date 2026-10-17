@@ -83,12 +83,6 @@ class _NotificationCenterPageState extends State<NotificationCenterPage> {
                 padding: const EdgeInsets.only(right: 6),
                 child: TextButton(
                   onPressed: _markingAllRead ? null : _markAllAsRead,
-                  style: TextButton.styleFrom(
-                    foregroundColor: colorScheme.primary,
-                    textStyle: theme.textTheme.labelLarge?.copyWith(
-                      fontSize: 14,
-                    ),
-                  ),
                   child: _markingAllRead
                       ? SizedBox(
                           width: 16,

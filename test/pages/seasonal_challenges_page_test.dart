@@ -188,7 +188,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final claimButton = find.widgetWithText(ElevatedButton, 'Claim reward');
+      final claimButton = find.widgetWithText(FilledButton, 'Claim reward');
       expect(claimButton, findsOneWidget);
 
       await tester.tap(claimButton);

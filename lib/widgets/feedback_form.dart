@@ -252,38 +252,23 @@ class _FeedbackFormState extends State<FeedbackForm> {
     );
   }
 
-  /// Field decoration matching the design's `FBField`: a surface fill inside a
-  /// strong hairline border, 16px radius, and a placeholder-style label.
+  /// Field decoration with a placeholder-style label; fill and borders
+  /// come from the theme.
   InputDecoration _decoration(
     BuildContext context, {
     required String label,
     Widget? suffixIcon,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final appColors = AppColors.of(context);
-    final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppSpacing.rField),
-      borderSide: BorderSide(
-        color: appColors.borderStrong,
-        width: 1,
-      ),
-    );
     return InputDecoration(
       hintText: label,
       labelStyle: Theme.of(context)
           .textTheme
           .bodyLarge
           ?.copyWith(color: colorScheme.onSurfaceVariant),
-      filled: true,
-      fillColor: colorScheme.surface,
       contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.gap16, vertical: AppSpacing.gap16),
       suffixIcon: suffixIcon,
-      border: border,
-      enabledBorder: border,
-      focusedBorder: border.copyWith(
-        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-      ),
     );
   }
 

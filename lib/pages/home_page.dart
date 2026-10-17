@@ -1261,7 +1261,7 @@ class _HomePageState extends State<HomePage>
               if (others.isEmpty)
                 TextButton(
                   onPressed: () => _openPrimarySchedule(primary),
-                  style: _sectionLinkStyle(colorScheme),
+                  style: _sectionLinkStyle(context),
                   child: const Text('Schedule'),
                 ),
             ],
@@ -1301,29 +1301,15 @@ class _HomePageState extends State<HomePage>
   /// title is the same with or without a link.
   static const double _sectionHeaderHeight = 44;
 
-  ButtonStyle _sectionLinkStyle(ColorScheme colorScheme) {
-    return TextButton.styleFrom(
-      foregroundColor: colorScheme.primary,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap8),
-      minimumSize: const Size(44, _sectionHeaderHeight),
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
-  }
+  ButtonStyle _sectionLinkStyle(BuildContext context) =>
+      AppButtonStyles.sectionLink(context, _sectionHeaderHeight);
 
   /// Ghost-style "Mark as read" button — a clear step above the reading card
   /// surface (prototype `.btn-ghost`: `--surface-2` fill + `--border-strong`),
   /// so it reads as a distinct control even in dark mode where the card and a
   /// tonal fill would otherwise share the same luminance.
-  ButtonStyle _ghostMarkButtonStyle(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return FilledButton.styleFrom(
-      backgroundColor: colorScheme.surfaceContainerLow,
-      foregroundColor: colorScheme.onSurface,
-      side: BorderSide(color: AppColors.of(context).borderStrong),
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.rButton)),
-    );
-  }
+  ButtonStyle _ghostMarkButtonStyle(BuildContext context) =>
+      AppButtonStyles.ghost(context);
 
   /// Caption shown beneath a not-yet-read mark button when the "Reading
   /// counts as showing up" preference is on, so marking this reading is known
@@ -1562,15 +1548,6 @@ class _HomePageState extends State<HomePage>
                       color: colorScheme.primary,
                     ),
                     label: const Text('View schedule'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.primary,
-                      side: BorderSide(
-                        color: colorScheme.primary.withValues(alpha: 0.4),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                      ),
-                    ),
                   )
                 : isRead
                     ? _buildReadConfirmationRow(context, 'Read with your group')
@@ -1704,11 +1681,6 @@ class _HomePageState extends State<HomePage>
                       softWrap: false,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                      ),
-                    ),
                   ),
                 ),
               ),
@@ -1726,17 +1698,6 @@ class _HomePageState extends State<HomePage>
                       softWrap: false,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.onSurfaceVariant,
-                      side: BorderSide(
-                        color: colorScheme.outlineVariant.withValues(
-                          alpha: 0.4,
-                        ),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                      ),
-                    ),
                   ),
                 ),
               ),
@@ -1746,9 +1707,7 @@ class _HomePageState extends State<HomePage>
           Center(
             child: TextButton(
               onPressed: () => _finishReading(item),
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.onSurfaceVariant,
-              ),
+              style: AppButtonStyles.mutedText(context),
               child: const Text('Finish plan'),
             ),
           ),
@@ -2142,11 +2101,7 @@ class _HomePageState extends State<HomePage>
               ),
               TextButton(
                 onPressed: () => _openReflectSheet(context, initialText: text),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                style: AppButtonStyles.compactText(context),
                 child: const Text('Edit'),
               ),
             ],
@@ -2430,7 +2385,7 @@ class _HomePageState extends State<HomePage>
               ),
               TextButton(
                 onPressed: widget.onOpenCommunity,
-                style: _sectionLinkStyle(colorScheme),
+                style: _sectionLinkStyle(context),
                 child: const Text('Open'),
               ),
             ],

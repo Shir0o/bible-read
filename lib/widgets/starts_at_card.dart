@@ -72,17 +72,6 @@ class StartsAtCard extends StatelessWidget {
                 iconAlignment: IconAlignment.end,
                 icon: const Icon(Icons.chevron_right, size: 16),
                 label: const Text('Change'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 44),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.gap16),
-                  backgroundColor: colorScheme.surfaceContainerLowest,
-                  foregroundColor: appColors.primaryPress,
-                  side: BorderSide(color: appColors.primaryLine),
-                  textStyle: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
               ),
             ],
           ),

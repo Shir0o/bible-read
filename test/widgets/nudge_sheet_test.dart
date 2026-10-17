@@ -9,7 +9,7 @@ Widget _host({required Future<NudgeResult> Function(String) onSend}) {
     home: Scaffold(
       body: Builder(
         builder: (context) => Center(
-          child: ElevatedButton(
+          child: FilledButton(
             onPressed: () => showNudgeSheet(
               context,
               person: const NudgePerson(name: 'Mona Lisa'),

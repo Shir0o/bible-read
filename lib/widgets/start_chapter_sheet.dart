@@ -126,6 +126,7 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.close, size: 18),
                 style: IconButton.styleFrom(
+                  // token-exempt: tonal 44px icon tile; no themed equivalent
                   minimumSize: const Size(44, 44),
                   backgroundColor: colorScheme.surfaceContainer,
                   foregroundColor: colorScheme.onSurfaceVariant,

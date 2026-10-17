@@ -272,38 +272,7 @@ class _SignupPageState extends State<SignupPage> {
         final colorScheme = Theme.of(context).colorScheme;
         final textTheme = Theme.of(context).textTheme;
 
-        const inputRadius =
-            BorderRadius.vertical(top: Radius.circular(AppSpacing.rChip));
-        final inputDecoration = InputDecoration(
-          filled: true,
-          fillColor: colorScheme.surface.withValues(alpha: 0.08),
-          contentPadding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-          enabledBorder: UnderlineInputBorder(
-            borderRadius: inputRadius,
-            borderSide: BorderSide(color: AppColors.of(context).border),
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderRadius: inputRadius,
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          errorBorder: UnderlineInputBorder(
-            borderRadius: inputRadius,
-            borderSide: BorderSide(color: colorScheme.error, width: 2),
-          ),
-          focusedErrorBorder: UnderlineInputBorder(
-            borderRadius: inputRadius,
-            borderSide: BorderSide(color: colorScheme.error, width: 2),
-          ),
-          labelStyle: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
-          floatingLabelStyle: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.primary,
-            fontWeight: FontWeight.w500,
-          ),
-          errorStyle: textTheme.labelSmall?.copyWith(color: colorScheme.error),
-        );
+        const inputDecoration = InputDecoration();
 
         return SingleChildScrollView(
           child: Column(
@@ -320,12 +289,6 @@ class _SignupPageState extends State<SignupPage> {
                         color: colorScheme.onSurface,
                       ),
                       onPressed: () => Navigator.of(context).pop(),
-                      style: IconButton.styleFrom(
-                        backgroundColor: colorScheme.surface.withValues(
-                          alpha: 0,
-                        ),
-                        shape: const CircleBorder(),
-                      ),
                     ),
                     Expanded(
                       child: Text(
@@ -511,18 +474,8 @@ class _SignupPageState extends State<SignupPage> {
                     SizedBox(
                       height: 48,
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: FilledButton(
                         onPressed: _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.rCard,
-                            ),
-                          ),
-                        ),
                         child: _loading
                             ? SizedBox(
                                 height: 24,

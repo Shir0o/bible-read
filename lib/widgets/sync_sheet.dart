@@ -117,16 +117,10 @@ class SyncSheet extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(true),
             icon: const Icon(Icons.check, size: 18),
             label: const Text('Yes, count it as showing up'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap16),
-            ),
           ),
           const SizedBox(height: AppSpacing.gap8),
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            style: TextButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
             child: const Text('Keep them separate'),
           ),
         ],

@@ -182,17 +182,8 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
               SizedBox(
                 height: 56,
                 width: double.infinity,
-                child: ElevatedButton(
+                child: OutlinedButton(
                   onPressed: _handleGoogleSignIn,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.surfaceBright,
-                    foregroundColor: colorScheme.onSurface,
-                    elevation: 4,
-                    shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                    ),
-                  ),
                   child: _isSigningIn
                       ? SizedBox(
                           height: 24,
@@ -222,7 +213,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
               SizedBox(
                 height: 56,
                 width: double.infinity,
-                child: ElevatedButton(
+                child: FilledButton(
                   onPressed: () {
                     unawaited(widget.vibrationService.mediumImpact());
                     Navigator.of(context).push(
@@ -236,15 +227,6 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    elevation: 4,
-                    shadowColor: colorScheme.shadow.withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.rCard),
-                    ),
-                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

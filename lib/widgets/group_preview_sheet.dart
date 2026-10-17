@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'common_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -169,13 +170,6 @@ class _GroupPreviewSheetState extends State<GroupPreviewSheet> {
             height: AppSpacing.buttonHeight,
             child: FilledButton(
               onPressed: _requesting ? null : _requestToJoin,
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                ),
-              ),
               child: _requesting
                   ? SizedBox(
                       width: 20,
@@ -195,12 +189,7 @@ class _GroupPreviewSheetState extends State<GroupPreviewSheet> {
             height: 44,
             child: TextButton(
               onPressed: _requesting ? null : () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.onSurfaceVariant,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                ),
-              ),
+              style: AppButtonStyles.mutedText(context),
               child: const Text('Not now'),
             ),
           ),

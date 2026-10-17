@@ -30,7 +30,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.tap(find.byType(FilledButton));
     await tester.pump();
 
     expect(tester.takeException(), error);

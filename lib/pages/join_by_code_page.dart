@@ -7,7 +7,6 @@ import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/join_code_service.dart';
 import '../services/vibration_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/join_code_keys.dart';
@@ -163,20 +162,12 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                         decoration: const InputDecoration(
                           labelText: 'Join code',
                           hintText: 'e.g. HK2N9P',
-                          border: OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 16),
                       FilledButton(
                         key: JoinCodeKeys.findButton,
                         onPressed: _lookingUp ? null : _findGroup,
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppSpacing.rChip),
-                          ),
-                        ),
                         child: _lookingUp
                             ? SizedBox(
                                 width: 20,

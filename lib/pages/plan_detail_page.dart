@@ -811,12 +811,6 @@ class _PlanDetailContentState extends State<_PlanDetailContent> {
                     onPressed: widget.onStartPlan,
                     icon: const Icon(Icons.play_arrow),
                     label: const Text('Start This Plan'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSpacing.rChip),
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -1114,11 +1108,6 @@ class _TodayAnchorCard extends StatelessWidget {
           label: const Text(
             'I read this with the group',
             style: TextStyle(fontWeight: FontWeight.w700),
-          ),
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.rInset),
-            ),
           ),
         ),
       );

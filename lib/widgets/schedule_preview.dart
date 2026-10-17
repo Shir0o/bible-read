@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'common_styles.dart';
 import '../theme/app_theme.dart';
 
 import '../services/catch_up_engine.dart';
@@ -111,10 +112,7 @@ class SchedulePreview extends StatelessWidget {
                 onPressed: onViewFull,
                 icon: const Icon(Icons.calendar_month_outlined, size: 18),
                 label: const Text('View full schedule'),
-                style: TextButton.styleFrom(
-                  foregroundColor: colorScheme.primary,
-                  padding: EdgeInsets.zero,
-                ),
+                style: AppButtonStyles.compactText(context),
               ),
             ),
           ],

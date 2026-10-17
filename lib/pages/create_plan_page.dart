@@ -801,6 +801,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 labelText: 'Group name',
                 hintText: 'e.g., Thursday morning group',
                 border: OutlineInputBorder(
+                  // token-exempt: slice 8 rebuild (#988)
                   borderRadius:
                       BorderRadius.all(Radius.circular(AppSpacing.rField)),
                 ),
@@ -859,6 +860,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   labelText: 'Plan Title',
                   hintText: 'e.g., Daily Walk',
                   border: OutlineInputBorder(
+                    // token-exempt: slice 8 rebuild (#988)
                     borderRadius:
                         BorderRadius.all(Radius.circular(AppSpacing.rField)),
                   ),
@@ -1392,6 +1394,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               child: FilledButton(
                 onPressed: _isCreating ? null : _createPlan,
                 style: FilledButton.styleFrom(
+                  // token-exempt: slice 8 rebuild (#988)
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),

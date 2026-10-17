@@ -393,7 +393,6 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
   }
 
   Widget _buildPace(BuildContext context) {
-    final theme = Theme.of(context);
     final isPerDay = _draft.mode == ScheduleMode.chaptersPerDay;
     final finish = _plan.finishesOn;
 
@@ -453,10 +452,6 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
                     _draft.endDate == null
                         ? 'Choose'
                         : formatPlanDateShort(_draft.endDate!),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 44),
-                    textStyle: theme.textTheme.titleSmall,
                   ),
                 ),
         ),
