@@ -19,6 +19,7 @@ import '../services/read_log_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_bottom_sheet.dart';
 import '../widgets/app_header.dart';
 import '../widgets/community/empty_group_state.dart';
 import '../widgets/nudge_sheet.dart';
@@ -68,6 +69,30 @@ class _CommunityPageState extends State<CommunityPage>
   @override
   bool get wantKeepAlive => true;
 
+  /// Placeholder for the header's Invite action: surfaces the existing
+  /// join / find / create group paths until the real invite flow lands (#983).
+  void _openInvite() {
+    showAppSheet<void>(
+      context: context,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.hPadding,
+          AppSpacing.gap8,
+          AppSpacing.hPadding,
+          AppSpacing.gap24,
+        ),
+        child: SingleChildScrollView(
+          child: EmptyGroupState(
+            auth: widget.auth,
+            firestore: widget.firestore,
+            groupService: widget.groupService,
+            vibrationService: widget.vibrationService,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _refresh() async {
     if (mounted) setState(() {});
     await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -112,7 +137,10 @@ class _CommunityPageState extends State<CommunityPage>
                               : 'Together'
                           : 'Together',
                       title: 'Circle',
-                      showProfileIcon: false,
+                      action: AppHeaderAction(
+                        label: 'Invite',
+                        onPressed: _openInvite,
+                      ),
                     ),
                   ),
                   if (groups.isEmpty) ...[

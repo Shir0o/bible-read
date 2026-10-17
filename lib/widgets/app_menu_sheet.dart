@@ -1,33 +1,31 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../pages/admin/feedback_admin_page.dart';
-import '../pages/feedback_page.dart';
 import '../models/app_notification.dart';
+import '../pages/admin/feedback_admin_page.dart';
+import '../pages/notification_center_page.dart';
+import '../pages/settings_page.dart';
 import '../services/admin_role_service.dart';
 import '../services/feedback_service.dart';
+import '../services/google_sign_in_factory.dart';
+import '../services/notification_service.dart';
+import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
+import '../theme/app_theme.dart';
 import 'animated_page_route.dart';
 import 'app_bottom_sheet.dart';
-import '../pages/notification_center_page.dart';
-import '../services/notification_service.dart';
+import 'common_styles.dart';
 
-import '../pages/settings_page.dart';
-import '../pages/bible_progress_page.dart';
-import '../services/google_sign_in_factory.dart';
-
-/// The hub sheet opened from the avatar — matches the design's `MenuSheet`:
-/// a profile header, a two-column grid of destinations, and a quiet full-width
-/// Sign out row at the bottom.
+/// The sheet opened from the avatar: a profile row, up to three of the newest
+/// unread notifications (with "See all"), then Settings and, for admins, Inbox.
+/// Sign out lives in Settings.
 class AppMenuSheet extends StatefulWidget {
   const AppMenuSheet({
     super.key,
-    required this.onNavigate,
     required this.vibrationService,
     required this.parentContext,
     this.feedbackService,
@@ -36,7 +34,6 @@ class AppMenuSheet extends StatefulWidget {
     this.firestore,
   });
 
-  final ValueChanged<int> onNavigate;
   final VibrationService vibrationService;
   final BuildContext parentContext;
   final FeedbackService? feedbackService;
@@ -46,7 +43,6 @@ class AppMenuSheet extends StatefulWidget {
 
   static Future<void> show({
     required BuildContext context,
-    required ValueChanged<int> onNavigate,
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
     AdminRoleService? adminRoleService,
@@ -61,7 +57,6 @@ class AppMenuSheet extends StatefulWidget {
       context: context,
       builder: (sheetContext) {
         return AppMenuSheet(
-          onNavigate: onNavigate,
           vibrationService: vibrationService ?? const VibrationService(),
           parentContext: context,
           feedbackService: feedbackService,
@@ -108,431 +103,336 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
     }
   }
 
-  List<_MenuItem> _menuItems() {
-    try {
-      final auth = widget.auth ?? FirebaseAuth.instance;
-      final firestore = widget.firestore ?? FirebaseFirestore.instance;
-      return _buildFullMenuList(auth, firestore);
-    } catch (_) {
-      return _buildFallbackMenuList();
-    }
+  /// Closes the sheet, then runs [action] against the page that opened it.
+  void _closeThen(void Function(BuildContext context) action) {
+    unawaited(widget.vibrationService.lightImpact());
+    Navigator.of(context).pop();
+    action(widget.parentContext);
   }
 
-  List<_MenuItem> _buildFullMenuList(
-    FirebaseAuth auth,
-    FirebaseFirestore firestore,
-  ) {
-    final items = [
-      _MenuItem(
-        icon: Icons.settings_outlined,
-        label: 'Settings',
-        onTap: (context) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => SettingsPage(
-                auth: auth,
-                firestore: firestore,
-                googleSignInProvider: createGoogleSignIn,
-                vibrationService: widget.vibrationService,
-              ),
-            ),
-          );
-        },
-      ),
-      _MenuItem(
-        icon: Icons.notifications_outlined,
-        label: 'Notifications',
-        badge: true,
-        onTap: (context) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => NotificationCenterPage(
-                service: NotificationService(firestore: firestore),
-                auth: auth,
-                vibrationService: widget.vibrationService,
-              ),
-            ),
-          );
-        },
-      ),
-      _MenuItem(
-        icon: Icons.emoji_events_outlined,
-        label: 'Challenges',
-        index: 5,
-      ),
-      _MenuItem(
-        icon: Icons.menu_book_outlined,
-        label: 'Library',
-        onTap: (context) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => BibleProgressPage(
-                auth: auth,
-                firestore: firestore,
-                vibrationService: widget.vibrationService,
-              ),
-            ),
-          );
-        },
-      ),
-      _MenuItem(
-        icon: Icons.bug_report_outlined,
-        label: 'Feedback',
-        onTap: (context) {
-          final feedback = widget.feedbackService ?? FeedbackService();
-          Navigator.of(context).push(
-            animatedPageRoute(
-              FeedbackPage(
-                initialTab: FeedbackTab.feature,
-                feedbackService: feedback,
-                vibrationService: widget.vibrationService,
-                parentMessenger: ScaffoldMessenger.of(context),
-              ),
-            ),
-          );
-        },
-      ),
-    ];
-
-    if (_isAdmin) {
-      items.add(
-        _MenuItem(
-          icon: Icons.inbox_outlined,
-          label: 'Inbox',
-          onTap: (context) {
-            Navigator.of(context).push(
-              animatedPageRoute(
-                FeedbackAdminPage(
-                  firestore: widget.feedbackService?.firestore,
-                  auth: widget.feedbackService?.auth,
-                  adminRoleService: widget.adminRoleService,
-                ),
-              ),
-            );
-          },
+  void _openNotificationCenter(BuildContext context) {
+    final auth = widget.auth ?? FirebaseAuth.instance;
+    final firestore = widget.firestore ?? FirebaseFirestore.instance;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NotificationCenterPage(
+          service: NotificationService(firestore: firestore),
+          auth: auth,
+          vibrationService: widget.vibrationService,
         ),
-      );
-    }
-    return items;
+      ),
+    );
   }
 
-  List<_MenuItem> _buildFallbackMenuList() {
-    return [
-      _MenuItem(
-        icon: Icons.bug_report_outlined,
-        label: 'Feedback',
-        onTap: (context) {
-          final feedback = widget.feedbackService ?? FeedbackService();
-          Navigator.of(context).push(
-            animatedPageRoute(
-              FeedbackPage(
-                initialTab: FeedbackTab.feature,
-                feedbackService: feedback,
-                vibrationService: widget.vibrationService,
-                parentMessenger: ScaffoldMessenger.of(context),
-              ),
-            ),
-          );
-        },
+  void _openSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SettingsPage(
+          auth: widget.auth ?? FirebaseAuth.instance,
+          firestore: widget.firestore ?? FirebaseFirestore.instance,
+          googleSignInProvider: createGoogleSignIn,
+          vibrationService: widget.vibrationService,
+        ),
       ),
-    ];
+    );
+  }
+
+  void _openInbox(BuildContext context) {
+    Navigator.of(context).push(
+      animatedPageRoute(
+        FeedbackAdminPage(
+          firestore: widget.feedbackService?.firestore,
+          auth: widget.feedbackService?.auth,
+          adminRoleService: widget.adminRoleService,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return _MenuContents(
-      items: _menuItems(),
-      vibrationService: widget.vibrationService,
-      onNavigate: widget.onNavigate,
-      parentContext: widget.parentContext,
-      auth: widget.auth,
-      firestore: widget.firestore,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final auth = widget.auth;
+    final firestore = widget.firestore;
+    final uid = auth?.currentUser?.uid;
+    final hasNotifications = auth != null && firestore != null && uid != null;
+
+    return SingleChildScrollView(
+      key: const Key('menu_scroll_view'),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.gap20,
+        AppSpacing.gap16,
+        AppSpacing.gap20,
+        AppSpacing.gap32,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ProfileRow(auth: auth, firestore: firestore),
+          if (hasNotifications)
+            StreamBuilder<List<AppNotification>>(
+              stream:
+                  NotificationService(firestore: firestore).notifications(uid),
+              builder: (context, snapshot) {
+                final unread = (snapshot.data ?? const <AppNotification>[])
+                    .where((n) => !n.read)
+                    .toList();
+                return _NotificationsSection(
+                  unread: unread,
+                  onSeeAll: () => _closeThen(_openNotificationCenter),
+                  onOpen: (n) => _closeThen(
+                    (ctx) => unawaited(
+                      openNotification(
+                        ctx,
+                        notification: n,
+                        service: NotificationService(firestore: firestore),
+                        auth: auth,
+                        vibrationService: widget.vibrationService,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          Divider(height: AppSpacing.gap24, color: colorScheme.outlineVariant),
+          _SheetRow(
+            icon: Icons.settings_outlined,
+            label: 'Settings',
+            onTap: () => _closeThen(_openSettings),
+          ),
+          if (_isAdmin)
+            _SheetRow(
+              icon: Icons.inbox_outlined,
+              label: 'Inbox',
+              tag: 'Admin',
+              onTap: () => _closeThen(_openInbox),
+            ),
+        ],
+      ),
     );
   }
 }
 
-class _MenuContents extends StatelessWidget {
-  const _MenuContents({
-    required this.items,
-    required this.vibrationService,
-    required this.onNavigate,
-    required this.parentContext,
-    this.auth,
-    this.firestore,
-  });
+class _ProfileRow extends StatelessWidget {
+  const _ProfileRow({this.auth, this.firestore});
 
-  final List<_MenuItem> items;
-  final VibrationService vibrationService;
-  final ValueChanged<int> onNavigate;
-  final BuildContext parentContext;
   final FirebaseAuth? auth;
   final FirebaseFirestore? firestore;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final ColorScheme colorScheme = theme.colorScheme;
-    final textStyle =
-        theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600) ??
-            const TextStyle(fontWeight: FontWeight.w600);
+    final colorScheme = theme.colorScheme;
+    final user = auth?.currentUser;
+    final rawName = (user?.displayName ?? '').trim();
+    final name = rawName.isEmpty ? 'Reader' : rawName;
+    final photoUrl = user?.photoURL;
 
-    return SingleChildScrollView(
-      key: const Key('menu_scroll_view'),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.gap20, AppSpacing.gap16,
-          AppSpacing.gap20, AppSpacing.gap32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ProfileHeader(auth: auth),
-          const SizedBox(height: 16),
-          Builder(
-            builder: (context) {
-              final double availableWidth = MediaQuery.of(
-                context,
-              ).size.width;
-              final bool compact = availableWidth < 360;
-              final double horizontalPadding = 40.0; // 20 on each side
-              final double contentWidth = availableWidth - horizontalPadding;
+    Widget subtitle(String text) =>
+        Text(text, style: theme.textTheme.bodySmall);
 
-              final double baseWidth =
-                  compact ? contentWidth : (contentWidth - 9) / 2;
-              final double buttonWidth = compact
-                  ? baseWidth
-                  : baseWidth.clamp(140.0, 240.0).toDouble();
-
-              return Wrap(
-                spacing: 9,
-                runSpacing: 9,
-                alignment:
-                    compact ? WrapAlignment.center : WrapAlignment.spaceBetween,
-                children: items
-                    .map(
-                      (item) => SizedBox(
-                        width: buttonWidth, // Ensure equal width
-                        child: _MenuActionButton(
-                          item: item,
-                          onNavigate: onNavigate,
-                          vibrationService: vibrationService,
-                          textStyle: textStyle,
-                          parentContext: parentContext,
-                          auth: auth,
-                          firestore: firestore,
-                        ),
-                      ),
-                    )
-                    .toList(),
-              );
-            },
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colorScheme.primaryContainer,
+            image: photoUrl != null
+                ? DecorationImage(
+                    image: CachedNetworkImageProvider(photoUrl),
+                    fit: BoxFit.cover,
+                  )
+                : null,
           ),
-          const SizedBox(height: AppSpacing.gap8),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonalIcon(
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap12),
-                alignment: Alignment.center,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.rButton),
-                  side: BorderSide(color: AppColors.of(context).border),
-                ),
-                backgroundColor: colorScheme.surfaceContainerLow,
-                foregroundColor: colorScheme.onSurfaceVariant,
-              ),
-              onPressed: () {
-                unawaited(vibrationService.lightImpact());
-                Navigator.of(context).pop();
-                onNavigate(10);
-              },
-              icon: const Icon(Icons.logout, size: AppSpacing.iconMd),
-              label: Text(
-                'Sign out',
-                style: textStyle,
+          alignment: Alignment.center,
+          child: photoUrl == null
+              ? Text(
+                  name[0].toUpperCase(),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: colorScheme.primary),
+                )
+              : null,
+        ),
+        const SizedBox(width: AppSpacing.gap12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium,
               ),
-            ),
+              const SizedBox(height: 1),
+              if (user != null && firestore != null)
+                StreamBuilder<int>(
+                  stream: ReadingStatusService(firestore: firestore!)
+                      .watchStreak(user.uid),
+                  builder: (context, snapshot) {
+                    final streak = snapshot.data ?? 0;
+                    return subtitle(
+                      streak > 0 ? '$streak-day streak' : 'Keep showing up.',
+                    );
+                  },
+                )
+              else
+                subtitle('Keep showing up.'),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({this.auth});
-
-  final FirebaseAuth? auth;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final user = auth?.currentUser;
-    final name = user?.displayName ?? 'Reader';
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.gap2, AppSpacing.gap2, AppSpacing.gap2, AppSpacing.gap16),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: colorScheme.primaryContainer,
-            ),
-            clipBehavior: Clip.antiAlias,
-            alignment: Alignment.center,
-            child: user?.photoURL != null
-                ? Image.network(
-                    user!.photoURL!,
-                    fit: BoxFit.cover,
-                    width: 44,
-                    height: 44,
-                    errorBuilder: (context, error, stackTrace) => Center(
-                      child: Text(
-                        initial,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(color: colorScheme.primary),
-                      ),
-                    ),
-                  )
-                : Text(
-                    initial,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(color: colorScheme.primary),
-                  ),
-          ),
-          const SizedBox(width: AppSpacing.gap12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  'Keep showing up.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MenuActionButton extends StatelessWidget {
-  const _MenuActionButton({
-    required this.item,
-    required this.onNavigate,
-    required this.vibrationService,
-    required this.textStyle,
-    required this.parentContext,
-    this.auth,
-    this.firestore,
+class _NotificationsSection extends StatelessWidget {
+  const _NotificationsSection({
+    required this.unread,
+    required this.onSeeAll,
+    required this.onOpen,
   });
 
-  final _MenuItem item;
-  final ValueChanged<int> onNavigate;
-  final VibrationService vibrationService;
-  final TextStyle textStyle;
-  final BuildContext parentContext;
-  final FirebaseAuth? auth;
-  final FirebaseFirestore? firestore;
+  final List<AppNotification> unread;
+  final VoidCallback onSeeAll;
+  final ValueChanged<AppNotification> onOpen;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final appColors = AppColors.of(context);
 
-    Widget badge = const SizedBox.shrink();
-    if (item.badge && auth != null && firestore != null) {
-      badge = StreamBuilder<List<AppNotification>>(
-        stream: NotificationService(firestore: firestore!)
-            .notifications(auth!.currentUser?.uid ?? ''),
-        builder: (context, snapshot) {
-          final unread = snapshot.data?.where((n) => !n.read).length ?? 0;
-          if (unread == 0) return const SizedBox.shrink();
-          return Positioned(
-            top: 11,
-            right: 11,
-            child: Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: colorScheme.tertiary,
-                shape: BoxShape.circle,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: AppSpacing.gap16),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                unread.isEmpty
+                    ? 'NOTIFICATIONS'
+                    : 'NOTIFICATIONS · ${unread.length} NEW',
+                style: AppTextStyles.caption(context)
+                    .copyWith(color: colorScheme.outline),
               ),
             ),
-          );
-        },
-      );
-    }
+            TextButton(
+              onPressed: onSeeAll,
+              child: const Text('See all'),
+            ),
+          ],
+        ),
+        for (final n in unread.take(3))
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.gap8),
+            child: Material(
+              color: appColors.primarySoft,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.rInset),
+                side: BorderSide(color: appColors.primaryLine),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => onOpen(n),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.gap12,
+                    vertical: AppSpacing.gap12,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          n.message ?? defaultNotificationMessage(n),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.gap8),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: colorScheme.tertiary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
 
-    return FilledButton.tonalIcon(
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        alignment: Alignment.centerLeft,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.rButton)),
-        backgroundColor: colorScheme.secondaryContainer,
-        foregroundColor: colorScheme.primary,
-      ),
-      onPressed: () {
-        unawaited(vibrationService.lightImpact());
-        Navigator.of(context).pop();
-        if (item.onTap != null) {
-          item.onTap!(parentContext);
-        } else if (item.index != null) {
-          onNavigate(item.index!);
-        }
-      },
-      icon: SizedBox(
-        width: 28,
-        child: Stack(
+class _SheetRow extends StatelessWidget {
+  const _SheetRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.tag,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? tag;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSpacing.rInset),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.gap12,
+          horizontal: AppSpacing.gap4,
+        ),
+        child: Row(
           children: [
-            Icon(item.icon, size: 20),
-            badge,
+            Icon(icon, size: 22, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: AppSpacing.gap12),
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.bodyLarge
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (tag != null)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.gap8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(AppSpacing.gap12),
+                ),
+                child: Text(
+                  tag!,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
-      label: Text(
-        item.label,
-        style: textStyle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        softWrap: false,
-      ),
     );
   }
-}
-
-class _MenuItem {
-  const _MenuItem({
-    this.index,
-    required this.icon,
-    required this.label,
-    this.onTap,
-    this.badge = false,
-  }) : assert(
-          index != null || onTap != null,
-          'Either index or onTap must be provided.',
-        );
-
-  final int? index;
-  final IconData icon;
-  final String label;
-  final bool badge;
-  final void Function(BuildContext context)? onTap;
 }

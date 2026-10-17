@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -32,10 +31,10 @@ import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
 import '../services/read_log_service.dart';
 
-import '../widgets/navigation_menu_scope.dart';
+import '../widgets/app_header.dart';
+import '../widgets/sun_mark.dart';
 import '../widgets/reflect_sheet.dart';
 import '../widgets/skeleton_loader.dart';
-import '../widgets/sun_mark.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import 'adjust_pace_page.dart';
 import 'check_in_page.dart';
@@ -1058,13 +1057,8 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// The design's Home top bar: an eyebrow date, a serif-style greeting (no
-  /// name) and a tappable avatar on the right that opens the navigation menu.
-  Widget _buildHomeHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final user = widget.auth.currentUser;
-    final now = widget.dateProvider();
-
+  /// Today's header eyebrow, e.g. `MONDAY · JANUARY 5`.
+  String _dateEyebrow(DateTime now) {
     const weekdays = [
       'MONDAY',
       'TUESDAY',
@@ -1088,83 +1082,7 @@ class _HomePageState extends State<HomePage>
       'NOVEMBER',
       'DECEMBER',
     ];
-    final eyebrow =
-        '${weekdays[now.weekday - 1]} · ${months[now.month - 1]} ${now.day}';
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  eyebrow,
-                  style: AppTextStyles.caption(context).copyWith(
-                    color: colorScheme.outline,
-                    letterSpacing: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _greeting(now),
-                  style: AppTextStyles.topBarTitle(context).copyWith(
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SunMark(size: 34, done: _readToday, onTap: _openCheckInPage),
-              const SizedBox(width: AppSpacing.gap12),
-              Semantics(
-                button: true,
-                label: 'Open menu',
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () {
-                    widget.vibrationService.lightImpact();
-                    NavigationMenuScope.maybeOf(context)?.showMenu(context);
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colorScheme.primaryContainer,
-                      image: user?.photoURL != null
-                          ? DecorationImage(
-                              image: CachedNetworkImageProvider(
-                                user!.photoURL!,
-                              ),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                    ),
-                    alignment: Alignment.center,
-                    child: user?.photoURL == null
-                        ? Text(
-                            _userInitial(user),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(color: colorScheme.primary),
-                          )
-                        : null,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+    return '${weekdays[now.weekday - 1]} · ${months[now.month - 1]} ${now.day}';
   }
 
   String _greeting(DateTime now) {
@@ -1172,14 +1090,6 @@ class _HomePageState extends State<HomePage>
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
-  }
-
-  String _userInitial(User? user) {
-    final name = (user?.displayName ?? '').trim();
-    if (name.isNotEmpty) return name[0].toUpperCase();
-    final email = (user?.email ?? '').trim();
-    if (email.isNotEmpty) return email[0].toUpperCase();
-    return '?';
   }
 
   /// Groups sequential chapters (e.g., "Genesis 1", "Genesis 2" -> "Genesis 1–2").
@@ -1259,42 +1169,63 @@ class _HomePageState extends State<HomePage>
     // Home is "the act": the daily habit is the hero, with an optional, clearly
     // secondary "Today's reading" section below it (epic #716, #722/#723).
     // The long-arc plan progress (meter, Day x/y, schedule) lives on Journey.
+    final now = widget.dateProvider();
     return SafeArea(
       bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
-        // Content is top-aligned (habit hero first) and laid out at its natural
-        // height; the enclosing CustomScrollView scrolls it when tall.
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHomeHeader(context),
-            const SizedBox(height: AppSpacing.gap4),
-            if (hasPlan) ...[
-              _buildReadingSection(context, readingItems),
-            ] else ...[
-              _buildStartPlanInvitationCard(context),
-            ],
-            if (_readToday) ...[
-              const SizedBox(height: 24),
-              _buildReflectionSection(context),
-            ],
-            if (_readToday) ...[
-              const SizedBox(height: AppSpacing.gap24),
-              _buildConsistencyGlimpse(context),
-            ],
-            // The community glimpse is always present once the user's circle has
-            // loaded (matching the prototype), with an empty state when nobody
-            // has read yet. `_communityTotal` counts the user, so it is >0 once
-            // `_loadCommunity` completes.
-            if (_communityTotal > 0) ...[
-              const SizedBox(height: AppSpacing.gap20),
-              _buildCommunitySection(context),
-            ],
-            const SizedBox(height: 24),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppHeader(
+            auth: widget.auth,
+            firestore: widget.firestore,
+            vibrationService: widget.vibrationService,
+            dateProvider: widget.dateProvider,
+            eyebrow: _dateEyebrow(now),
+            title: _greeting(now),
+            status: SunMark(
+              size: 34,
+              done: _readToday,
+              onTap: _openCheckInPage,
+            ),
+          ),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
+            // Content is top-aligned (habit hero first) and laid out at its
+            // natural height; the enclosing CustomScrollView scrolls it when
+            // tall.
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.gap4),
+                if (hasPlan) ...[
+                  _buildReadingSection(context, readingItems),
+                ] else ...[
+                  _buildStartPlanInvitationCard(context),
+                ],
+                if (_readToday) ...[
+                  const SizedBox(height: 24),
+                  _buildReflectionSection(context),
+                ],
+                if (_readToday) ...[
+                  const SizedBox(height: AppSpacing.gap24),
+                  _buildConsistencyGlimpse(context),
+                ],
+                // The community glimpse is always present once the user's circle has
+                // loaded (matching the prototype), with an empty state when nobody
+                // has read yet. `_communityTotal` counts the user, so it is >0 once
+                // `_loadCommunity` completes.
+                if (_communityTotal > 0) ...[
+                  const SizedBox(height: AppSpacing.gap20),
+                  _buildCommunitySection(context),
+                ],
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

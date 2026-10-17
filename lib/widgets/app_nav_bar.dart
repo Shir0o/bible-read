@@ -1,10 +1,7 @@
 // The bottom navigation bar, drawn in the app's own system (treatment B of
 // the navigation redesign): custom stroke glyphs on the theme palette, no
-// Material pill indicator, icons alone at rest with only the active
-// destination labelled.
-//
-// Inactive destinations reserve the label's space — the label is laid out and
-// painted transparent — so icons hold still when the selection changes.
+// Material pill indicator, every destination labelled; the selected one is
+// drawn in the primary colour and a heavier weight.
 import 'package:bible_read/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -95,23 +92,13 @@ class _AppDestination extends StatelessWidget {
                     : destination.icon,
               ),
               SizedBox(height: AppSpacing.gap4),
-              // Always laid out and always in the semantics tree; painted
-              // invisible when unselected so the icon does not shift when the
-              // selection changes.
-              Visibility(
-                visible: selected,
-                maintainSize: true,
-                maintainAnimation: true,
-                maintainState: true,
-                maintainSemantics: true,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    destination.label,
-                    maxLines: 1,
-                    softWrap: false,
-                    style: labelStyle,
-                  ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  destination.label,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: labelStyle,
                 ),
               ),
             ],

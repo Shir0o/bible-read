@@ -158,14 +158,14 @@ class AppTextStyles {
   static TextStyle sectionTitle(BuildContext context) =>
       Theme.of(context).textTheme.titleLarge!;
 
-  /// Top-bar page title (Spectral 27 / 500 / -0.01em / 1.05). Matches the
-  /// design's `TopBar` title rule; shared by the Home, Community, and Journey
-  /// headers so all three tabs render the same title size.
+  /// Top-bar page title (Spectral 32 / 500 / -0.01em / 1.05). Matches the
+  /// design's `TopBar` title rule; shared by the Today, Circle and Path
+  /// headers (via `AppHeader`) so all three tabs render the same title size.
   static TextStyle topBarTitle(BuildContext context) =>
       Theme.of(context).textTheme.titleLarge!.copyWith(
-            fontSize: 27,
+            fontSize: 32,
             height: 1.05,
-            letterSpacing: -0.27,
+            letterSpacing: -0.32,
           );
 
   /// Serif scripture body (Spectral, line-height 1.82). Pass [scale] to honour

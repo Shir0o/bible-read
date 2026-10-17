@@ -16,6 +16,7 @@ import '../widgets/journey/seasonal_challenge_card.dart';
 import '../services/vibration_service.dart';
 import '../services/reading_status_service.dart';
 import '../widgets/app_header.dart';
+import 'create_plan_page.dart';
 
 class JourneyPage extends StatefulWidget {
   final FirebaseAuth auth;
@@ -149,6 +150,22 @@ class _JourneyPageState extends State<JourneyPage>
     }
   }
 
+  /// The header's "New plan" action: the same creation flow as the plan list's
+  /// enroll button, reloading the list on return.
+  Future<void> _openNewPlan() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreatePlanPage(
+          firestore: widget.firestore,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+          groupService: GroupService(firestore: widget.firestore),
+        ),
+      ),
+    );
+    if (mounted) await _hubKey.currentState?.reload();
+  }
+
   @override
   void dispose() {
     _readDatesSub?.cancel();
@@ -185,7 +202,10 @@ class _JourneyPageState extends State<JourneyPage>
               dateProvider: widget.dateProvider,
               eyebrow: 'Keep going',
               title: 'Path',
-              showNotificationBell: false,
+              action: AppHeaderAction(
+                label: 'New plan',
+                onPressed: _openNewPlan,
+              ),
             ),
             Expanded(
               child: RefreshIndicator(

@@ -51,7 +51,6 @@ class NavigationMenuScope extends InheritedWidget {
   Future<void> showMenu(BuildContext context) {
     return AppMenuSheet.show(
       context: context,
-      onNavigate: onNavigate,
       vibrationService: vibrationService,
       adminRoleService: adminRoleService,
       auth: auth,

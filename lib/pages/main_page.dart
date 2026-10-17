@@ -19,8 +19,6 @@ import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/login_page.dart'; // Added
 import 'package:bible_read/widgets/animated_page_route.dart'; // Added
-import 'challenges_page.dart';
-import 'streak_history_page.dart';
 import '../services/admin_role_service.dart';
 import '../services/circle_service.dart';
 import '../services/google_sign_in_factory.dart';
@@ -218,43 +216,6 @@ class MainPageState extends State<MainPage> {
         _selectedIndex = index;
         _navigationHistory.add(index);
       });
-    } else {
-      switch (index) {
-        case 5: // Challenges
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChallengesPage(
-                auth: widget.auth,
-                firestore: widget.firestore,
-                vibrationService: widget.vibrationService,
-              ),
-            ),
-          );
-          break;
-        case 7: // History
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => StreakHistoryPage(
-                auth: widget.auth,
-                firestore: widget.firestore,
-              ),
-            ),
-          );
-          break;
-        case 10: // Sign out
-          unawaited(clearSilentSignInFlag());
-          unawaited(widget.auth.signOut());
-          unawaited(widget.googleSignInProvider().signOut());
-          setState(() {
-            _selectedIndex = 0;
-            _navigationHistory
-              ..clear()
-              ..add(0);
-          });
-          break;
-      }
     }
   }
 
