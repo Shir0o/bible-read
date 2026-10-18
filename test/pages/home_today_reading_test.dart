@@ -822,7 +822,9 @@ void main() {
 
         await tester.tap(find.text('Stretch it out'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Apply'));
+        await tester.tap(find.text('Preview changes'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Confirm & apply'));
         await tester.pumpAndSettle();
 
         expect(find.byType(AdjustPacePage), findsNothing);

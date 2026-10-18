@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import '../common_styles.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +20,7 @@ import '../../services/vibration_service.dart';
 import '../catch_up_status_row.dart';
 import '../member_presence_stack.dart';
 import '../../pages/adjust_pace_page.dart';
+import '../../pages/archived_page.dart';
 import '../../pages/create_plan_page.dart';
 import '../../pages/group_members_page.dart';
 import '../../pages/plan_detail_page.dart';
@@ -73,9 +73,6 @@ class PlansHubState extends State<PlansHub> {
   String? _pinnedReadingId;
 
   late final ActiveReadingAggregator _aggregator;
-
-  /// Whether the Archived section lists every row, not just the first few.
-  bool _showAllArchived = false;
 
   final Set<StreamSubscription<dynamic>> _watchSubs = {};
   Timer? _reloadTimer;
@@ -538,97 +535,23 @@ class PlansHubState extends State<PlansHub> {
     }
   }
 
-  /// Unarchives a group (#776): an owned group returns for every member; a
-  /// shelved participation returns to this reader's active lists.
-  Future<void> _unarchiveGroup(Group group) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
+  /// Opens the Archive (#776), reloading on return so the counts and any
+  /// unarchived plans show up straight away.
+  Future<void> _openArchive() async {
     widget.vibrationService.lightImpact();
-    try {
-      if (uid == group.ownerUid) {
-        await widget.groupService.unarchiveGroup(
-          groupId: group.id,
-          ownerUid: uid,
-        );
-      } else {
-        await widget.groupService.unarchiveMemberParticipation(
-          groupId: group.id,
-          uid: uid,
-        );
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${group.name}" restored')),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Failed to restore "${group.name}". Please try again.'),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Asks before the owner soft-deletes the group — recoverable for 30 days
-  /// from the Recently Deleted hub.
-  void _confirmTrashGroup(Group group) {
-    showDialog(
-      context: context,
-      barrierColor: AppColors.of(context).scrim,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Delete "${group.name}"?'),
-        content: const Text(
-          'The group moves to Recently Deleted for 30 days. Members lose '
-          'access until you restore it or the 30 days run out.',
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ArchivedPage(
+          auth: widget.auth,
+          groupService: widget.groupService,
+          readingPlanService: widget.readingPlanService,
+          aggregator: _aggregator,
+          vibrationService: widget.vibrationService,
+          dateProvider: widget.dateProvider,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _trashGroup(group);
-            },
-            style: AppButtonStyles.destructiveText(context),
-            child: const Text('Delete'),
-          ),
-        ],
       ),
     );
-  }
-
-  Future<void> _trashGroup(Group group) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    try {
-      await widget.groupService.softDeleteGroup(
-        groupId: group.id,
-        ownerUid: uid,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${group.name}" moved to Recently Deleted')),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Failed to delete "${group.name}". Please try again.'),
-          ),
-        );
-      }
-    }
+    if (mounted) await _load();
   }
 
   /// Opens the Recently Deleted hub (#776).
@@ -644,62 +567,6 @@ class PlansHubState extends State<PlansHub> {
           vibrationService: widget.vibrationService,
           dateProvider: widget.dateProvider,
         ),
-      ),
-    );
-  }
-
-  /// Moves a plan to the Recently Deleted hub (#776): recoverable for 30
-  /// days, restorable to the state it had — archived or active.
-  Future<void> _trashPlan(ActivePersonalReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    try {
-      await widget.readingPlanService.softDeletePlan(uid, row.plan.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('"${row.plan.title}" moved to Recently Deleted')),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Failed to delete "${row.plan.title}". Please try again.'),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Asks before moving the plan to the trash — recoverable for 30 days.
-  void _confirmTrashPlan(ActivePersonalReading row) {
-    showDialog(
-      context: context,
-      barrierColor: AppColors.of(context).scrim,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Delete "${row.plan.title}"?'),
-        content: const Text(
-          'It moves to Recently Deleted and waits there for 30 days. '
-          'Restore it any time before then.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _trashPlan(row);
-            },
-            style: AppButtonStyles.destructiveText(context),
-            child: const Text('Delete'),
-          ),
-        ],
       ),
     );
   }
@@ -836,13 +703,11 @@ class PlansHubState extends State<PlansHub> {
                 ],
                 if (hasFinished)
                   _finishedSection(context, personalDone, groupDone),
-                if (_archived.isNotEmpty || _archivedGroups.isNotEmpty)
-                  _archivedSection(context),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.gap12),
-          _trashShortcut(context),
+          const SizedBox(height: AppSpacing.gap20),
+          _shelfCard(context),
           const SizedBox(height: AppSpacing.gap12),
         ],
       ),
@@ -1274,201 +1139,6 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  Widget _archivedSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final rows = [
-      for (final row in _archived) _archivedRow(context, row),
-      for (final group in _archivedGroups) _archivedGroupRow(context, group),
-    ];
-    // Keep a long archive from pushing the rest of Path far down the page.
-    const collapsedCount = 2;
-    final collapsible = rows.length > collapsedCount;
-    final shown =
-        collapsible && !_showAllArchived ? rows.take(collapsedCount) : rows;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.gap4, AppSpacing.gap32,
-              AppSpacing.gap4, AppSpacing.gap8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Archived',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              Text(
-                'shelved · progress kept',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        ...shown,
-        if (collapsible)
-          Center(
-            child: TextButton(
-              onPressed: () =>
-                  setState(() => _showAllArchived = !_showAllArchived),
-              child: Text(
-                _showAllArchived ? 'Show less' : 'Show all ${rows.length}',
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  /// Archive row for an archived group (#776): owned groups return with
-  /// unarchive (owner) — participation returns with unarchive (member).
-  Widget _archivedGroupRow(BuildContext context, Group group) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final uid = widget.auth.currentUser?.uid;
-    final isOwner = uid != null && uid == group.ownerUid;
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(AppSpacing.rInset),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(AppSpacing.rChip),
-            ),
-            child: Icon(
-              Icons.group_outlined,
-              size: 20,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.gap12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  group.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: AppSpacing.gap2),
-                Text(
-                  isOwner ? 'Group archived' : 'Your participation archived',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () => _unarchiveGroup(group),
-            icon: const Icon(Icons.restore),
-            tooltip: 'Unarchive group',
-            color: colorScheme.primary,
-          ),
-          if (isOwner)
-            IconButton(
-              onPressed: () => _confirmTrashGroup(group),
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete group',
-              color: colorScheme.error.withValues(alpha: 0.7),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _archivedRow(BuildContext context, ActivePersonalReading row) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(AppSpacing.rInset),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(AppSpacing.rChip),
-            ),
-            child: Icon(
-              Icons.archive_outlined,
-              size: 20,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.gap12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  row.plan.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: AppSpacing.gap2),
-                Text(
-                  'All ${row.status.total} readings kept',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () => _restorePlan(row),
-            icon: const Icon(Icons.restore),
-            tooltip: 'Unarchive and continue',
-            color: colorScheme.primary,
-          ),
-          IconButton(
-            onPressed: () => _confirmTrashPlan(row),
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Delete plan',
-            color: colorScheme.error.withValues(alpha: 0.7),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _enrollButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -1481,19 +1151,111 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  /// Quiet link to the Recently Deleted hub (#776) at the foot of the list,
-  /// with a hint of how much is waiting in the trash.
-  Widget _trashShortcut(BuildContext context) {
-    return Center(
-      child: TextButton.icon(
-        onPressed: _openTrash,
-        icon: const Icon(Icons.delete_outline, size: 18),
-        label: Text(
-          _trashedCount > 0
-              ? 'Recently Deleted · $_trashedCount waiting'
-              : 'Recently Deleted',
+  /// The foot of Path (#776): Archived and Recently Deleted as two rows of
+  /// one card, each opening its own page. The Archived row hides while
+  /// nothing is shelved; Recently Deleted always shows.
+  Widget _shelfCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final archivedCount = _archived.length + _archivedGroups.length;
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
+        border: Border.all(color: AppColors.of(context).border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          children: [
+            if (archivedCount > 0) ...[
+              _shelfRow(
+                context,
+                icon: Icons.archive_outlined,
+                title: 'Archived',
+                subtitle: 'Shelved · progress kept',
+                count: archivedCount,
+                onTap: _openArchive,
+              ),
+              Divider(
+                height: 1,
+                indent: AppSpacing.gap16 + 38 + AppSpacing.gap12,
+                color: AppColors.of(context).border,
+              ),
+            ],
+            _shelfRow(
+              context,
+              icon: Icons.delete_outline,
+              title: 'Recently Deleted',
+              subtitle: 'Kept for 30 days',
+              count: _trashedCount,
+              onTap: _openTrash,
+            ),
+          ],
         ),
-        style: AppButtonStyles.mutedText(context),
+      ),
+    );
+  }
+
+  Widget _shelfRow(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required int count,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(AppSpacing.rChip),
+              ),
+              child: Icon(
+                icon,
+                size: AppSpacing.iconMd,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.gap12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleSmall),
+                  const SizedBox(height: AppSpacing.gap2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (count > 0)
+              Text(
+                '$count',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            const SizedBox(width: AppSpacing.gap4),
+            Icon(Icons.chevron_right, color: colorScheme.outline),
+          ],
+        ),
       ),
     );
   }
@@ -1530,12 +1292,8 @@ class PlansHubState extends State<PlansHub> {
           ),
           const SizedBox(height: AppSpacing.gap24),
           _enrollButton(context),
-          const SizedBox(height: AppSpacing.gap8),
-          _trashShortcut(context),
-          if (_archived.isNotEmpty || _archivedGroups.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.gap8),
-            _archivedSection(context),
-          ],
+          const SizedBox(height: AppSpacing.gap24),
+          _shelfCard(context),
         ],
       ),
     );

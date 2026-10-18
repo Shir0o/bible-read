@@ -225,7 +225,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Archive plan'));
       await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-      expect(find.text('Archived'), findsOneWidget);
+      // Open the Archive from its row at the foot of Path.
+      await tester.tap(find.text('Archived'));
+      await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
       // Move it to the trash from the archive row.
       await tester.tap(find.byTooltip('Delete plan'));
@@ -234,17 +236,20 @@ void main() {
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
-      // Gone from the hub; the trash shortcut counts it.
+      // Gone from the Archive; back on Path the trash row counts it.
+      expect(find.text('Nothing archived'), findsOneWidget);
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await tester.pumpAndSettle(const Duration(milliseconds: 1200));
       expect(find.text('Archived'), findsNothing);
-      expect(find.text('Recently Deleted · 1 waiting'), findsOneWidget);
+      expect(find.text('Recently Deleted'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
     });
 
-    testWidgets('the trash shortcut opens the Recently Deleted hub',
-        (tester) async {
+    testWidgets('the trash row opens the Recently Deleted hub', (tester) async {
       await planService.softDeletePlan('u1', 'p1');
       await pumpPage(tester);
 
-      await tester.tap(find.text('Recently Deleted · 1 waiting'));
+      await tester.tap(find.text('Recently Deleted'));
       await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
       expect(find.byType(RecentlyDeletedPage), findsOneWidget);

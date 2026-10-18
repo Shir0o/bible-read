@@ -36,7 +36,7 @@ CatchUpStatus _status({
   );
 }
 
-Widget _host(CatchUpStatus status, {bool isGroup = true}) {
+Widget _host(CatchUpStatus status, {bool isGroup = true, DateTime? today}) {
   return MaterialApp(
     home: Scaffold(
       body: ScheduleScreenView(
@@ -45,6 +45,7 @@ Widget _host(CatchUpStatus status, {bool isGroup = true}) {
         isGroup: isGroup,
         onToggle: (_) {},
         todayAnchorBuilder: isGroup ? (_) => const Text('GROUP ANCHOR') : null,
+        today: today,
       ),
     ),
   );
@@ -87,6 +88,7 @@ class _OptimisticHostState extends State<_OptimisticHost> {
           onToggle: (i) => setState(() => _completed.add(i)),
           todayAnchorBuilder:
               widget.isGroup ? (_) => const Text('GROUP ANCHOR') : null,
+          today: widget.today,
         ),
       ),
     );
@@ -121,7 +123,7 @@ Color? _rowBackground(WidgetTester tester, Finder text) {
 void main() {
   final today = DateTime(2026, 6, 2);
 
-  testWidgets('behind: shows catch-up tray and hides "Jump to current"', (
+  testWidgets('behind: shows catch-up tray and shows "Jump to today"', (
     tester,
   ) async {
     final status = _status(
@@ -133,7 +135,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(_host(status));
+    await tester.pumpWidget(_host(status, today: today));
     await tester.pumpAndSettle();
 
     expect(find.text('TEST PLAN'), findsOneWidget);
@@ -143,12 +145,12 @@ void main() {
     expect(find.text('TO REVISIT'), findsWidgets);
     // The current reading drives the group anchor.
     expect(find.text('GROUP ANCHOR'), findsOneWidget);
-    // No "Jump to current" chip while behind (the tray handles that).
-    expect(find.text('Jump to current'), findsNothing);
+    // "Jump to today" chip is visible even while behind.
+    expect(find.text('Jump to today'), findsOneWidget);
     expect(find.text('0 of 3 read'), findsOneWidget);
   });
 
-  testWidgets('caught up: shows "Jump to current" chip and "in step" card', (
+  testWidgets('caught up: shows "Jump to today" chip and "in step" card', (
     tester,
   ) async {
     final status = _status(
@@ -160,13 +162,76 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(_host(status));
+    await tester.pumpWidget(_host(status, today: today));
     await tester.pumpAndSettle();
 
-    expect(find.text('Jump to current'), findsOneWidget);
+    expect(find.text('Jump to today'), findsOneWidget);
     expect(find.text("You're in step with your group."), findsOneWidget);
     expect(find.text('Catch up at your own pace'), findsNothing);
     expect(find.text('2 of 3 read'), findsOneWidget);
+  });
+
+  testWidgets('weekly cadence: shows "Jump to current" chip', (
+    tester,
+  ) async {
+    final status = _status(
+      today: today,
+      days: const [
+        (dayOffset: -7, completed: true),
+        (dayOffset: 0, completed: false),
+        (dayOffset: 7, completed: false),
+      ],
+    );
+
+    await tester
+        .pumpWidget(_host(status, today: today.add(const Duration(days: 1))));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Jump to current'), findsOneWidget);
+  });
+
+  testWidgets(
+      'scroll-to-top FAB: toggles with scroll offset and animates to top', (
+    tester,
+  ) async {
+    // 30 days of readings so the page is scrollable
+    final status = _status(
+      today: today,
+      days: [
+        for (var i = 0; i < 30; i++) (dayOffset: i, completed: false),
+      ],
+    );
+
+    await tester.pumpWidget(_host(status, today: today));
+    await tester.pumpAndSettle();
+
+    final fabFinder = find.byKey(const Key('schedule_scroll_to_top_fab'));
+    expect(fabFinder, findsOneWidget);
+
+    // At top: FAB has scale 0 (hidden)
+    final initialScale = tester.widget<AnimatedScale>(
+      find.ancestor(of: fabFinder, matching: find.byType(AnimatedScale)),
+    );
+    expect(initialScale.scale, 0.0);
+
+    // Scroll down 400px
+    await tester.drag(
+        find.byType(SingleChildScrollView), const Offset(0, -400));
+    await tester.pumpAndSettle();
+
+    final scrolledScale = tester.widget<AnimatedScale>(
+      find.ancestor(of: fabFinder, matching: find.byType(AnimatedScale)),
+    );
+    expect(scrolledScale.scale, 1.0);
+
+    // Tap the FAB to scroll back to top
+    await tester.tap(fabFinder);
+    await tester.pumpAndSettle();
+
+    final returnScale = tester.widget<AnimatedScale>(
+      find.ancestor(of: fabFinder, matching: find.byType(AnimatedScale)),
+    );
+    expect(returnScale.scale, 0.0);
   });
 
   testWidgets('personal: behind shows a quiet inline note, no group chrome', (
@@ -286,7 +351,7 @@ void main() {
     expect(_rowBackground(tester, marked), isNot(activeBackground));
   });
 
-  testWidgets('"Jump to current" lands on the current row after catching up',
+  testWidgets('"Jump to today" lands on the current row after catching up',
       (tester) async {
     await tester.pumpWidget(
       _OptimisticHost(
@@ -307,7 +372,7 @@ void main() {
         .controller!;
 
     // Catch up on every behind reading; marking the last one clears the
-    // catch-up note and frees the "Jump to current" chip.
+    // catch-up note and frees the "Jump to today" chip.
     for (var i = 1; i <= 6; i++) {
       await tester.tap(
         find.ancestor(
@@ -317,14 +382,14 @@ void main() {
       );
       await tester.pumpAndSettle();
     }
-    expect(find.text('Jump to current'), findsOneWidget);
+    expect(find.text('Jump to today'), findsOneWidget);
 
     // Back at the top, the reading that is current now sits below the fold.
     controller.jumpTo(0);
     await tester.pump();
     expect(tester.getRect(find.text('Genesis 7')).top, greaterThan(600));
 
-    await tester.tap(find.text('Jump to current'));
+    await tester.tap(find.text('Jump to today'));
     await tester.pumpAndSettle();
 
     // The jump reveals the current reading.
