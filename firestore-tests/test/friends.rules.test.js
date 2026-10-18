@@ -183,6 +183,20 @@ describe('users/{uid}/friend_feed', () => {
     );
   });
 
+  it('lets the author manage their own Amen like any Group copy', async () => {
+    const mei = await asUser('mei');
+    await assertSucceeds(
+      mei
+        .doc('users/mei/friend_feed/2026-10-18/entries/mei/likes/mei')
+        .set({timestamp: new Date()}),
+    );
+    await assertSucceeds(
+      mei
+        .doc('users/mei/friend_feed/2026-10-18/entries/mei/likes/mei')
+        .delete(),
+    );
+  });
+
   it('denies an Amen from a non-Friend', async () => {
     const carol = await asUser('carol');
     await assertFails(
