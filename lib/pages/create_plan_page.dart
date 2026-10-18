@@ -575,8 +575,22 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
+  List<DateTime> _scheduleDates(int count) {
+    final dates = <DateTime>[];
+    if (count <= 0) return dates;
+    var cursor = DateTime(_startDate.year, _startDate.month, _startDate.day);
+    while (dates.length < count) {
+      if (_readingDays.contains(cursor.weekday)) {
+        dates.add(cursor);
+      }
+      cursor = cursor.add(const Duration(days: 1));
+    }
+    return dates;
+  }
+
   void _showFullSchedule(BuildContext context, ReadingPlan plan) {
     final colorScheme = Theme.of(context).colorScheme;
+    final dates = _scheduleDates(plan.schedule.length);
     showAppSheet<void>(
       context: context,
       builder: (context) {
@@ -606,7 +620,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                     itemCount: plan.schedule.length,
                     itemBuilder: (context, index) {
                       final day = plan.schedule[index];
-                      final date = _startDate.add(Duration(days: day.day - 1));
+                      final date = index < dates.length
+                          ? dates[index]
+                          : _startDate.add(Duration(days: day.day - 1));
                       return Container(
                         margin: const EdgeInsets.only(bottom: AppSpacing.gap8),
                         padding: const EdgeInsets.all(AppSpacing.gap12),
@@ -621,6 +637,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                               width: 64,
                               child: Text(
                                 '${_months[date.month - 1]} ${date.day}',
+                                key: Key('create_plan_schedule_date_$index'),
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelMedium
@@ -1389,6 +1406,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         button: true,
         label: _fullDayName(day),
         child: GestureDetector(
+          key: Key('create_plan_day_$day'),
           behavior: HitTestBehavior.opaque,
           onTap: () {
             unawaited(widget.vibrationService.lightImpact());
@@ -1512,11 +1530,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final end = DateTime(
-      _startDate.year,
-      _startDate.month,
-      _startDate.day + plan.schedule.last.day - 1,
-    );
+    final dates = _scheduleDates(plan.schedule.length);
+    final end = dates.isNotEmpty
+        ? dates.last
+        : DateTime(
+            _startDate.year,
+            _startDate.month,
+            _startDate.day + plan.schedule.last.day - 1,
+          );
     final chapters = plan.schedule.fold<int>(
       0,
       (total, day) => total + day.readings.length,
