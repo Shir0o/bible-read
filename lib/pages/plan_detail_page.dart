@@ -20,6 +20,7 @@ import '../widgets/app_bottom_sheet.dart';
 import '../widgets/burst_undo_controller.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/sub_header.dart';
+import 'adjust_pace_page.dart';
 import '../widgets/member_presence_stack.dart';
 import '../widgets/schedule_preview.dart';
 import '../widgets/schedule_screen_view.dart';
@@ -86,14 +87,18 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   // Personal plan streams / state
   late Stream<UserPlanProgress?> _progressStream;
   Set<int>? _optimisticCompletedDays;
+  UserPlanProgress? _latestProgress;
 
   // Group schedule streams / state
   late Stream<List<GroupSchedule>> _groupScheduleStream;
   late Stream<Map<String, int>> _groupProgressStream;
   final Map<String, int> _optimisticGroupProgress = {};
+  List<GroupSchedule>? _latestGroupSchedule;
+  Map<String, int> _latestGroupProgress = const {};
 
   /// Coalesces rapid marks into one undoable burst (ADR-0005).
   late final BurstUndoController _burstUndo;
+  late final ValueNotifier<bool> _canAdjustNotifier;
 
   bool get _isGroupMode => widget.group != null;
 
@@ -101,9 +106,15 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   void initState() {
     super.initState();
     _burstUndo = BurstUndoController();
+    _canAdjustNotifier = ValueNotifier<bool>(
+      _isGroupMode
+          ? (widget.isMember && (widget.initialSchedule?.isNotEmpty ?? false))
+          : (widget.initialProgress != null),
+    );
     final user = widget.auth.currentUser;
 
     if (_isGroupMode) {
+      _latestGroupSchedule = widget.initialSchedule;
       _groupScheduleStream = widget.groupService!.schedule(widget.group!.id);
       if (user != null) {
         _groupProgressStream = widget.groupService!.userProgressForGroup(
@@ -114,6 +125,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         _groupProgressStream = Stream.value({});
       }
     } else {
+      _latestProgress = widget.initialProgress;
       if (user != null) {
         _progressStream =
             _planService.getPlanProgress(user.uid, widget.plan!.id);
@@ -125,6 +137,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
   @override
   void dispose() {
+    _canAdjustNotifier.dispose();
     _burstUndo.dispose();
     super.dispose();
   }
@@ -325,6 +338,76 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     );
   }
 
+  Future<void> _handleAdjustPersonalPace() async {
+    final user = widget.auth.currentUser;
+    if (user == null || widget.plan == null) return;
+    final progress = _latestProgress;
+    if (progress == null) return;
+    final effectiveProgress = UserPlanProgress(
+      planId: widget.plan!.id,
+      userId: user.uid,
+      startDate: progress.startDate,
+      completedDays:
+          (_optimisticCompletedDays ?? progress.completedDays).toList(),
+    );
+    final applied = await adjustPersonalPace(
+      context,
+      firestore: _effectiveFirestore,
+      uid: user.uid,
+      plan: widget.plan!,
+      progress: effectiveProgress,
+      today: DateTime.now(),
+      vibrationService: widget.vibrationService,
+    );
+    if (applied && mounted) {
+      setState(() {
+        _optimisticCompletedDays = null;
+      });
+    }
+  }
+
+  Future<void> _handleAdjustSharedPace() async {
+    final user = widget.auth.currentUser;
+    if (user == null || widget.group == null || !_isGroupMode) return;
+    final schedule = _latestGroupSchedule;
+    if (schedule == null || schedule.isEmpty) return;
+
+    final progress = {
+      ..._latestGroupProgress,
+      ..._optimisticGroupProgress,
+    };
+    final completedIds = <String>{};
+    for (final s in schedule) {
+      final dateId = _dateId(s.date);
+      final count = progress[dateId] ?? 0;
+      final isRead =
+          s.chapters.isEmpty ? count > 0 : count >= s.chapters.length;
+      if (isRead) completedIds.add(dateId);
+    }
+    final status = CatchUpEngine.forGroupSchedule(
+      schedule,
+      completedIds,
+      today: DateTime.now(),
+    );
+
+    final applied = await adjustSharedPace(
+      context,
+      firestore: _effectiveFirestore,
+      uid: user.uid,
+      groupId: widget.group!.id,
+      schedule: schedule,
+      completedDateIds: completedIds,
+      daysBehind: status.missedCount,
+      today: DateTime.now(),
+      vibrationService: widget.vibrationService,
+    );
+    if (applied && mounted) {
+      setState(() {
+        _optimisticGroupProgress.clear();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -339,6 +422,19 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
             SubHeader(
               title: title,
               onBack: () => Navigator.of(context).pop(),
+              right: ValueListenableBuilder<bool>(
+                valueListenable: _canAdjustNotifier,
+                builder: (context, canAdjust, _) {
+                  if (!canAdjust) return const SizedBox.shrink();
+                  return IconButton(
+                    icon: const Icon(Icons.tune),
+                    tooltip: 'Adjust pace',
+                    onPressed: _isGroupMode
+                        ? _handleAdjustSharedPace
+                        : _handleAdjustPersonalPace,
+                  );
+                },
+              ),
             ),
             Expanded(
               child: _isGroupMode
@@ -401,6 +497,16 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                       : count >= s.chapters.length;
                   if (isRead) completedIds.add(dateId);
                 }
+                _latestGroupSchedule = fullSchedule;
+                _latestGroupProgress = remoteProgress;
+
+                final canAdjustGroup =
+                    widget.isMember && fullSchedule.isNotEmpty;
+                if (_canAdjustNotifier.value != canAdjustGroup) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _canAdjustNotifier.value = canAdjustGroup;
+                  });
+                }
 
                 final status = CatchUpEngine.forGroupSchedule(
                   fullSchedule,
@@ -455,6 +561,14 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
             snapshot.data == null;
         final streamProgress = snapshot.data;
         final isStarted = streamProgress != null;
+        _latestProgress = streamProgress;
+
+        final canAdjustPersonal = isStarted;
+        if (_canAdjustNotifier.value != canAdjustPersonal) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _canAdjustNotifier.value = canAdjustPersonal;
+          });
+        }
 
         return SkeletonLoader(
           loading: isLoading,

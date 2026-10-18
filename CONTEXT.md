@@ -83,9 +83,12 @@ plan overlay. A reader can be on track in one and behind in the other.
 _Avoid_: Group plan
 
 **Adjust pace**:
-A reader re-dating their own schedule after falling behind. Applies to solo and
-Shared plans alike; on a Shared plan it writes the reader's own overlay and never
-touches the Group schedule or another member's progress. Always personal — see
+A reader re-dating their own schedule after falling behind or changing their daily
+reading pace (e.g. from 2 to 3 chapters a day). Keeps all previously completed
+readings and their dates intact while re-slicing unread chapters starting from today.
+Always offers a dry-run preview before committing. Applies to solo and Shared
+plans alike; on a Shared plan it writes the reader's own overlay and never touches
+the Group schedule or another member's progress. Always personal — see
 [ADR-0007](docs/adr/0007-shared-plan-schedule-is-fixed.md).
 _Avoid_: Edit plan, reschedule
 
