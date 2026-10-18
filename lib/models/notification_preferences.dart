@@ -5,6 +5,7 @@ enum NotificationType {
   groupJoinRequest,
   groupScheduleUpdate,
   groupInvite,
+  friend,
   seasonalChallenge,
   badge,
 }

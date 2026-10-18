@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/badge_award.dart';
 import '../models/circle_member.dart';
 import 'error_logger.dart';
+import 'friend_service.dart';
 import 'group_collections.dart';
 import 'milestone_announcer.dart';
 import 'read_log_service.dart';
@@ -42,8 +43,14 @@ class FeedService {
   /// Likes are watched live, one listener per update in the week (an entry
   /// or a logged badge), so another reader's Amen shows at once. Listeners
   /// follow the updates: one whose update is gone is cancelled.
-  Stream<FeedSource> watch(List<String> groupIds, {required DateTime today}) {
-    if (groupIds.isEmpty) return Stream.value(const FeedSource());
+  Stream<FeedSource> watch(
+    List<String> groupIds, {
+    required DateTime today,
+    List<String> friendUids = const [],
+  }) {
+    if (groupIds.isEmpty && friendUids.isEmpty) {
+      return Stream.value(const FeedSource());
+    }
     final dateKeys = dateKeysFor(today);
     final oldest = DateTime(today.year, today.month, today.day - (days - 1));
 
@@ -51,7 +58,8 @@ class FeedService {
       final entries = <String, List<FeedEntryCopy>>{};
       final badges = <String, List<FeedBadgeCopy>>{};
       final generation = <String, int>{};
-      final expected = groupIds.length * (dateKeys.length + 1);
+      final expected =
+          (groupIds.length + friendUids.length) * (dateKeys.length + 1);
       final subs = <StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>[];
       final likeSubs =
           <String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>{};
@@ -124,7 +132,7 @@ class FeedService {
 
       for (final groupId in groupIds) {
         for (final dateKey in dateKeys) {
-          final key = '$groupId/$dateKey';
+          final key = 'g/$groupId/$dateKey';
           subs.add(firestore
               .collection(GroupCollections.groups)
               .doc(groupId)
@@ -154,12 +162,54 @@ class FeedService {
             .listen(
           (snap) => put(
             badges,
-            groupId,
-            _badgeCopies(groupId, dateKeys.toSet(), snap.docs),
+            'g/$groupId',
+            _badgeCopies(groupId, null, dateKeys.toSet(), snap.docs),
           ),
           onError: (Object e, StackTrace st) {
             unawaited(ErrorLogger.log(e, st));
-            put(badges, groupId, const <FeedBadgeCopy>[]);
+            put(badges, 'g/$groupId', const <FeedBadgeCopy>[]);
+          },
+        ));
+      }
+
+      for (final friendUid in friendUids) {
+        for (final dateKey in dateKeys) {
+          final key = 'f/$friendUid/$dateKey';
+          subs.add(firestore
+              .collection('users')
+              .doc(friendUid)
+              .collection(FriendService.feedCollection)
+              .doc(dateKey)
+              .collection('entries')
+              .snapshots()
+              .listen(
+            (snap) => hydrate(
+              key,
+              () => _friendEntryCopies(friendUid, dateKey, snap.docs),
+            ),
+            onError: (Object e, StackTrace st) {
+              unawaited(ErrorLogger.log(e, st));
+              put(entries, key, const <FeedEntryCopy>[]);
+            },
+          ));
+        }
+
+        subs.add(firestore
+            .collection('users')
+            .doc(friendUid)
+            .collection(FriendService.badgeLog)
+            .where('dateUnlocked',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(oldest))
+            .snapshots()
+            .listen(
+          (snap) => put(
+            badges,
+            'f/$friendUid',
+            _badgeCopies(null, friendUid, dateKeys.toSet(), snap.docs),
+          ),
+          onError: (Object e, StackTrace st) {
+            unawaited(ErrorLogger.log(e, st));
+            put(badges, 'f/$friendUid', const <FeedBadgeCopy>[]);
           },
         ));
       }
@@ -227,11 +277,34 @@ class FeedService {
     ];
   }
 
+  Future<List<FeedEntryCopy>> _friendEntryCopies(
+    String friendUid,
+    String dateKey,
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) async {
+    if (docs.isEmpty) return const [];
+    return [
+      for (final doc in docs)
+        FeedEntryCopy(
+          groupId: friendUid,
+          friendUid: friendUid,
+          dateKey: dateKey,
+          uid: doc.id,
+          name: doc.data()['name'] as String?,
+          timestamp: (doc.data()['timestamp'] as Timestamp?)?.toDate(),
+          sharedReflection: _reflection(doc.data()['sharedReflection']),
+          milestone: FeedMilestone.fromMap(doc.data()['milestone']),
+          reading: doc.data()['reading'] as String?,
+        ),
+    ];
+  }
+
   static String? _reflection(Object? value) =>
       value is String && value.trim().isNotEmpty ? value.trim() : null;
 
   List<FeedBadgeCopy> _badgeCopies(
-    String groupId,
+    String? groupId,
+    String? friendUid,
     Set<String> dateKeys,
     List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
   ) =>
@@ -239,6 +312,7 @@ class FeedService {
         for (final doc in docs)
           FeedBadgeCopy(
             groupId: groupId,
+            friendUid: friendUid,
             awardId: doc.id,
             mirror: BadgeMirror.fromFirestore(
               (doc.data()['uid'] as String?) ?? '',
@@ -274,9 +348,14 @@ class FeedService {
   }
 }
 
-/// One copy of a person's daily entry, in one Group.
+/// One copy of a person's daily entry, in one Group or in their own
+/// Friend-visible source.
 class FeedEntryCopy {
   final String groupId;
+
+  /// Set when this copy came from the author's Friend source rather than a
+  /// Group's read log.
+  final String? friendUid;
   final String dateKey;
   final String uid;
   final String? name;
@@ -290,6 +369,7 @@ class FeedEntryCopy {
     required this.groupId,
     required this.dateKey,
     required this.uid,
+    this.friendUid,
     this.name,
     this.timestamp,
     this.sharedReflection,
@@ -298,10 +378,14 @@ class FeedEntryCopy {
     this.likerUids = const {},
   });
 
-  String get likesPath => AmenTarget(groupId, dateKey, uid).likesPath;
+  bool get isFriend => friendUid != null;
+
+  String get likesPath =>
+      AmenTarget(groupId, dateKey, uid, friendUid: friendUid).likesPath;
 
   FeedEntryCopy withLikers(Set<String> likers) => FeedEntryCopy(
         groupId: groupId,
+        friendUid: friendUid,
         dateKey: dateKey,
         uid: uid,
         name: name,
@@ -313,10 +397,13 @@ class FeedEntryCopy {
       );
 }
 
-/// One Group's log of a badge a member was awarded, with the Amens on that
-/// badge alone.
+/// One log of a badge a member was awarded — a Group's mirror or the
+/// author's own Friend-visible log — with the Amens on that badge alone.
 class FeedBadgeCopy {
-  final String groupId;
+  final String? groupId;
+
+  /// Set when this copy came from the author's Friend source.
+  final String? friendUid;
 
   /// The badge log document id, `{uid}_{badgeId}`.
   final String awardId;
@@ -327,18 +414,25 @@ class FeedBadgeCopy {
     required this.groupId,
     required this.awardId,
     required this.mirror,
+    this.friendUid,
     this.likerUids = const {},
   });
 
   String get dateKey => ReadLogService.dateKeyFor(mirror.dateUnlocked!);
 
-  AmenTarget get target =>
-      AmenTarget(groupId, dateKey, mirror.uid, awardId: awardId);
+  AmenTarget get target => AmenTarget(
+        groupId ?? '',
+        dateKey,
+        mirror.uid,
+        awardId: awardId,
+        friendUid: friendUid,
+      );
 
   String get likesPath => target.likesPath;
 
   FeedBadgeCopy withLikers(Set<String> likers) => FeedBadgeCopy(
         groupId: groupId,
+        friendUid: friendUid,
         awardId: awardId,
         mirror: mirror,
         likerUids: likers,
@@ -354,17 +448,32 @@ class FeedSource {
 }
 
 /// A read-log entry, or with [awardId] a logged badge, an Amen is written on.
+/// [friendUid] points at the author's Friend source instead of a Group.
 class AmenTarget {
   final String groupId;
   final String dateKey;
   final String uid;
   final String? awardId;
+  final String? friendUid;
 
-  const AmenTarget(this.groupId, this.dateKey, this.uid, {this.awardId});
+  const AmenTarget(
+    this.groupId,
+    this.dateKey,
+    this.uid, {
+    this.awardId,
+    this.friendUid,
+  });
 
-  String get likesPath => awardId == null
-      ? '${GroupCollections.groups}/$groupId/read_log/$dateKey/entries/$uid/likes'
-      : '${GroupCollections.groups}/$groupId/${FeedService.badgeLog}/$awardId/likes';
+  String get likesPath {
+    if (friendUid != null) {
+      return awardId == null
+          ? 'users/$friendUid/${FriendService.feedCollection}/$dateKey/entries/$uid/likes'
+          : 'users/$friendUid/${FriendService.badgeLog}/$awardId/likes';
+    }
+    return awardId == null
+        ? '${GroupCollections.groups}/$groupId/read_log/$dateKey/entries/$uid/likes'
+        : '${GroupCollections.groups}/$groupId/${FeedService.badgeLog}/$awardId/likes';
+  }
 }
 
 enum FeedUpdateKind { day, grouped, milestone, badge }
@@ -406,6 +515,9 @@ class FeedUpdate {
   final List<AmenTarget> targets;
   final Set<String> likerUids;
 
+  /// Whether any copy of this update came from the author's Friend source.
+  final bool isFriend;
+
   const FeedUpdate({
     required this.kind,
     required this.key,
@@ -414,6 +526,7 @@ class FeedUpdate {
     required this.groupIds,
     required this.targets,
     required this.likerUids,
+    this.isFriend = false,
     this.time,
     this.reading,
     this.reflection,
@@ -448,13 +561,29 @@ List<FeedDay> assembleFeed({
   required List<CircleMember> circle,
   required Set<String> groupIds,
   required DateTime today,
+  Set<String> friendUids = const {},
 }) {
-  final members = {
+  final circleByUid = {for (final m in circle) m.uid: m};
+  final coMembers = {
     for (final m in circle)
       if (m.groupIds.any(groupIds.contains)) m.uid: m,
   };
-  bool visible(String uid, String groupId) =>
-      groupIds.contains(groupId) && (uid == myUid || members.containsKey(uid));
+
+  bool visibleEntry(FeedEntryCopy entry) {
+    if (entry.friendUid != null) {
+      return entry.uid == myUid || friendUids.contains(entry.uid);
+    }
+    return groupIds.contains(entry.groupId) &&
+        (entry.uid == myUid || coMembers.containsKey(entry.uid));
+  }
+
+  bool visibleBadge(FeedBadgeCopy badge) {
+    if (badge.friendUid != null) {
+      return badge.mirror.uid == myUid || friendUids.contains(badge.mirror.uid);
+    }
+    return groupIds.contains(badge.groupId) &&
+        (badge.mirror.uid == myUid || coMembers.containsKey(badge.mirror.uid));
+  }
 
   FeedPerson person(String uid, String? entryName) {
     if (uid == myUid) {
@@ -466,23 +595,24 @@ List<FeedDay> assembleFeed({
         avatarName: myName,
       );
     }
-    final full = members[uid]?.name ?? entryName ?? '';
+    final member = circleByUid[uid];
+    final full = member?.name ?? entryName ?? '';
     final first = full.trim().split(' ').first;
     return FeedPerson(
       uid: uid,
       name: first.isEmpty ? 'Someone' : first,
-      photoUrl: members[uid]?.photoUrl,
+      photoUrl: member?.photoUrl,
     );
   }
 
   final copies = <String, List<FeedEntryCopy>>{};
   for (final e in source.entries) {
-    if (!visible(e.uid, e.groupId)) continue;
+    if (!visibleEntry(e)) continue;
     copies.putIfAbsent('${e.dateKey}/${e.uid}', () => []).add(e);
   }
   final badgeCopies = <String, List<FeedBadgeCopy>>{};
   for (final b in source.badges) {
-    if (!visible(b.mirror.uid, b.groupId)) continue;
+    if (!visibleBadge(b)) continue;
     badgeCopies.putIfAbsent('${b.dateKey}/${b.awardId}', () => []).add(b);
   }
 
@@ -495,7 +625,11 @@ List<FeedDay> assembleFeed({
           dateKey: badge.dateKey,
           time: badge.mirror.dateUnlocked,
           people: [person(badge.mirror.uid, null)],
-          groupIds: {for (final b in badges) b.groupId},
+          groupIds: {
+            for (final b in badges)
+              if (b.groupId != null) b.groupId!,
+          },
+          isFriend: badges.any((b) => b.friendUid != null),
           badgeTitle: badge.mirror.title,
           targets: [for (final b in badges) b.target],
           likerUids: {for (final b in badges) ...b.likerUids},
@@ -503,7 +637,11 @@ List<FeedDay> assembleFeed({
   }
   for (final MapEntry(:key, value: entryCopies) in copies.entries) {
     final [dateKey, uid] = key.split('/');
-    final groups = {for (final c in entryCopies) c.groupId};
+    final groups = {
+      for (final c in entryCopies)
+        if (c.friendUid == null) c.groupId,
+    };
+    final isFriend = entryCopies.any((c) => c.friendUid != null);
     final milestone = entryCopies.map((c) => c.milestone).nonNulls.firstOrNull;
     final times = entryCopies.map((c) => c.timestamp).nonNulls;
     final kind =
@@ -517,11 +655,20 @@ List<FeedDay> assembleFeed({
               : times.reduce((a, b) => a.isAfter(b) ? a : b),
           people: [person(uid, entryCopies.firstOrNull?.name)],
           groupIds: groups,
+          isFriend: isFriend,
           reading: entryCopies.map((c) => c.reading).nonNulls.firstOrNull,
           reflection:
               entryCopies.map((c) => c.sharedReflection).nonNulls.firstOrNull,
           milestone: milestone,
-          targets: [for (final g in groups) AmenTarget(g, dateKey, uid)],
+          targets: [
+            for (final c in entryCopies)
+              AmenTarget(
+                c.groupId,
+                dateKey,
+                uid,
+                friendUid: c.friendUid,
+              ),
+          ],
           likerUids: {for (final c in entryCopies) ...c.likerUids},
         ));
   }
@@ -551,6 +698,7 @@ List<FeedDay> assembleFeed({
         time: plain.first.time,
         people: [for (final u in ordered) u.people.first],
         groupIds: {for (final u in plain) ...u.groupIds},
+        isFriend: plain.any((u) => u.isFriend),
         // Amen celebrates the others; the reader never Amens themselves.
         targets: [
           for (final u in plain)

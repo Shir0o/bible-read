@@ -15,6 +15,7 @@ import '../theme/app_theme.dart';
 import '../services/apple_sign_in_service.dart';
 import '../services/error_logger.dart';
 import '../services/feedback_service.dart';
+import '../services/friend_service.dart';
 import '../services/notification_preferences_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/google_sign_in_factory.dart';
@@ -40,6 +41,7 @@ class SettingsPage extends StatefulWidget {
   final UserPreferencesService? userPreferencesService;
   final VibrationService vibrationService;
   final FeedbackService feedbackService;
+  final FriendService friendService;
   final Widget Function(BuildContext)? mainPageBuilder;
 
   factory SettingsPage({
@@ -52,6 +54,7 @@ class SettingsPage extends StatefulWidget {
     UserPreferencesService? userPreferencesService,
     VibrationService? vibrationService,
     FeedbackService? feedbackService,
+    FriendService? friendService,
     Widget Function(BuildContext)? mainPageBuilder,
   }) {
     final authInstance = auth ?? FirebaseAuth.instance;
@@ -71,6 +74,7 @@ class SettingsPage extends StatefulWidget {
       vibrationService: vibrationService ?? const VibrationService(),
       feedbackService:
           feedbackService ?? FeedbackService(firestore: fs, auth: authInstance),
+      friendService: friendService ?? FriendService(firestore: fs),
       mainPageBuilder: mainPageBuilder,
     );
   }
@@ -85,6 +89,7 @@ class SettingsPage extends StatefulWidget {
     this.userPreferencesService,
     required this.vibrationService,
     required this.feedbackService,
+    required this.friendService,
     this.mainPageBuilder,
   });
 
@@ -331,6 +336,26 @@ class SettingsPageState extends State<SettingsPage> {
     final uid = user.uid;
 
     try {
+      // 0. Remove the friend graph: code lookup, both sides of every
+      // friendship, and the Friend source. The server does this because a
+      // client may not delete another reader's side (ADR-0012). Abort rather
+      // than delete the account while their friendships linger.
+      try {
+        await widget.friendService.deleteMyFriendData();
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Couldn’t clear your friend data. Please try again.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
       // 1. Clean up personal Firestore data
       final userDoc = widget.firestore.collection('users').doc(uid);
       try {

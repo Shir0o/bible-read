@@ -228,6 +228,27 @@ exports.claimSeasonalChallengeReward = onCall({ region: 'us-central1' }, async (
   return { success: true };
 });
 
+async function isCircleMember(db, fromUid, toUid) {
+  if (!fromUid || !toUid || fromUid === toUid) return false;
+  const friend = await db
+    .collection('users').doc(fromUid)
+    .collection('friends').doc(toUid)
+    .get();
+  if (friend.exists) return true;
+
+  const memberships = await db
+    .collectionGroup('members')
+    .where('uid', '==', fromUid)
+    .get();
+  for (const membership of memberships.docs) {
+    const group = membership.ref.parent.parent;
+    if (!group) continue;
+    const coMember = await group.collection('members').doc(toUid).get();
+    if (coMember.exists) return true;
+  }
+  return false;
+}
+
 exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) => {
   if (!req.auth) {
     throw new functions.https.HttpsError(
@@ -243,6 +264,16 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
 
   const fromUid = req.auth.uid;
   const db = admin.firestore();
+
+  // A Nudge is person-to-person across the Circle (ADR-0012): a co-member of
+  // at least one shared Group, or a Friend. Anyone else is not eligible.
+  if (!(await isCircleMember(db, fromUid, toUid))) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'You can only nudge someone in your Circle.',
+    );
+  }
+
   const logRef = db.collection('users').doc(fromUid)
     .collection('nudges').doc(toUid);
 
@@ -314,6 +345,218 @@ exports.sendNudgeNotification = onCall({ region: "us-central1" }, async (req) =>
   );
 
   return { alreadySent: false };
+});
+
+// ADR-0012: eight characters from the join-code alphabet, no I, O, 0 or 1.
+const FRIEND_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const FRIEND_CODE_LENGTH = 8;
+
+function normalizeFriendCode(raw) {
+  return typeof raw === 'string'
+    ? raw.toUpperCase().replace(/[\s-]/g, '')
+    : '';
+}
+
+function isFriendCode(code) {
+  return code.length === FRIEND_CODE_LENGTH &&
+    code.split('').every((char) => FRIEND_CODE_ALPHABET.includes(char));
+}
+
+function friendDisplayName(data) {
+  const name = typeof data?.name === 'string' ? data.name.trim() : '';
+  if (name) return name;
+  const displayName = typeof data?.displayName === 'string'
+    ? data.displayName.trim()
+    : '';
+  if (displayName) return displayName;
+  const email = typeof data?.email === 'string' ? data.email.trim() : '';
+  return email ? email.split('@')[0] : '';
+}
+
+/**
+ * Redeems a friend code: writes both sides of the friendship atomically and
+ * tells the code's owner. Clients cannot write another reader's friendship
+ * side, so redemption has to live here. Codes are resolved again server-side
+ * so a reset or stale code cannot slip through between preview and confirm.
+ */
+exports.redeemFriendCode = onCall({ region: 'us-central1' }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated.',
+    );
+  }
+
+  const code = normalizeFriendCode(req.data?.code);
+  if (!isFriendCode(code)) return { status: 'unknown' };
+
+  const db = admin.firestore();
+  const lookup = await db.collection('friendCodes').doc(code).get();
+  const ownerUid = lookup.exists ? lookup.data()?.ownerUid : null;
+  if (!ownerUid || typeof ownerUid !== 'string') return { status: 'unknown' };
+
+  const redeemerUid = req.auth.uid;
+  if (ownerUid === redeemerUid) return { status: 'self' };
+
+  const ownerFriendRef = db
+    .collection('users').doc(ownerUid)
+    .collection('friends').doc(redeemerUid);
+  const redeemerFriendRef = db
+    .collection('users').doc(redeemerUid)
+    .collection('friends').doc(ownerUid);
+
+  const [ownerSnap, redeemerSnap] = await Promise.all([
+    db.collection('users').doc(ownerUid).get(),
+    db.collection('users').doc(redeemerUid).get(),
+  ]);
+  if (!ownerSnap.exists) return { status: 'unknown' };
+
+  const ownerName = friendDisplayName(ownerSnap.data());
+  const redeemerName = friendDisplayName(redeemerSnap.data());
+  const ownerPhoto = ownerSnap.data()?.photoUrl || null;
+  const redeemerPhoto = redeemerSnap.data()?.photoUrl || null;
+
+  let alreadyFriends = false;
+  await db.runTransaction(async (transaction) => {
+    const [ownerSide, redeemerSide] = await Promise.all([
+      transaction.get(ownerFriendRef),
+      transaction.get(redeemerFriendRef),
+    ]);
+    if (ownerSide.exists || redeemerSide.exists) {
+      alreadyFriends = true;
+      return;
+    }
+
+    const since = admin.firestore.FieldValue.serverTimestamp();
+    transaction.set(redeemerFriendRef, {
+      uid: ownerUid,
+      name: ownerName,
+      photoUrl: ownerPhoto,
+      since,
+    });
+    transaction.set(ownerFriendRef, {
+      uid: redeemerUid,
+      name: redeemerName,
+      photoUrl: redeemerPhoto,
+      since,
+    });
+    transaction.set(
+      db.collection('users').doc(ownerUid).collection('notifications').doc(),
+      {
+        type: 'friend',
+        read: false,
+        message: redeemerName
+          ? `${redeemerName} added you as a friend.`
+          : 'Someone added you as a friend.',
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      },
+    );
+  });
+
+  if (alreadyFriends) return { status: 'alreadyFriends' };
+
+  const [enabled, token] = await Promise.all([
+    isNotificationEnabled(ownerUid, 'friend'),
+    getFcmToken(ownerUid),
+  ]);
+  if (enabled && token) {
+    try {
+      await sendNotification(token, {
+        title: 'New friend',
+        body: redeemerName
+          ? `${redeemerName} added you as a friend.`
+          : 'Someone added you as a friend.',
+        data: { type: 'friend', fromUid: redeemerUid },
+      });
+    } catch (err) {
+      functions.logger.error('Failed to send new friend notification', err);
+    }
+  }
+
+  return { status: 'added', ownerUid };
+});
+
+/**
+ * Ends a friendship for both readers, silently. Either side may call it;
+ * only the pair's two documents are touched.
+ */
+exports.unfriend = onCall({ region: 'us-central1' }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated.',
+    );
+  }
+  const friendUid = req.data?.friendUid;
+  if (!friendUid || typeof friendUid !== 'string' || friendUid === req.auth.uid) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'friendUid is required.',
+    );
+  }
+
+  const db = admin.firestore();
+  const batch = db.batch();
+  batch.delete(
+    db.collection('users').doc(req.auth.uid).collection('friends').doc(friendUid),
+  );
+  batch.delete(
+    db.collection('users').doc(friendUid).collection('friends').doc(req.auth.uid),
+  );
+  await batch.commit();
+  return { success: true };
+});
+
+/**
+ * Account deletion (ADR-0006, ADR-0012): removes everything the reader owns
+ * in the friend graph — their code lookup, both sides of every friendship,
+ * and their Friend source. A client may not write another reader's side, so
+ * this runs server-side. The client calls it before deleting its own tree.
+ */
+exports.deleteFriendData = onCall({ region: 'us-central1' }, async (req) => {
+  if (!req.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated.',
+    );
+  }
+  const uid = req.auth.uid;
+  const db = admin.firestore();
+
+  // Retire every code lookup the reader owns (normally exactly one).
+  const codes = await db
+    .collection('friendCodes')
+    .where('ownerUid', '==', uid)
+    .get();
+  for (const code of codes.docs) {
+    await code.ref.delete();
+  }
+
+  // Both sides of every friendship, in chunks that respect the batch cap.
+  const friends = await db
+    .collection('users').doc(uid)
+    .collection('friends')
+    .get();
+  for (let i = 0; i < friends.docs.length; i += 200) {
+    const batch = db.batch();
+    for (const friend of friends.docs.slice(i, i + 200)) {
+      batch.delete(friend.ref);
+      batch.delete(
+        db.collection('users').doc(friend.id)
+          .collection('friends').doc(uid),
+      );
+    }
+    await batch.commit();
+  }
+
+  // The reader's own Friend-visible source and private code document.
+  for (const collection of ['friend_feed', 'friend_badge_log', 'private']) {
+    await db.recursiveDelete(
+      db.collection('users').doc(uid).collection(collection),
+    );
+  }
+
+  return { success: true, friends: friends.size };
 });
 
 exports.sendSignupNotification = functions.auth.user().onCreate(async (user) => {

@@ -38,6 +38,14 @@ service cloud.firestore {
     );
   }
 
+  // ADR-0012: a Friend is a mutual connection stored on both readers.
+  // The friend document lives on the viewer's own side, so this is a point
+  // read on a path the viewer owns.
+  function isFriendOf(authorUid) {
+    return request.auth != null &&
+      exists(/databases/$(database)/documents/users/$(request.auth.uid)/friends/$(authorUid));
+  }
+
   // 🔐 Collection Group Rules
   match /{path=**}/entries/{docId} {
     allow read: if request.auth != null && (resource.data.uid == request.auth.uid);
@@ -105,6 +113,54 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
 
       // 🔐 Nested collections — user-only access
+
+      // The reader's friend code on their own private data. It is deliberately
+      // not on the publicly readable profile: the only way to get a code is
+      // for its owner to hand it over (ADR-0012).
+      match /private/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // One side of a mutual friendship. Only the owner can read their side;
+      // both sides are written together by the redeemFriendCode callable, so
+      // no client may write here (a client write could leave one side only).
+      match /friends/{friendUid} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+
+      // A reader's own Fan-out of updates for their Friends (ADR-0012):
+      // the same shape as a Group read-log entry, its Amens, and the Badge
+      // log. A Friend can read the author's source; nobody else can.
+      match /friend_feed/{date}/entries/{entryUid} {
+        allow read: if request.auth != null &&
+          (request.auth.uid == userId || isFriendOf(userId));
+        allow create, update: if request.auth != null &&
+          request.auth.uid == userId && entryUid == userId;
+        allow delete: if request.auth != null &&
+          request.auth.uid == userId && entryUid == userId;
+
+        match /likes/{likerId} {
+          allow read: if request.auth != null &&
+            (request.auth.uid == userId || isFriendOf(userId));
+          allow write: if request.auth != null &&
+            request.auth.uid == likerId && isFriendOf(userId);
+        }
+      }
+
+      match /friend_badge_log/{awardId} {
+        allow read: if request.auth != null &&
+          (request.auth.uid == userId || isFriendOf(userId));
+        allow write: if false;
+
+        match /likes/{likerId} {
+          allow read: if request.auth != null &&
+            (request.auth.uid == userId || isFriendOf(userId));
+          allow write: if request.auth != null &&
+            request.auth.uid == likerId && isFriendOf(userId);
+        }
+      }
+
       match /seasonChallenges/{docId} {
         allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if request.auth != null &&
@@ -385,6 +441,22 @@ service cloud.firestore {
       allow delete: if resource.data.keys().hasOnly(['groupId']) &&
         resource.data.groupId is string &&
         isGroupMember(resource.data.groupId);
+      allow update: if false;
+    }
+
+    // 🔗 Friend codes. The document id IS the eight-character code; the body
+    // carries only the owner's uid. A point read names the person for the
+    // preview; lists are denied outright, so codes cannot be enumerated and
+    // there is no people directory (ADR-0012). Only the owner can create or
+    // retire their own lookup.
+    match /friendCodes/{code} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null &&
+        request.resource.data.keys().hasOnly(['ownerUid']) &&
+        request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if request.auth != null &&
+        resource.data.ownerUid == request.auth.uid;
       allow update: if false;
     }
 

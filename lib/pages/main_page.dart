@@ -48,6 +48,9 @@ class MainPage extends StatefulWidget {
   final bool appCheckFailed;
   final FirebaseFunctions? functions;
 
+  /// The tab to show first. Used when a notification opens Circle.
+  final int initialIndex;
+
   // Expose onNavigate for testing overrides if needed, though usually not passed
   final bool Function(int)? onNavigate;
 
@@ -62,6 +65,7 @@ class MainPage extends StatefulWidget {
     this.sendLikeNotification,
     this.appCheckFailed = false,
     this.functions,
+    this.initialIndex = 0,
     this.onNavigate,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
@@ -94,12 +98,14 @@ class MainPageState extends State<MainPage> {
   late final List<Widget> _pages;
   late final Stream<User?> _authStream;
 
-  final List<int> _navigationHistory = [_homeIndex];
+  List<int> _navigationHistory = [_homeIndex];
   bool _showAuthSelection = false;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
+    _navigationHistory = [_selectedIndex];
     _authStream = widget.auth.authStateChanges();
     _cacheService = DataCacheService();
     _connectivityService = ConnectivityService();

@@ -174,6 +174,17 @@ class NotificationNavigator {
     }
 
     switch (type) {
+      case 'friend':
+        await navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => MainPage(
+              initialIndex: 1,
+              auth: auth,
+              firestore: firestore,
+            ),
+          ),
+        );
+        break;
       case 'groupJoinRequest':
         final groupId = data['groupId']?.toString();
         if (groupId == null || groupId.isEmpty) {

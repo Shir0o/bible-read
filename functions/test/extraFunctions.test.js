@@ -12,6 +12,31 @@ admin.app = () => ({ options: { projectId: 'demo' } });
 const functionsTest = require('firebase-functions-test')({projectId: 'demo'});
 const myFunctions = require('../index');
 const utils = require('../notification-utils');
+// A Nudge is eligible across the Circle (ADR-0012). These fake Firestores
+// model one shared Group so the callable's eligibility check passes without
+// each test having to construct the full membership path.
+function circleGroupStub() {
+  return () => ({
+    where: () => ({
+      get: async () => ({
+        docs: [
+          {
+            ref: {
+              parent: {
+                parent: {
+                  collection: () => ({
+                    doc: () => ({get: async () => ({exists: true})}),
+                  }),
+                },
+              },
+            },
+          },
+        ],
+      }),
+    }),
+  });
+}
+
 
 class FakeDoc {
   constructor(id, data = undefined, parent = null) {
@@ -134,6 +159,7 @@ describe('other cloud functions', () => {
     const originalMessaging = admin.messaging;
     let logSet = false;
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: (name) => ({
         doc: () => ({
           collection: (sub) => ({
@@ -167,6 +193,7 @@ describe('other cloud functions', () => {
     const originalMessaging = admin.messaging;
     let logSet = false;
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: (name) => ({
         doc: () => ({
           collection: () => ({
@@ -203,10 +230,11 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
-  it('sendNudgeNotification never touches friend collections', async () => {
+  it('sendNudgeNotification checks Friends as part of the Circle', async () => {
     const originalFirestore = admin.firestore;
     const touched = [];
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: (name) => {
         touched.push(name);
         return {
@@ -238,7 +266,10 @@ describe('other cloud functions', () => {
     const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
     assert.equal(res.alreadySent, false);
     const joined = touched.join(',');
-    assert.ok(!joined.includes('friend'), `nudge path touched: ${joined}`);
+    assert.ok(
+      joined.includes('users/friends'),
+      `nudge path did not check Friends: ${joined}`,
+    );
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
   });
 
@@ -248,6 +279,7 @@ describe('other cloud functions', () => {
     const originalFirestore = admin.firestore;
     const ledgerDocs = new Map();
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: (name) => ({
         doc: (docId) => ({
           collection: (sub) => ({
@@ -303,6 +335,7 @@ describe('other cloud functions', () => {
     const originalMessaging = admin.messaging;
     let setLog = false;
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: (name) => ({
         doc: () => ({
           collection: () => ({
@@ -328,6 +361,7 @@ describe('other cloud functions', () => {
   it('sendNudgeNotification already nudged today', async () => {
     const originalFirestore = admin.firestore;
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: (name) => ({
         doc: () => ({
           collection: (sub) => ({
@@ -364,6 +398,7 @@ describe('other cloud functions', () => {
     const originalMessaging = admin.messaging;
     let sent = false;
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: () => ({
         doc: () => ({
           collection: (sub) => ({
@@ -407,6 +442,7 @@ describe('other cloud functions', () => {
     const originalMessaging = admin.messaging;
     let logSet = false;
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: (name) => ({
         doc: () => ({
           collection: (sub) => ({
@@ -443,6 +479,75 @@ describe('other cloud functions', () => {
     } catch (err) {
       assert.match(err.message, /invalid-argument/);
     }
+  });
+
+  it('sendNudgeNotification rejects a reader outside the Circle', async () => {
+    const originalFirestore = admin.firestore;
+    const fakeDb = {
+      collection: (name) => ({
+        doc: () => ({
+          collection: () => ({
+            doc: () => ({
+              get: async () => ({exists: false}),
+              set: async () => {},
+            }),
+          }),
+          get: async () => ({data: () => ({fcmToken: 'tok'})}),
+        }),
+      }),
+      collectionGroup: () => ({
+        where: () => ({get: async () => ({docs: []})}),
+      }),
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = {serverTimestamp: () => 'ts'};
+    Object.defineProperty(admin, 'firestore', {value: fakeFirestore, configurable: true, writable: true});
+
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    await assert.rejects(
+      wrapped({data: {toUid: 'stranger', fromName: 'Sue'}, auth: {uid: 'u1'}}),
+      /only nudge someone in your Circle/,
+    );
+    Object.defineProperty(admin, 'firestore', {value: originalFirestore, writable: true, configurable: true});
+  });
+
+  it('sendNudgeNotification accepts a Friend with no shared Group', async () => {
+    const originalFirestore = admin.firestore;
+    const originalMessaging = admin.messaging;
+    let sends = 0;
+    const fakeDb = {
+      collection: (name) => ({
+        doc: (docId) => ({
+          collection: (sub) => ({
+            doc: () => ({
+              // The friendship exists on the sender's side; the nudge ledger
+              // and reading lookup do not yet.
+              get: async () => ({exists: sub === 'friends'}),
+              set: async () => {},
+            }),
+          }),
+          get: async () => ({data: () => ({fcmToken: 'tok', read: false})}),
+        }),
+      }),
+      collectionGroup: () => ({
+        where: () => ({get: async () => ({docs: []})}),
+      }),
+    };
+    function fakeFirestore() { return fakeDb; }
+    fakeFirestore.FieldValue = {serverTimestamp: () => 'ts'};
+    Object.defineProperty(admin, 'firestore', {value: fakeFirestore, configurable: true, writable: true});
+    Object.defineProperty(admin, 'messaging', {
+      value: () => ({send: async () => { sends += 1; }}),
+      configurable: true,
+      writable: true,
+    });
+
+    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
+    const res = await wrapped({data: {toUid: 'friend', fromName: 'Sue'}, auth: {uid: 'u1'}});
+    assert.equal(res.alreadySent, false);
+    assert.equal(sends, 1);
+    Object.defineProperty(admin, 'firestore', {value: originalFirestore, writable: true, configurable: true});
+    Object.defineProperty(admin, 'messaging', {value: originalMessaging, writable: true, configurable: true});
   });
 
   it('sendNudgeNotification missing params', async () => {
@@ -515,6 +620,7 @@ describe('other cloud functions', () => {
   it('sendNudgeNotification no token', async () => {
     const originalFirestore = admin.firestore;
     const fakeDb = {
+      collectionGroup: circleGroupStub(),
       collection: () => ({
         doc: () => ({
           collection: () => ({ doc: () => ({ get: async () => ({ exists: false }), set: async () => {} }) }),

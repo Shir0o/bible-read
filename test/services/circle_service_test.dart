@@ -314,4 +314,149 @@ void main() {
       expect(completed.contains('2026-10-16'), isFalse);
     });
   });
+
+  group('Friends (ADR-0012)', () {
+    Future<void> seedFriend(
+      String uid,
+      String friendUid, {
+      String? name,
+      DateTime? since,
+    }) async {
+      await firestore
+          .collection('users')
+          .doc(uid)
+          .collection('friends')
+          .doc(friendUid)
+          .set({
+        'uid': friendUid,
+        if (name != null) 'name': name,
+        if (since != null) 'since': since,
+      });
+    }
+
+    test('watch includes a Friend with no shared Group', () async {
+      await seedFriend('u1', 'f1', name: 'Mei', since: DateTime(2026, 10, 3));
+
+      final future = nextWhere<List<CircleMember>>(
+        circleService.watchCircleMembers('u1'),
+        (members) => members.any((m) => m.uid == 'f1'),
+      );
+
+      final members = await future.timeout(const Duration(seconds: 3));
+      final friend = members.firstWhere((m) => m.uid == 'f1');
+      expect(friend.isFriend, isTrue);
+      expect(friend.groupIds, isEmpty);
+      expect(friend.name, 'Mei');
+      expect(friend.friendSince, DateTime(2026, 10, 3));
+    });
+
+    test('a Friend who also shares a Group appears once', () async {
+      await seedGroup(
+        id: 'g1',
+        ownerUid: 'u1',
+        members: [
+          {'uid': 'f1', 'name': 'Mei'},
+        ],
+      );
+      await seedFriend('u1', 'f1', name: 'Mei');
+
+      final future = nextWhere<List<CircleMember>>(
+        circleService.watchCircleMembers('u1'),
+        (members) => members.any((m) => m.uid == 'f1'),
+      );
+
+      final members = await future.timeout(const Duration(seconds: 3));
+      final matches = members.where((m) => m.uid == 'f1').toList();
+      expect(matches, hasLength(1));
+      expect(matches.single.groupIds, {'g1'});
+      expect(matches.single.isFriend, isTrue);
+    });
+
+    test('Friends work with no Groups', () async {
+      await seedFriend('u1', 'f1', name: 'Mei');
+
+      final future = nextWhere<List<CircleMember>>(
+        circleService.watchCircleMembers('u1'),
+        (members) => members.isNotEmpty,
+      );
+
+      final members = await future.timeout(const Duration(seconds: 3));
+      expect(members.map((m) => m.uid), {'f1'});
+    });
+
+    test('fetchCircleMemberIds includes Friends', () async {
+      await seedGroup(
+        id: 'g1',
+        ownerUid: 'u1',
+        members: [
+          {'uid': 'u2'},
+        ],
+      );
+      await seedFriend('u1', 'f1');
+
+      expect(await circleService.fetchCircleMemberIds('u1'), {'u2', 'f1'});
+    });
+
+    test('an unfriended Friend with no shared Group leaves the Circle',
+        () async {
+      await seedFriend('u1', 'f1', name: 'Mei');
+      final future = nextWhere<List<CircleMember>>(
+        circleService.watchCircleMembers('u1'),
+        (members) => members.any((m) => m.uid == 'f1'),
+      );
+      await future.timeout(const Duration(seconds: 3));
+
+      final gone = nextWhere<List<CircleMember>>(
+        circleService.watchCircleMembers('u1'),
+        (members) => members.every((m) => m.uid != 'f1'),
+      );
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('friends')
+          .doc('f1')
+          .delete();
+
+      expect(
+        (await gone.timeout(const Duration(seconds: 3)))
+            .where((m) => m.uid == 'f1'),
+        isEmpty,
+      );
+    });
+
+    test('an unfriended Friend who shares a Group stays in the Circle',
+        () async {
+      await seedGroup(
+        id: 'g1',
+        ownerUid: 'u1',
+        members: [
+          {'uid': 'f1', 'name': 'Mei'},
+        ],
+      );
+      await seedFriend('u1', 'f1', name: 'Mei');
+      final future = nextWhere<List<CircleMember>>(
+        circleService.watchCircleMembers('u1'),
+        (members) => members.any((m) => m.isFriend),
+      );
+      await future.timeout(const Duration(seconds: 3));
+
+      final updated = nextWhere<List<CircleMember>>(
+        circleService.watchCircleMembers('u1'),
+        (members) => members.any((m) => m.uid == 'f1' && !m.isFriend),
+      );
+      await firestore
+          .collection('users')
+          .doc('u1')
+          .collection('friends')
+          .doc('f1')
+          .delete();
+
+      final member =
+          (await updated.timeout(const Duration(seconds: 3))).firstWhere(
+        (m) => m.uid == 'f1',
+      );
+      expect(member.groupIds, {'g1'});
+      expect(member.isFriend, isFalse);
+    });
+  });
 }

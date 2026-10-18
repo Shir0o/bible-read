@@ -13,6 +13,9 @@ void main() {
 
       // Missing fields should be true
       expect(prefs[NotificationType.groupInvite], isTrue);
+      // New friends default on, like every other type.
+      expect(prefs[NotificationType.friend], isTrue);
+      expect(NotificationType.friend.name, 'friend');
     });
 
     test('fromFirestore reads provided values', () {

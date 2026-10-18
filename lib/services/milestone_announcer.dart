@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/read_through.dart';
 import 'error_logger.dart';
+import 'friend_service.dart';
 
 /// Announces a detected read-through in the feed.
 ///
@@ -74,11 +75,10 @@ class MilestoneAnnouncer {
         },
       };
 
-      // One entry per Group the reader belongs to (ADR-0004). A reader with
-      // no Groups announces nothing here — their marking still lands through
-      // ReadLogService.mark, which owns the plain presence entry.
+      // One entry per Group the reader belongs to (ADR-0004), plus the
+      // reader's Friend-visible copy (ADR-0012), which exists even with no
+      // Groups.
       final groupIds = _groupIdsResolver?.call() ?? await _resolveGroupIds(uid);
-      if (groupIds.isEmpty) return;
 
       final batch = firestore.batch();
       for (final groupId in groupIds) {
@@ -94,6 +94,17 @@ class MilestoneAnnouncer {
           SetOptions(merge: true),
         );
       }
+      batch.set(
+        firestore
+            .collection('users')
+            .doc(uid)
+            .collection(FriendService.feedCollection)
+            .doc(dateKey)
+            .collection('entries')
+            .doc(uid),
+        data,
+        SetOptions(merge: true),
+      );
       await batch.commit();
     } catch (e, st) {
       // The read-through is already recorded; a missed announcement is not

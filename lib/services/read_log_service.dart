@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'friend_service.dart';
 import 'group_collections.dart';
 
 /// The reader's daily feed, denormalized per Group (ADR-0004, #801).
@@ -72,8 +73,6 @@ class ReadLogService {
       // Best effort; the feed entries below are the primary record.
     }
 
-    if (groupIds.isEmpty) return;
-
     final batch = firestore.batch();
     for (final groupId in groupIds) {
       batch.set(
@@ -88,6 +87,10 @@ class ReadLogService {
         SetOptions(merge: true),
       );
     }
+
+    // The reader's own Friend-visible copy (ADR-0012). Written even when
+    // they have no Groups, so a Friend alone reaches their Circle.
+    batch.set(_friendEntry(user.uid, dateKey), data, SetOptions(merge: true));
     await batch.commit();
   }
 
@@ -113,7 +116,6 @@ class ReadLogService {
     }
 
     final groupIds = await groupIdsFor(user.uid);
-    if (groupIds.isEmpty) return;
 
     final batch = firestore.batch();
     for (final groupId in groupIds) {
@@ -127,6 +129,7 @@ class ReadLogService {
             .doc(user.uid),
       );
     }
+    batch.delete(_friendEntry(user.uid, dateKey));
     await batch.commit();
   }
 
@@ -286,6 +289,18 @@ class ReadLogService {
       },
     );
   }
+
+  DocumentReference<Map<String, dynamic>> _friendEntry(
+    String uid,
+    String dateKey,
+  ) =>
+      firestore
+          .collection('users')
+          .doc(uid)
+          .collection(FriendService.feedCollection)
+          .doc(dateKey)
+          .collection(_entries)
+          .doc(uid);
 }
 
 const String _readLog = 'read_log';
