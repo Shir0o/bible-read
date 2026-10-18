@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.36.0](https://github.com/Shir0o/bible-read/compare/v1.35.3...v1.36.0) (2026-10-18)
+
+
+### Features
+
+* **path:** Archived and Recently Deleted as one card at the foot of Path ([#1003](https://github.com/Shir0o/bible-read/issues/1003)) ([5a1be15](https://github.com/Shir0o/bible-read/commit/5a1be15f0da85761c311fd7f69a85d6143de6c0f))
+
+
+### Bug Fixes
+
+* **plans:** respect reading days in proposed schedule preview and date mapping (closes [#1000](https://github.com/Shir0o/bible-read/issues/1000)) ([#1001](https://github.com/Shir0o/bible-read/issues/1001)) ([83c6113](https://github.com/Shir0o/bible-read/commit/83c611384b0154e23951bdad1c2886743a95d609))
+* **ui:** card-shaped skeletons on Notifications and Inbox; Challenges reachable without a season ([#999](https://github.com/Shir0o/bible-read/issues/999)) ([dcd700d](https://github.com/Shir0o/bible-read/commit/dcd700d7d2444d11482adea7e73fcbffabbfb820))
+
 ## [1.35.3](https://github.com/Shir0o/bible-read/compare/v1.35.2...v1.35.3) (2026-10-16)
 
 
