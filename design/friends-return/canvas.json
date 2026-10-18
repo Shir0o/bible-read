@@ -1,0 +1,121 @@
+{
+  "artboards": [
+    {
+      "file": "Circle.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Circle — Invite sheet"
+    },
+    {
+      "file": "FriendSheet.dc.html",
+      "x": 0,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "A Friend — sheet with Unfriend"
+    },
+    {
+      "file": "V1CodeShare.dc.html",
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "V1 Code — your code"
+    },
+    {
+      "file": "V1CodeAdd.dc.html",
+      "x": 470,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "V1 Code — entering it"
+    },
+    {
+      "file": "V2QrShare.dc.html",
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "V2 QR — your code"
+    },
+    {
+      "file": "V2QrScan.dc.html",
+      "x": 940,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "V2 QR — scanning"
+    },
+    {
+      "file": "V3LinkShare.dc.html",
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "V3 Link — sending"
+    },
+    {
+      "file": "V3LinkOpen.dc.html",
+      "x": 1410,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "V3 Link — opening it"
+    },
+    {
+      "file": "V4AllShare.dc.html",
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "V4 All in one — your code"
+    },
+    {
+      "file": "V4AllAdd.dc.html",
+      "x": 1880,
+      "y": 984,
+      "w": 390,
+      "h": 844,
+      "title": "V4 All in one — their code"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "col0",
+      "x": 0,
+      "y": -260,
+      "w": 390,
+      "text": "Shared — what doesn't change across variations.\n\nThe entry is one new row in the existing Invite sheet. \"Have a code?\" takes a friend code as well as a group code.\n\nA Friend is a full member of your Circle: same status ring, same Nudge, same Feed updates and Amen. Where a co-member's update names the shared group, a Friend's says \"Friend\". The Friends chip sits beside the group chips; there is no separate Friends screen."
+    },
+    {
+      "id": "col1",
+      "x": 470,
+      "y": -260,
+      "w": 390,
+      "text": "V1 — Friend code.\n\nAn 8-character personal code, read aloud or texted. It goes into the same \"Enter a code\" field as a 6-character group code — the length tells them apart, so the person never has to know which kind they were handed.\n\nCheapest to build: no camera, no deep links."
+    },
+    {
+      "id": "col2",
+      "x": 940,
+      "y": -260,
+      "w": 390,
+      "text": "V2 — QR.\n\nFor people in the same room. \"My code\" and \"Scan\" are two halves of one screen. The QR encodes the same personal code as V1.\n\nNeeds a camera permission and a scanner package (none in pubspec today)."
+    },
+    {
+      "id": "col3",
+      "x": 1410,
+      "y": -260,
+      "w": 390,
+      "text": "V3 — Invite link.\n\nFor people who aren't nearby. One button into the system share sheet; the recipient lands on a single confirm screen.\n\nDepends on deep links, still deferred in #785. Opening the link with the app not installed has to survive the store round-trip."
+    },
+    {
+      "id": "col4",
+      "x": 1880,
+      "y": -260,
+      "w": 390,
+      "text": "V4 — All in one.\n\nThe same code shown three ways on one screen: QR, typed code, link. The add side puts the scanner and the code field together, so whatever they were given, it goes in one place.\n\nCost is the sum of V1–V3."
+    }
+  ]
+}

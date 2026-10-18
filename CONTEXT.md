@@ -100,12 +100,17 @@ A named set of readers reading a shared schedule together, with an owner and mem
 _Avoid_: Team, cohort, and "circle" *as a name for a Group* — a Circle is a different
 thing (below)
 
+**Friend**:
+A reader connected to another one-to-one, without a Group. The connection is mutual
+and made only by direct invite: one reader shares their friend code (typed, scanned,
+or sent as a link) and the other uses it. There is no searching for people and no
+friend request. Either side can end it.
+_Avoid_: Contact, follower, connection, Pair
+
 **Circle**:
-Everyone a reader shares at least one Group with. Derived from Group membership and
-never established directly: there is no separate mutual-connection graph, so being in
-someone's Circle means being in a Group with them. A reader in two Groups has one
-Circle, with any overlapping person counted once.
-_Avoid_: Friend, contact, follower
+Everyone a reader shares at least one Group with, plus their Friends. A reader in
+two Groups who is also someone's Friend appears in their Circle once.
+_Avoid_: Contact, follower
 
 **Nudge**:
 A gentle prompt one reader sends another in their Circle who has not Shown up today.
@@ -116,7 +121,7 @@ _Avoid_: Poke, reminder, ping
 **Feed**:
 The stream of updates from a reader's Circle: each person's day (Shown up, with
 their Reflection when they chose to share it), Milestones, and Badges earned.
-Read only by people who share a Group with the author.
+Read only by the author's Circle: people who share a Group with them, and their Friends.
 _Avoid_: Timeline, activity, wall
 
 **Amen**:
