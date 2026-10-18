@@ -149,6 +149,89 @@ void main() {
     expect(find.textContaining('Genesis 1'), findsWidgets);
   });
 
+  testWidgets(
+      'the full schedule and preview line respect selected reading days', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    // Switch to Choose books with 1 chapter a day to keep schedule small and inspectable
+    await tester.tap(find.text('Choose books'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chapters a day'));
+    await tester.pumpAndSettle();
+
+    // Toggle off Saturday (6). Note: Sunday (7) is already off by default.
+    await tester.ensureVisible(find.text('Reading days'));
+    await tester.tap(find.byKey(const Key('create_plan_day_6')));
+    await tester.pumpAndSettle();
+
+    // Open full schedule
+    await tester.tap(find.byKey(const Key('create_plan_preview')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Full Schedule'), findsOneWidget);
+
+    // Compute expected reading dates for Mon-Fri starting from today
+    final expectedDates = <DateTime>[];
+    var cursor = DateTime.now();
+    cursor = DateTime(cursor.year, cursor.month, cursor.day);
+    while (expectedDates.length < 5) {
+      if (cursor.weekday >= DateTime.monday &&
+          cursor.weekday <= DateTime.friday) {
+        expectedDates.add(cursor);
+      }
+      cursor = cursor.add(const Duration(days: 1));
+    }
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    // Day 1 reading should be on expectedDates[0], Day 2 on expectedDates[1]
+    final firstItemText =
+        '${months[expectedDates[0].month - 1]} ${expectedDates[0].day}';
+    final secondItemText =
+        '${months[expectedDates[1].month - 1]} ${expectedDates[1].day}';
+
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('create_plan_schedule_date_0')))
+          .data,
+      firstItemText,
+    );
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('create_plan_schedule_date_1')))
+          .data,
+      secondItemText,
+    );
+
+    // Close sheet
+    Navigator.of(tester.element(find.text('Full Schedule'))).pop();
+    await tester.pumpAndSettle();
+
+    // Verify preview line text has Ends <expected end date>
+    final previewText = tester
+        .widget<Text>(find.descendant(
+          of: find.byKey(const Key('create_plan_preview')),
+          matching: find.byType(Text),
+        ))
+        .data!;
+    expect(previewText, startsWith('Ends '));
+    expect(previewText, contains('about 3 chapters a day'));
+  });
+
   testWidgets('a title is required', (tester) async {
     await pumpPage(tester);
 
