@@ -193,8 +193,11 @@ class MainPageState extends State<MainPage> {
 
   void _handleRequestedTab() {
     final requested = MainPage.requestedTab.value;
-    if (requested == 0 || requested == _selectedIndex) return;
+    if (requested == 0) return;
+    // Always clear first: a request for the tab we are already on must not
+    // leave a stale value that swallows the next request.
     MainPage.requestedTab.value = 0;
+    if (requested == _selectedIndex) return;
     if (mounted) _onItemTapped(requested);
   }
 

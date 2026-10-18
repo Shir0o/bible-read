@@ -344,6 +344,46 @@ void main() {
     expect(responsive.selectedIndex, 0);
   });
 
+  testWidgets('a friend notification request opens the Circle tab', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    MainPage.requestedTab.value = MainPage.circleTabIndex;
+    addTearDown(() => MainPage.requestedTab.value = 0);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainPage(
+          auth: auth,
+          firestore: FakeFirebaseFirestore(),
+          messaging: FakeFirebaseMessaging(null),
+          vibrationService: _RecordingVibrationService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    if (find.bySemanticsLabel('Dismiss check-in').evaluate().isNotEmpty) {
+      await tester.tap(find.bySemanticsLabel('Dismiss check-in'));
+      await tester.pumpAndSettle();
+    }
+
+    final responsive = tester.widget<ResponsiveScaffold>(
+      find.byType(ResponsiveScaffold),
+    );
+    expect(responsive.selectedIndex, MainPage.circleTabIndex);
+    // The request is consumed so it cannot fire a second time.
+    expect(MainPage.requestedTab.value, 0);
+  });
+
   testWidgets('bottom navigation visible on non-core pages', (tester) async {
     final auth = MockFirebaseAuth(
       mockUser: MockUser(uid: 'u1'),
