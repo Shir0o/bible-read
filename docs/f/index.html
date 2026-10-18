@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>You're invited – Bible Reading Challenge</title>
+  <style>
+    :root {
+      --bg: #f4f0e8;
+      --surface: #fffdfa;
+      --text: #231e2c;
+      --muted: #6c6577;
+      --border: rgba(43, 33, 58, 0.085);
+      --accent: #6a53ad;
+      --accent-hover: #5b449e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+    main {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.6rem;
+      font-weight: 500;
+      letter-spacing: -0.3px;
+      margin-bottom: 8px;
+    }
+    p { color: var(--muted); font-size: 0.95rem; }
+    .actions { display: grid; gap: 12px; margin-top: 28px; }
+    a.button {
+      display: block;
+      padding: 15px 16px;
+      border-radius: 16px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    a.button:hover { background: var(--accent-hover); }
+    button.copy {
+      padding: 13px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .code {
+      margin-top: 24px;
+      padding: 14px;
+      border-radius: 12px;
+      background: var(--bg);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 1.25rem;
+      letter-spacing: 0.18em;
+    }
+    .hint { margin-top: 20px; font-size: 0.8rem; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>You're invited</h1>
+    <p>Read together with a friend on Bible Reading Challenge.</p>
+
+    <div id="codeBlock" class="hidden">
+      <div id="code" class="code" aria-label="Friend code"></div>
+      <div class="actions">
+        <a id="openApp" class="button" href="#">Open in Bible Read</a>
+        <button id="copy" class="copy" type="button">Copy code</button>
+      </div>
+      <p class="hint">
+        If the app doesn't open, install Bible Read and enter this code on the
+        “Add a friend” screen.
+      </p>
+    </div>
+
+    <p id="empty" class="hint hidden">
+      This invite link is missing its code. Ask your friend to share it again.
+    </p>
+  </main>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var code = (params.get('code') || '').replace(/[\s-]/g, '').toUpperCase();
+      var valid = /^[A-HJ-NP-Z2-9]{8}$/.test(code);
+
+      var codeBlock = document.getElementById('codeBlock');
+      var empty = document.getElementById('empty');
+
+      if (!valid) {
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      var spaced = code.slice(0, 4) + ' ' + code.slice(4);
+      document.getElementById('code').textContent = spaced;
+      document.getElementById('openApp').href =
+        'bibleread://friend?code=' + encodeURIComponent(code);
+      codeBlock.classList.remove('hidden');
+
+      document.getElementById('copy').addEventListener('click', function () {
+        var button = this;
+        var done = function () {
+          button.textContent = 'Copied';
+          setTimeout(function () { button.textContent = 'Copy code'; }, 2000);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(done);
+        } else {
+          var field = document.createElement('textarea');
+          field.value = code;
+          document.body.appendChild(field);
+          field.select();
+          document.execCommand('copy');
+          document.body.removeChild(field);
+          done();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
