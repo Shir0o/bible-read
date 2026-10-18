@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app_links/app_links.dart';
+import 'package:bible_read/pages/friend_invite_page.dart';
 import 'package:bible_read/pages/group_join_requests_page.dart';
 import 'package:bible_read/pages/main_page.dart';
+import 'package:bible_read/services/friend_invite.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -116,6 +119,14 @@ void main() async {
         ErrorLogger.log(error, st);
       }),
     );
+    unawaited(
+      _setupIncomingLinks().catchError((Object error, StackTrace st) {
+        if (kDebugMode) {
+          debugPrint('Incoming link setup failed: $error');
+        }
+        ErrorLogger.log(error, st);
+      }),
+    );
   }
   runApp(MyApp(appCheckFailed: appCheckFailed));
 }
@@ -209,6 +220,77 @@ class NotificationNavigator {
 
 // Global instance for convenience, can be overridden in tests.
 NotificationNavigator notificationNavigator = NotificationNavigator();
+
+/// Routes an incoming invite link to the friend confirm screen. A link that
+/// arrives while signed out, or before the navigator is ready, is held until
+/// sign-in so the invite is not lost.
+class IncomingLinkHandler {
+  final FirebaseAuth auth;
+  final GlobalKey<NavigatorState> navigatorKey;
+  final Widget Function(String code) pageBuilder;
+
+  String? _pendingCode;
+
+  IncomingLinkHandler({
+    FirebaseAuth? auth,
+    GlobalKey<NavigatorState>? navigatorKey,
+    Widget Function(String code)? pageBuilder,
+  })  : auth = auth ?? FirebaseAuth.instance,
+        navigatorKey = navigatorKey ?? _rootNavigatorKey,
+        pageBuilder = pageBuilder ?? _friendInvitePage;
+
+  static Widget _friendInvitePage(String code) => FriendInvitePage(code: code);
+
+  /// Reads an invite out of [uri] and opens the confirm screen, or holds it
+  /// until the reader is signed in.
+  Future<void> handleUri(Uri uri) async {
+    final code = FriendInvite.codeFrom(uri);
+    if (code == null) return;
+    if (auth.currentUser == null) {
+      _pendingCode = code;
+      return;
+    }
+    _show(code);
+  }
+
+  /// Shows a held invite once a reader has signed in.
+  void onSignedIn() {
+    final code = _pendingCode;
+    if (code == null) return;
+    _pendingCode = null;
+    _show(code);
+  }
+
+  void _show(String code) {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) {
+      _pendingCode = code;
+      return;
+    }
+    unawaited(
+      navigator.push(
+        MaterialPageRoute<void>(builder: (_) => pageBuilder(code)),
+      ),
+    );
+  }
+}
+
+// Global instance for convenience, can be overridden in tests.
+IncomingLinkHandler incomingLinkHandler = IncomingLinkHandler();
+
+Future<void> _setupIncomingLinks() async {
+  // Drain a held invite when the reader signs in (story 4).
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    if (user != null) incomingLinkHandler.onSignedIn();
+  });
+
+  // The stream replays links received before the first listen, including a
+  // cold-start link, so one subscription covers every case.
+  AppLinks().uriLinkStream.listen(
+        (uri) => unawaited(incomingLinkHandler.handleUri(uri)),
+        onError: (Object e, StackTrace st) => unawaited(ErrorLogger.log(e, st)),
+      );
+}
 
 Future<void> _setupMessaging() async {
   final messaging = FirebaseMessaging.instance;

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../services/error_logger.dart';
+import '../services/friend_invite.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import '../services/join_code_service.dart';
@@ -136,9 +137,13 @@ class _FriendCodePageState extends State<FriendCodePage> {
     final code = _code;
     if (code == null) return;
     unawaited(widget.vibrationService.lightImpact());
+    final rawName = widget.auth.currentUser?.displayName?.trim();
+    final name = (rawName == null || rawName.isEmpty) ? null : rawName;
+    final link = FriendInvite.linkFor(code);
     await SharePlus.instance.share(ShareParams(
-      text: 'Add me as a friend on Bible Reading Challenge. My friend code is '
-          '$code.',
+      text: name == null
+          ? 'Read with me on Bible Reading Challenge: $link'
+          : 'Read with me — $name on Bible Reading Challenge: $link',
     ));
   }
 
@@ -481,7 +486,7 @@ class _FriendCodePageState extends State<FriendCodePage> {
                 key: FriendCodeKeys.shareButton,
                 onPressed: _shareCode,
                 icon: const Icon(Icons.ios_share_rounded, size: 18),
-                label: const Text('Share'),
+                label: const Text('Share link'),
               ),
             ),
           ],

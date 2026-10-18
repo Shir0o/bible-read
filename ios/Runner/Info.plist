@@ -34,6 +34,16 @@
 				<string>com.googleusercontent.apps.82330382748-kv8cr6ehdtjglo5v2iqa6e8ge038kh0s</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>app.bibleread.friend</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>bibleread</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>

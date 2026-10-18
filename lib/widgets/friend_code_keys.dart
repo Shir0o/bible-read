@@ -13,4 +13,8 @@ abstract final class FriendCodeKeys {
 
   static const qrCode = Key('friend_code_qr');
   static const scanError = Key('friend_code_scan_error');
+
+  static const inviteAddButton = Key('friend_invite_add');
+  static const inviteNotNow = Key('friend_invite_not_now');
+  static const inviteError = Key('friend_invite_error');
 }

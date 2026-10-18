@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  app_links_linux
   dynamic_color
   flutter_timezone
   url_launcher_linux
