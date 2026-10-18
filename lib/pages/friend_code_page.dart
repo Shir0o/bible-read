@@ -318,7 +318,7 @@ class _FriendCodePageState extends State<FriendCodePage> {
             style: TextButton.styleFrom(
               // token-exempt: compact inline reset action
               padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 32),
+              minimumSize: const Size(0, 44),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: _resetting

@@ -182,6 +182,20 @@ void main() {
 
       expect((await friendEntry('solo', '2025-07-15')).exists, isTrue);
     });
+
+    test('carries what the reader was reading onto the Friend copy',
+        () async {
+      final user = MockUser(uid: 'solo', displayName: 'Solo User');
+
+      await ReadLogService(firestore: firestore).mark(
+        user,
+        date: fixedDate,
+        reading: 'John 1',
+      );
+
+      final friend = await friendEntry('solo', '2025-07-15');
+      expect(friend.data()?['reading'], 'John 1');
+    });
   });
 
   group('clear', () {

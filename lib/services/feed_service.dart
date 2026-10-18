@@ -286,7 +286,6 @@ class FeedService {
     return [
       for (final doc in docs)
         FeedEntryCopy(
-          groupId: friendUid,
           friendUid: friendUid,
           dateKey: dateKey,
           uid: doc.id,
@@ -351,7 +350,9 @@ class FeedService {
 /// One copy of a person's daily entry, in one Group or in their own
 /// Friend-visible source.
 class FeedEntryCopy {
-  final String groupId;
+  /// The Group this copy sits in, or null for a copy from the author's
+  /// Friend source.
+  final String? groupId;
 
   /// Set when this copy came from the author's Friend source rather than a
   /// Group's read log.
@@ -366,7 +367,7 @@ class FeedEntryCopy {
   final Set<String> likerUids;
 
   const FeedEntryCopy({
-    required this.groupId,
+    this.groupId,
     required this.dateKey,
     required this.uid,
     this.friendUid,
@@ -381,7 +382,7 @@ class FeedEntryCopy {
   bool get isFriend => friendUid != null;
 
   String get likesPath =>
-      AmenTarget(groupId, dateKey, uid, friendUid: friendUid).likesPath;
+      AmenTarget(groupId ?? '', dateKey, uid, friendUid: friendUid).likesPath;
 
   FeedEntryCopy withLikers(Set<String> likers) => FeedEntryCopy(
         groupId: groupId,
@@ -573,7 +574,8 @@ List<FeedDay> assembleFeed({
     if (entry.friendUid != null) {
       return entry.uid == myUid || friendUids.contains(entry.uid);
     }
-    return groupIds.contains(entry.groupId) &&
+    return entry.groupId != null &&
+        groupIds.contains(entry.groupId) &&
         (entry.uid == myUid || coMembers.containsKey(entry.uid));
   }
 
@@ -639,7 +641,7 @@ List<FeedDay> assembleFeed({
     final [dateKey, uid] = key.split('/');
     final groups = {
       for (final c in entryCopies)
-        if (c.friendUid == null) c.groupId,
+        if (c.friendUid == null && c.groupId != null) c.groupId!,
     };
     final isFriend = entryCopies.any((c) => c.friendUid != null);
     final milestone = entryCopies.map((c) => c.milestone).nonNulls.firstOrNull;
@@ -663,7 +665,7 @@ List<FeedDay> assembleFeed({
           targets: [
             for (final c in entryCopies)
               AmenTarget(
-                c.groupId,
+                c.groupId ?? '',
                 dateKey,
                 uid,
                 friendUid: c.friendUid,

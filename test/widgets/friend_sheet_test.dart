@@ -69,7 +69,7 @@ void main() {
     expect(find.text('Mei'), findsOneWidget);
     expect(find.text('Friend'), findsOneWidget);
     expect(find.text('since 3 October'), findsOneWidget);
-    expect(find.text('Showed up 2 of 7 days · Reading John'), findsOneWidget);
+    expect(find.text('Shown up 2 of 7 days · Reading John'), findsOneWidget);
     expect(
       find.text(
         'Mei won’t be told. You don’t share a group, so they’ll leave your '

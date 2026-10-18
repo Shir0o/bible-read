@@ -38,6 +38,13 @@ typedef SendLikeNotification = Future<void> Function({
 });
 
 class MainPage extends StatefulWidget {
+  /// The Circle tab's index in the bottom navigation.
+  static const int circleTabIndex = 1;
+
+  /// A tab a notification handler wants shown once a MainPage is listening.
+  /// Handlers set this instead of pushing a second app shell over the first.
+  static final ValueNotifier<int> requestedTab = ValueNotifier<int>(0);
+
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
@@ -106,6 +113,14 @@ class MainPageState extends State<MainPage> {
     super.initState();
     _selectedIndex = widget.initialIndex;
     _navigationHistory = [_selectedIndex];
+    MainPage.requestedTab.addListener(_handleRequestedTab);
+    if (MainPage.requestedTab.value != 0) {
+      final requested = MainPage.requestedTab.value;
+      MainPage.requestedTab.value = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _onItemTapped(requested);
+      });
+    }
     _authStream = widget.auth.authStateChanges();
     _cacheService = DataCacheService();
     _connectivityService = ConnectivityService();
@@ -171,8 +186,16 @@ class MainPageState extends State<MainPage> {
 
   @override
   void dispose() {
+    MainPage.requestedTab.removeListener(_handleRequestedTab);
     _connectivityService.dispose();
     super.dispose();
+  }
+
+  void _handleRequestedTab() {
+    final requested = MainPage.requestedTab.value;
+    if (requested == 0 || requested == _selectedIndex) return;
+    MainPage.requestedTab.value = 0;
+    if (mounted) _onItemTapped(requested);
   }
 
   Future<void> _saveFcmToken() async {

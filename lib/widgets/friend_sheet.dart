@@ -278,7 +278,7 @@ class _FriendSheetState extends State<_FriendSheet> {
                   ),
                   const SizedBox(height: AppSpacing.gap12),
                   Text(
-                    'Showed up ${week.where((d) => d.shownUp).length} of 7 days'
+                    'Shown up ${week.where((d) => d.shownUp).length} of 7 days'
                     '${widget.reading == null ? '' : ' · Reading ${widget.reading}'}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,

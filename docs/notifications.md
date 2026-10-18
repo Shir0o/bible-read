@@ -25,6 +25,7 @@ The current notification types map to icons, copy, and navigation targets as fol
 | `groupJoinRequest` | `Icons.group_add` | "You received a group join request" | None |
 | `groupScheduleUpdate` | `Icons.schedule` | "Group schedule updated" | None |
 | `seasonalChallenge` | `Icons.eco` | "Seasonal challenge reward ready" | Seasonal Challenges page |
+| `friend` | `Icons.person_add` | "Someone added you as a friend" | Circle tab |
 
 ### Seasonal challenge notifications
 
@@ -50,7 +51,12 @@ device.
 ## Cloud Functions
 
 Cloud Functions in the `functions/` directory send push notifications. Callable
-functions such as `sendLikeNotification` and `sendCommentNotification` read the
+functions such as `sendLikeNotification` and `redeemFriendCode` read the
 recipient's `fcmToken` and `notificationPrefs` to respect user settings before
 sending a message.
+
+`redeemFriendCode` writes a `friend` notification and pushes
+**New friend** ("… added you as a friend") to the code's owner when someone
+redeems their friend code, then never notifies anyone on a failed redemption.
+The toggle lives in notification settings as **New friends**.
 

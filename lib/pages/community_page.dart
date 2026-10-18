@@ -664,6 +664,10 @@ class _CircleFeedState extends State<_CircleFeed> {
     required User user,
     required String todayKey,
   }) {
+    // The reader's own mark is not subject to the filter: "You" always
+    // reflects today, even while the Friends chip hides their Group copies.
+    final selfShownUp =
+        source.entries.any((e) => e.uid == user.uid && e.dateKey == todayKey);
     final marks = <String, DateTime>{};
     for (final e in source.entries) {
       if (e.dateKey != todayKey) continue;
@@ -696,7 +700,7 @@ class _CircleFeedState extends State<_CircleFeed> {
         uid: user.uid,
         name: 'You',
         photoUrl: user.photoURL,
-        shownUp: marks.containsKey(user.uid),
+        shownUp: selfShownUp,
         isMe: true,
         avatarName: user.displayName,
       ),

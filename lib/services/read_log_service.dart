@@ -48,7 +48,7 @@ class ReadLogService {
   /// documents. A reader with no Groups performs no Group writes — but the
   /// per-user `reading` document is still kept in sync, because streak
   /// calculations read it and Showing up counts without a Plan (#786).
-  Future<void> mark(User user, {DateTime? date}) async {
+  Future<void> mark(User user, {DateTime? date, String? reading}) async {
     final now = date ?? DateTime.now();
     final dateKey = dateKeyFor(now);
     final data = {
@@ -57,6 +57,8 @@ class ReadLogService {
       'email': user.email?.toLowerCase() ?? '',
       'dateId': dateKey,
       'timestamp': Timestamp.now(),
+      if (reading != null && reading.trim().isNotEmpty)
+        'reading': reading.trim(),
     };
 
     final groupIds = await groupIdsFor(user.uid);

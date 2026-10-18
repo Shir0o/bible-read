@@ -189,15 +189,8 @@ Future<void> openNotification(
   unawaited(vibrationService.lightImpact());
   switch (notification.type) {
     case NotificationType.friend:
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => MainPage(
-            initialIndex: 1,
-            auth: auth,
-            firestore: service.firestore,
-          ),
-        ),
-      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      MainPage.requestedTab.value = MainPage.circleTabIndex;
       break;
     case NotificationType.seasonalChallenge:
       await Navigator.of(context).push(
