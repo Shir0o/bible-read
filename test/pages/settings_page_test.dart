@@ -14,6 +14,7 @@ import '../helpers/fake_google_sign_in_platform.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:bible_read/pages/settings_page.dart';
+import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -263,6 +264,45 @@ void main() {
     });
   });
 
+  testWidgets('deleting an account clears the friend graph first',
+      (tester) async {
+    await mockNetworkImagesFor(() async {
+      GoogleSignInPlatform.instance = FakeGoogleSignInPlatform(user: null);
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u1', email: 'test@example.com'),
+        signedIn: true,
+      );
+      var friendDataCleared = false;
+      final friendService = FriendService(
+        firestore: firestore,
+        deleteFriendDataFn: () async {
+          friendDataCleared = true;
+        },
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SettingsPage(
+            auth: auth,
+            firestore: firestore,
+            friendService: friendService,
+            mainPageBuilder: (_) => const SizedBox.shrink(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final deleteTile = find.text('Delete account');
+      await tester.ensureVisible(deleteTile);
+      await tester.tap(deleteTile);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      expect(friendDataCleared, isTrue);
+    });
+  });
   testWidgets('delete account button shows confirmation dialog',
       (tester) async {
     await mockNetworkImagesFor(() async {

@@ -202,11 +202,11 @@ describe('owner-only user collections', () => {
 });
 
 // The friend graph is retired (ADR-0003): no rules block exists for these
-// collections any more, so every path is denied outright — including to the
-// owner, whose client no longer writes here either.
+// request collections any more, so every path is denied outright — including
+// to the owner. `friends` was revived by ADR-0012 and has its own tests in
+// friends.rules.test.js.
 describe('retired friend collections', () => {
   const retiredDocs = [
-    'friends/bob',
     'friendRequestsSent/bob',
     'friendRequestsReceived/bob',
     'friendStreakInvites/bob',

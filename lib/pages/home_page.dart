@@ -706,7 +706,11 @@ class _HomePageState extends State<HomePage>
       if (wasRead) {
         await _habitService.clearShowingUp(refreshedUser, date: today);
       } else {
-        await _habitService.showUp(refreshedUser, date: today);
+        await _habitService.showUp(
+          refreshedUser,
+          date: today,
+          reading: _currentReadingLabel(),
+        );
       }
 
       unawaited(_loadReadStatus(showLoading: false));
@@ -1093,6 +1097,21 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Groups sequential chapters (e.g., "Genesis 1", "Genesis 2" -> "Genesis 1–2").
+  /// A short label for what the reader is on today, used to carry "what
+  /// they're reading" onto their Friend-visible entry. Null when nothing is
+  /// active yet.
+  String? _currentReadingLabel() {
+    final items = _readingsSnapshot.homeReadings;
+    if (items.isEmpty) return null;
+    final item = items.first;
+    final schedule = item.todaySchedule;
+    if (schedule != null && schedule.chapters.isNotEmpty) {
+      return _formatReadings(schedule.chapters);
+    }
+    final title = item.title.trim();
+    return title.isEmpty ? null : title;
+  }
+
   String _formatReadings(List<String> readings) {
     if (readings.isEmpty) return '';
 

@@ -150,8 +150,7 @@ void main() {
           reason: 'a new Reflection always starts unshared');
       expect(
           find.textContaining('Off — only you can read this.'), findsOneWidget);
-      expect(
-          find.textContaining('people you share a group with'), findsOneWidget);
+      expect(find.textContaining('your Circle read it'), findsOneWidget);
 
       // Turn it on: the line states the current state.
       await tester.enterText(find.byType(TextField), 'A line worth sharing.');

@@ -1,6 +1,6 @@
 # Friends return alongside Groups; Circle is co-members plus Friends
 
-_Proposed 2026-10-17. Supersedes ADR-0003 once accepted._
+_Accepted 2026-10-18. Supersedes ADR-0003._
 
 ADR-0003 deleted the friend graph and made Group the only relationship
 primitive, accepting that "two people cannot be connected without forming a

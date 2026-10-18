@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/reflection.dart';
+import 'friend_service.dart';
 import 'group_collections.dart';
 
 /// Service for reading and writing a user's private daily reflections.
@@ -104,8 +105,6 @@ class ReflectionService {
         .whereType<String>()
         .toSet()
         .toList();
-    if (groupIds.isEmpty) return;
-
     final batch = firestore.batch();
     for (final groupId in groupIds) {
       final entry = firestore
@@ -122,6 +121,32 @@ class ReflectionService {
       } else {
         batch.set(
           entry,
+          {'sharedReflection': text},
+          SetOptions(merge: true),
+        );
+      }
+    }
+
+    // The Friend-visible copy (ADR-0012) lives under the author, so it
+    // exists with or without Groups. Only the opted-in text is copied; the
+    // private reflection stays owner-only.
+    final friendEntry = firestore
+        .collection('users')
+        .doc(uid)
+        .collection(FriendService.feedCollection)
+        .doc(dateKey)
+        .collection('entries')
+        .doc(uid);
+    // Only update a copy that exists: sharing a Reflection before Showing
+    // up must not invent a Friend-source entry with no author or timestamp.
+    if ((await friendEntry.get()).exists) {
+      if (text == null) {
+        batch.update(friendEntry, {
+          'sharedReflection': FieldValue.delete(),
+        });
+      } else {
+        batch.set(
+          friendEntry,
           {'sharedReflection': text},
           SetOptions(merge: true),
         );

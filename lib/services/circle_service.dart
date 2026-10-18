@@ -4,25 +4,34 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/circle_member.dart';
 import 'error_logger.dart';
+import 'friend_service.dart';
 import 'group_collections.dart';
 
-/// Deep module encapsulating Circle derivation (ADR-0003).
+/// Deep module encapsulating Circle derivation (ADR-0012).
 ///
-/// A reader's Circle consists of everyone they share at least one Group with.
-/// The Circle is derived dynamically from Group membership; there is no stored
-/// circle collection or mutual friend graph.
+/// A reader's Circle consists of everyone they share at least one Group with
+/// plus their Friends. The Circle is derived dynamically from Group
+/// membership and the friend graph; there is no stored circle collection.
 ///
 /// This service encapsulates:
-/// - One-shot lookup of co-member IDs across all shared groups ([fetchCircleMemberIds]).
-/// - Reactive streaming of deduplicated [CircleMember]s across all shared groups ([watchCircleMembers]).
+/// - One-shot lookup of Circle IDs across shared groups and Friends ([fetchCircleMemberIds]).
+/// - Reactive streaming of deduplicated [CircleMember]s ([watchCircleMembers]).
 /// - Observing co-members' reading progress / completed date keys in a group schedule ([memberCompletedDates]).
 class CircleService {
   /// Firestore instance used for database operations.
   final FirebaseFirestore firestore;
 
+  /// Source of the reader's Friends. Defaults to a [FriendService] on the
+  /// same Firestore.
+  final FriendService friendService;
+
   /// Creates a [CircleService] using [FirebaseFirestore.instance] by default.
-  CircleService({FirebaseFirestore? firestore})
-      : firestore = firestore ?? FirebaseFirestore.instance;
+  CircleService({
+    FirebaseFirestore? firestore,
+    FriendService? friendService,
+  })  : firestore = firestore ?? FirebaseFirestore.instance,
+        friendService = friendService ??
+            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
 
   static Future<void> _safeLog(Object e, StackTrace? st) async {
     try {
@@ -30,10 +39,9 @@ class CircleService {
     } catch (_) {}
   }
 
-  /// Everyone [uid] shares at least one Group with — their Circle, derived
-  /// from Group membership at read time (ADR-0003). Never stored: there is
-  /// no circle collection. Pending join requests confer nothing.
-  /// The reader themselves is excluded.
+  /// Everyone [uid] shares at least one Group with, plus their Friends.
+  /// Derived at read time; never stored. Pending join requests confer
+  /// nothing. The reader themselves is excluded.
   Future<Set<String>> fetchCircleMemberIds(String uid) async {
     final memberships = await firestore
         .collectionGroup(GroupCollections.members)
@@ -56,18 +64,101 @@ class CircleService {
         if (id != uid && id.isNotEmpty) circle.add(id);
       }
     }
+    circle.addAll(await friendService.fetchFriendIds(uid));
     return circle;
   }
 
   /// Backward-compatible alias for [fetchCircleMemberIds].
   Future<Set<String>> circleMemberIds(String uid) => fetchCircleMemberIds(uid);
 
-  /// Live stream of the reader's Circle (ADR-0003): the co-members of every
-  /// Group [uid] belongs to, deduplicated by uid. A person in two shared
-  /// Groups appears once, carrying both Group ids in [CircleMember.groupIds].
-  /// The reader is excluded — Circle is who you read *with*; the reader
-  /// renders their own row. No Groups yields an empty list, not an error.
+  /// Live stream of the reader's Circle (ADR-0012): the co-members of every
+  /// Group [uid] belongs to, plus their Friends, deduplicated by uid. A person
+  /// in two shared Groups appears once, carrying both Group ids; a Friend who
+  /// also shares a Group keeps their Group ids and is marked [isFriend].
+  /// The reader is excluded. No Groups and no Friends yields an empty list,
+  /// not an error.
   Stream<List<CircleMember>> watchCircleMembers(String uid) {
+    final coMembers = _watchCoMembers(uid);
+    final friendMembers = friendService.watchFriends(uid).map(
+          (friends) => [
+            for (final friend in friends)
+              CircleMember(
+                uid: friend.uid,
+                groupIds: const <String>{},
+                name: friend.name,
+                photoUrl: friend.photoUrl,
+                isFriend: true,
+                friendSince: friend.since,
+              ),
+          ],
+        );
+
+    return Stream<List<CircleMember>>.multi((controller) {
+      List<CircleMember>? co;
+      List<CircleMember>? friends;
+      var closed = false;
+
+      void emit() {
+        if (closed || co == null || friends == null) return;
+        final byUid = <String, CircleMember>{
+          for (final member in co!) member.uid: member,
+        };
+        for (final friend in friends!) {
+          final existing = byUid[friend.uid];
+          byUid[friend.uid] = existing == null
+              ? friend
+              : CircleMember(
+                  uid: existing.uid,
+                  groupIds: existing.groupIds,
+                  name: existing.name ?? friend.name,
+                  photoUrl: existing.photoUrl ?? friend.photoUrl,
+                  isFriend: true,
+                  friendSince: friend.friendSince,
+                );
+        }
+        controller.add(byUid.values.toList());
+      }
+
+      final subs = <StreamSubscription<dynamic>>[];
+
+      subs.add(coMembers.listen(
+        (members) {
+          co = members;
+          emit();
+        },
+        onError: (Object e, StackTrace st) {
+          unawaited(_safeLog(e, st));
+          co = const <CircleMember>[];
+          emit();
+        },
+      ));
+
+      subs.add(friendMembers.listen(
+        (members) {
+          friends = members;
+          emit();
+        },
+        onError: (Object e, StackTrace st) {
+          unawaited(_safeLog(e, st));
+          friends = const <CircleMember>[];
+          emit();
+        },
+      ));
+
+      controller.onCancel = () {
+        closed = true;
+        for (final sub in subs) {
+          unawaited(sub.cancel());
+        }
+      };
+    });
+  }
+
+  /// Backward-compatible alias for [watchCircleMembers].
+  Stream<List<CircleMember>> circleMembers(String uid) =>
+      watchCircleMembers(uid);
+
+  Stream<List<CircleMember>> _watchCoMembers(String uid) {
     final memberships = firestore
         .collectionGroup(GroupCollections.members)
         .where('uid', isEqualTo: uid)
@@ -187,10 +278,6 @@ class CircleService {
       };
     });
   }
-
-  /// Backward-compatible alias for [watchCircleMembers].
-  Stream<List<CircleMember>> circleMembers(String uid) =>
-      watchCircleMembers(uid);
 
   /// Stream of the `YYYY-MM-DD` ids [uid] has completed in [groupId]'s
   /// schedule, read from `progress/{dateId}/entries/{uid}` (count > 0 or

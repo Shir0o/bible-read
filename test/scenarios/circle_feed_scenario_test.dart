@@ -605,7 +605,10 @@ void main() {
     await pumpCircle(tester);
 
     expect(find.text('No one here yet'), findsOneWidget);
-    expect(find.text('Your Circle is everyone you share a group with.'),
+    expect(
+        find.text(
+          'Your Circle is your Friends and everyone you share a group with.',
+        ),
         findsOneWidget);
     expect(find.text('Have a code?'), findsOneWidget);
     expect(find.text('Find a group'), findsOneWidget);

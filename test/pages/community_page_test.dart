@@ -66,7 +66,8 @@ void main() {
 
     expect(find.text('No one here yet'), findsOneWidget);
     expect(
-      find.text('Your Circle is everyone you share a group with.'),
+      find.text(
+          'Your Circle is your Friends and everyone you share a group with.'),
       findsOneWidget,
     );
     expect(find.text('Have a code?'), findsOneWidget);
@@ -166,5 +167,100 @@ void main() {
     final topDiff = (textTop - chipTop).abs();
     final bottomDiff = (chipBottom - textBottom).abs();
     expect((topDiff - bottomDiff).abs(), lessThanOrEqualTo(1.0));
+  });
+
+  Future<void> seedFriend(String friendUid, {String name = 'Mei'}) async {
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friends')
+        .doc(friendUid)
+        .set({
+      'uid': friendUid,
+      'name': name,
+      'since': DateTime(2026, 10, 3),
+    });
+  }
+
+  Future<void> seedFriendDay(String friendUid, DateTime day) async {
+    final key =
+        '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    await firestore
+        .collection('users')
+        .doc(friendUid)
+        .collection('friend_feed')
+        .doc(key)
+        .collection('entries')
+        .doc(friendUid)
+        .set({
+      'uid': friendUid,
+      'name': 'Mei',
+      'dateId': key,
+      'timestamp': Timestamp.fromDate(day),
+    });
+  }
+
+  testWidgets('no Friends means no Friends chip', (tester) async {
+    await pumpPage(tester);
+
+    expect(find.widgetWithText(FilterChip, 'Friends'), findsNothing);
+  });
+
+  testWidgets('the Friends chip sits after Everyone and before the groups',
+      (tester) async {
+    await firestore.collection('groups').doc('g1').set({
+      'name': 'My Group',
+      'ownerUid': 'u1',
+      'memberCount': 1,
+    });
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({'uid': 'u1', 'role': 'owner'});
+    await seedFriend('f1');
+
+    await pumpPage(tester);
+
+    final labels = tester
+        .widgetList<FilterChip>(find.byType(FilterChip))
+        .map((chip) => (chip.label as Text).data)
+        .toList();
+    expect(labels, ['Everyone', 'Friends', 'My Group']);
+  });
+
+  testWidgets('selecting Friends narrows the status row to Friends',
+      (tester) async {
+    final date = DateTime(2026, 10, 18);
+    await firestore.collection('groups').doc('g1').set({
+      'name': 'My Group',
+      'ownerUid': 'u1',
+      'memberCount': 2,
+    });
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({'uid': 'u1', 'role': 'owner'});
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u2')
+        .set({'uid': 'u2', 'role': 'member', 'name': 'Bea'});
+    await seedFriend('f1');
+    await seedFriendDay('f1', date);
+
+    await pumpPage(tester, date: date);
+    expect(find.byKey(const ValueKey('status_u2')), findsOneWidget);
+    expect(find.byKey(const ValueKey('status_f1')), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilterChip, 'Friends'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('status_f1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('status_u2')), findsNothing);
   });
 }

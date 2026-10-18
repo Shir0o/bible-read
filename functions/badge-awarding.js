@@ -268,6 +268,27 @@ async function pushBadgeUnlock(db, uid, badges) {
 async function mirrorLatestBadge(db, uid, missing) {
   const latest = missing.reduce((a, b) => (b.rank > a.rank ? b : a));
   const logged = isBackfillQuiet() ? [] : missing;
+
+  // The reader's own Friend-visible badge log (ADR-0012) exists with or
+  // without Groups. Server-only, like the Group mirrors.
+  if (logged.length > 0) {
+    await Promise.all(
+      logged.map((badge) =>
+        db
+          .collection('users')
+          .doc(uid)
+          .collection('friend_badge_log')
+          .doc(`${uid}_${badge.id}`)
+          .set({
+            uid,
+            badgeId: badge.id,
+            type: badge.type,
+            dateUnlocked: admin.firestore.FieldValue.serverTimestamp(),
+          })
+      )
+    );
+  }
+
   const memberships = await db
     .collectionGroup('members')
     .where('uid', '==', uid)

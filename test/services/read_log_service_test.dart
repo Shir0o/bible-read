@@ -43,6 +43,15 @@ void main() {
     firestore = FakeFirebaseFirestore();
   });
 
+  Future<dynamic> friendEntry(String uid, String dateKey) => firestore
+      .collection('users')
+      .doc(uid)
+      .collection('friend_feed')
+      .doc(dateKey)
+      .collection('entries')
+      .doc(uid)
+      .get();
+
   group('mark', () {
     test('writes one entry per Group the reader belongs to', () async {
       await seedGroup(id: 'g1', ownerUid: 'u1', members: ['u2']);
@@ -146,6 +155,47 @@ void main() {
       expect(g1.exists, isTrue);
       expect(g2.exists, isTrue);
     });
+
+    test('also writes the reader\'s Friend-visible copy', () async {
+      await seedGroup(id: 'g1', ownerUid: 'u1', members: ['u2']);
+      final user = MockUser(uid: 'u2', displayName: 'Test User');
+
+      await ReadLogService(firestore: firestore).mark(
+        user,
+        date: fixedDate,
+      );
+
+      final friend = await friendEntry('u2', '2025-07-15');
+      expect(friend.exists, isTrue);
+      expect(friend.data()?['uid'], 'u2');
+      expect(friend.data()?['dateId'], '2025-07-15');
+    });
+
+    test('a reader with no Groups still writes the Friend-visible copy',
+        () async {
+      final user = MockUser(uid: 'solo', displayName: 'Solo User');
+
+      await ReadLogService(firestore: firestore).mark(
+        user,
+        date: fixedDate,
+      );
+
+      expect((await friendEntry('solo', '2025-07-15')).exists, isTrue);
+    });
+
+    test('carries what the reader was reading onto the Friend copy',
+        () async {
+      final user = MockUser(uid: 'solo', displayName: 'Solo User');
+
+      await ReadLogService(firestore: firestore).mark(
+        user,
+        date: fixedDate,
+        reading: 'John 1',
+      );
+
+      final friend = await friendEntry('solo', '2025-07-15');
+      expect(friend.data()?['reading'], 'John 1');
+    });
   });
 
   group('clear', () {
@@ -178,13 +228,25 @@ void main() {
       expect(g2.exists, isFalse);
     });
 
-    test('clearing with no Groups is a no-op', () async {
-      final user = MockUser(uid: 'solo', displayName: 'Solo User');
+    test('removes the Friend-visible copy too', () async {
+      await seedGroup(id: 'g1', ownerUid: 'u1', members: ['u2']);
+      final user = MockUser(uid: 'u2', displayName: 'Test User');
+      final service = ReadLogService(firestore: firestore);
 
-      await ReadLogService(firestore: firestore).clear(
-        user,
-        date: fixedDate,
-      );
+      await service.mark(user, date: fixedDate);
+      await service.clear(user, date: fixedDate);
+
+      expect((await friendEntry('u2', '2025-07-15')).exists, isFalse);
+    });
+
+    test('clearing with no Groups removes the Friend-visible copy', () async {
+      final user = MockUser(uid: 'solo', displayName: 'Solo User');
+      final service = ReadLogService(firestore: firestore);
+
+      await service.mark(user, date: fixedDate);
+      await service.clear(user, date: fixedDate);
+
+      expect((await friendEntry('solo', '2025-07-15')).exists, isFalse);
     });
   });
 

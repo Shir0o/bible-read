@@ -322,6 +322,23 @@ describe('settleReadThroughBadges', () => {
 
     assert.deepStrictEqual(await badgeIds(db, 'alice'), ['first_nt']);
   });
+
+  it('logs new badges in the Friend-visible source, with or without Groups',
+      async () => {
+    const db = new FakeFirestore();
+    await testamentLedger(db, 'alice', 'nt', 0, 1);
+
+    await settleReadThroughBadges(db, 'alice');
+
+    const entry = db._docs.get(
+      'users/alice/friend_badge_log/alice_first_nt',
+    );
+    assert.ok(entry, 'a Friend-visible badge log entry is written');
+    assert.strictEqual(entry.uid, 'alice');
+    assert.strictEqual(entry.badgeId, 'first_nt');
+    assert.strictEqual(entry.type, 'read_through');
+    assert.ok(entry.dateUnlocked);
+  });
 });
 
 describe('settleFirstBookBadge', () => {

@@ -174,6 +174,12 @@ class NotificationNavigator {
     }
 
     switch (type) {
+      case 'friend':
+        // Show the Circle tab on the existing shell rather than pushing a
+        // second MainPage over the first.
+        navigator.popUntil((route) => route.isFirst);
+        MainPage.requestedTab.value = MainPage.circleTabIndex;
+        break;
       case 'groupJoinRequest':
         final groupId = data['groupId']?.toString();
         if (groupId == null || groupId.isEmpty) {

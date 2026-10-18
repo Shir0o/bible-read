@@ -1,5 +1,7 @@
 # Circle is derived from Group membership; there is no friend graph
 
+- Status: Superseded by [ADR-0012](0012-friends-alongside-circle.md).
+
 The app had two parallel social graphs: a mutual request/accept friend graph
 (`users/{uid}/friends`, `friendRequestsSent`, `friendRequestsReceived`) and
 Group membership (`groups/{id}/members`). They were already crossing in code —

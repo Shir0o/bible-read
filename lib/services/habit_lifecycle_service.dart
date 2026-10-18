@@ -88,9 +88,9 @@ class HabitLifecycleService {
   /// Updates group feed entries and the per-user reading record via
   /// [ReadLogService], recalculates streak summary via [ReadingStatusService],
   /// and invalidates the reading status cache.
-  Future<void> showUp(User user, {DateTime? date}) async {
+  Future<void> showUp(User user, {DateTime? date, String? reading}) async {
     final targetDate = date ?? DateTime.now();
-    await readLogService.mark(user, date: targetDate);
+    await readLogService.mark(user, date: targetDate, reading: reading);
     try {
       await readingStatusService.updateSummary();
     } catch (e, st) {

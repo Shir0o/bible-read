@@ -38,6 +38,13 @@ typedef SendLikeNotification = Future<void> Function({
 });
 
 class MainPage extends StatefulWidget {
+  /// The Circle tab's index in the bottom navigation.
+  static const int circleTabIndex = 1;
+
+  /// A tab a notification handler wants shown once a MainPage is listening.
+  /// Handlers set this instead of pushing a second app shell over the first.
+  static final ValueNotifier<int> requestedTab = ValueNotifier<int>(0);
+
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final GoogleSignIn Function() googleSignInProvider;
@@ -47,6 +54,9 @@ class MainPage extends StatefulWidget {
   final ReadingStatusService? readingStatusService;
   final bool appCheckFailed;
   final FirebaseFunctions? functions;
+
+  /// The tab to show first. Used when a notification opens Circle.
+  final int initialIndex;
 
   // Expose onNavigate for testing overrides if needed, though usually not passed
   final bool Function(int)? onNavigate;
@@ -62,6 +72,7 @@ class MainPage extends StatefulWidget {
     this.sendLikeNotification,
     this.appCheckFailed = false,
     this.functions,
+    this.initialIndex = 0,
     this.onNavigate,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
@@ -94,12 +105,22 @@ class MainPageState extends State<MainPage> {
   late final List<Widget> _pages;
   late final Stream<User?> _authStream;
 
-  final List<int> _navigationHistory = [_homeIndex];
+  List<int> _navigationHistory = [_homeIndex];
   bool _showAuthSelection = false;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
+    _navigationHistory = [_selectedIndex];
+    MainPage.requestedTab.addListener(_handleRequestedTab);
+    if (MainPage.requestedTab.value != 0) {
+      final requested = MainPage.requestedTab.value;
+      MainPage.requestedTab.value = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _onItemTapped(requested);
+      });
+    }
     _authStream = widget.auth.authStateChanges();
     _cacheService = DataCacheService();
     _connectivityService = ConnectivityService();
@@ -165,8 +186,19 @@ class MainPageState extends State<MainPage> {
 
   @override
   void dispose() {
+    MainPage.requestedTab.removeListener(_handleRequestedTab);
     _connectivityService.dispose();
     super.dispose();
+  }
+
+  void _handleRequestedTab() {
+    final requested = MainPage.requestedTab.value;
+    if (requested == 0) return;
+    // Always clear first: a request for the tab we are already on must not
+    // leave a stale value that swallows the next request.
+    MainPage.requestedTab.value = 0;
+    if (requested == _selectedIndex) return;
+    if (mounted) _onItemTapped(requested);
   }
 
   Future<void> _saveFcmToken() async {

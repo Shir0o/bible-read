@@ -22,7 +22,7 @@ import '../nav_glyphs.dart';
 /// - Card on surfaceContainerLowest / #FFFDFA with 22px rounded corners and border.
 /// - 64x64 circle icon tinted with primary color (10% opacity) containing [CircleGlyph].
 /// - "No one here yet" serif title.
-/// - "Your Circle is everyone you share a group with." descriptive text.
+/// - "Your Circle is your Friends and everyone you share a group with."
 /// - Three clear action paths:
 ///   1. "Have a code?" -> [JoinByCodePage]
 ///   2. "Find a group" -> Browse public groups sheet
@@ -170,7 +170,7 @@ class EmptyGroupState extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 250),
             child: Text(
-              'Your Circle is everyone you share a group with.',
+              'Your Circle is your Friends and everyone you share a group with.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),

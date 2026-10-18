@@ -166,8 +166,7 @@ class _ReflectSheetState extends State<_ReflectSheet> {
                             ? 'On — the people you read with can read '
                                 'this one.'
                             : 'Off — only you can read this. Turning it '
-                                'on lets the people you share a group '
-                                'with read it.',
+                                'on lets your Circle read it.',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),

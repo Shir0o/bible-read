@@ -18,6 +18,7 @@ import '../services/group_service.dart';
 import '../widgets/sub_header.dart';
 import 'seasonal_challenges_page.dart';
 import 'group_join_requests_page.dart';
+import 'main_page.dart';
 
 class NotificationCenterPage extends StatefulWidget {
   final NotificationService service;
@@ -187,6 +188,10 @@ Future<void> openNotification(
   if (!context.mounted) return;
   unawaited(vibrationService.lightImpact());
   switch (notification.type) {
+    case NotificationType.friend:
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      MainPage.requestedTab.value = MainPage.circleTabIndex;
+      break;
     case NotificationType.seasonalChallenge:
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -231,6 +236,8 @@ String defaultNotificationMessage(AppNotification n) {
       return 'Someone said Amen';
     case NotificationType.nudge:
       return 'Someone nudged you to read';
+    case NotificationType.friend:
+      return 'Someone added you as a friend';
     default:
       return 'New notification';
   }
