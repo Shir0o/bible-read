@@ -185,6 +185,16 @@ void main() {
         .get();
     expect(progress.data()?['completedDays'], isEmpty);
   });
+  Future<void> openArchive(WidgetTester tester) async {
+    await tester.tap(find.text('Archived'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+  }
+
+  Future<void> closeArchive(WidgetTester tester) async {
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+  }
+
   Future<void> archiveViaMenu(WidgetTester tester) async {
     await tester.tap(find.byTooltip('More actions'));
     await tester.pumpAndSettle();
@@ -208,14 +218,17 @@ void main() {
         .get();
     expect(progress.data()?['isArchived'], isTrue);
 
-    // The card moves to the hub's Archived section — the capabilities the
-    // retired duplicate page owned (#811).
-    expect(find.text('Archived'), findsOneWidget);
+    // The card leaves the list; the Archived row at the foot of Path counts
+    // it and opens the Archive, which keeps restore and delete (#811).
+    expect(find.text('Morning Light'), findsNothing);
+    await openArchive(tester);
     expect(find.text('Morning Light'), findsOneWidget);
 
     // Restore returns it to "On your own".
     await tester.tap(find.byTooltip('Unarchive and continue'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+    expect(find.text('Nothing archived'), findsOneWidget);
+    await closeArchive(tester);
     progress = await firestore
         .collection('users')
         .doc('u1')
@@ -233,7 +246,7 @@ void main() {
     await planService.setPlanArchived('u1', 'p1', true);
     await pumpPage(tester);
 
-    expect(find.text('Archived'), findsOneWidget);
+    await openArchive(tester);
     await tester.tap(find.byTooltip('Delete plan'));
     await tester.pumpAndSettle();
 
@@ -253,8 +266,11 @@ void main() {
     expect(progress.exists, isTrue);
     expect(progress.data()?['deletedAt'], isNotNull);
     expect(progress.data()?['preDeleteState'], 'archived');
+    await closeArchive(tester);
+    // With nothing shelved the Archived row hides; the trash counts one.
     expect(find.text('Archived'), findsNothing);
-    expect(find.text('Recently Deleted · 1 waiting'), findsOneWidget);
+    expect(find.text('Recently Deleted'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
   });
 
   testWidgets('Undo on the archive snackbar restores the plan', (
@@ -279,7 +295,7 @@ void main() {
     expect(find.text('On your own'), findsOneWidget);
   });
 
-  testWidgets('a long archive collapses to two rows until expanded', (
+  testWidgets('the Archived row counts every shelved plan and lists them all', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1200, 3000);
@@ -301,11 +317,9 @@ void main() {
     }
     await pumpPage(tester);
 
-    expect(find.byTooltip('Unarchive and continue'), findsNWidgets(2));
-    await tester.tap(find.text('Show all 3'));
-    await tester.pumpAndSettle();
+    expect(find.text('3'), findsOneWidget);
+    await openArchive(tester);
     expect(find.byTooltip('Unarchive and continue'), findsNWidgets(3));
-    expect(find.text('Show less'), findsOneWidget);
   });
 
   testWidgets('a new plan appears without a manual reload', (tester) async {
