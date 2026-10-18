@@ -294,4 +294,100 @@ void main() {
           plan.schedule.map((d) => d.readings));
     });
   });
+
+  group('byChaptersPerDay', () {
+    test(
+        'preserves completed days and re-slices unread chapters from resumeDate',
+        () {
+      // 7 days with 2 chapters each (Gen 1 to Gen 14).
+      final days = [
+        for (var i = 0; i < 7; i++)
+          _day(
+            DateTime(2026, 1, 1 + i),
+            ['Gen ${i * 2 + 1}', 'Gen ${i * 2 + 2}'],
+          ),
+      ];
+      // Days 1 and 2 read (Gen 1-4). Today is Jan 5 (Day 5).
+      final completed = {_id(DateTime(2026, 1, 1)), _id(DateTime(2026, 1, 2))};
+      final resumeDate = PlanPace.resumeDate(days, completed, today: today);
+      expect(resumeDate, DateTime(2026, 1, 5));
+
+      final adjusted = PlanPace.byChaptersPerDay(
+        days: days,
+        completedDateIds: completed,
+        resumeDate: resumeDate,
+        chaptersPerDay: 3,
+      );
+
+      // Completed days 1 and 2 are kept intact with their original dates
+      expect(adjusted[0].date, DateTime(2026, 1, 1));
+      expect(adjusted[0].chapters, ['Gen 1', 'Gen 2']);
+      expect(adjusted[1].date, DateTime(2026, 1, 2));
+      expect(adjusted[1].chapters, ['Gen 3', 'Gen 4']);
+
+      // Remaining 10 chapters (Gen 5..14) re-sliced into 3/day starting Jan 5
+      expect(adjusted[2].date, DateTime(2026, 1, 5));
+      expect(adjusted[2].chapters, ['Gen 5', 'Gen 6', 'Gen 7']);
+
+      expect(adjusted[3].date, DateTime(2026, 1, 6));
+      expect(adjusted[3].chapters, ['Gen 8', 'Gen 9', 'Gen 10']);
+
+      expect(adjusted[4].date, DateTime(2026, 1, 7));
+      expect(adjusted[4].chapters, ['Gen 11', 'Gen 12', 'Gen 13']);
+
+      expect(adjusted[5].date, DateTime(2026, 1, 8));
+      expect(adjusted[5].chapters, ['Gen 14']);
+
+      expect(adjusted.length, 6);
+
+      // Total chapters across whole plan are preserved in canonical order
+      expect(
+        [for (final d in adjusted) ...d.chapters],
+        [for (final d in days) ...d.chapters],
+      );
+
+      // Relative to Jan 5, missed readings are 0
+      final status =
+          CatchUpEngine.forGroupSchedule(adjusted, completed, today: today);
+      expect(status.missedCount, 0);
+      expect(status.currentIndex, 2);
+    });
+
+    test('starts tomorrow when today is already completed', () {
+      final days = [
+        _day(DateTime(2026, 1, 1), ['Gen 1', 'Gen 2']),
+        _day(DateTime(2026, 1, 5), ['Gen 3', 'Gen 4']),
+        _day(DateTime(2026, 1, 6), ['Gen 5', 'Gen 6']),
+      ];
+      final completed = {_id(DateTime(2026, 1, 1)), _id(DateTime(2026, 1, 5))};
+      final resumeDate = PlanPace.resumeDate(days, completed, today: today);
+      expect(resumeDate, DateTime(2026, 1, 6));
+
+      final adjusted = PlanPace.byChaptersPerDay(
+        days: days,
+        completedDateIds: completed,
+        resumeDate: resumeDate,
+        chaptersPerDay: 2,
+      );
+
+      expect(adjusted.length, 3);
+      expect(adjusted[2].date, DateTime(2026, 1, 6));
+      expect(adjusted[2].chapters, ['Gen 5', 'Gen 6']);
+    });
+
+    test('handles empty remaining chapters', () {
+      final days = [
+        _day(DateTime(2026, 1, 1), ['Gen 1']),
+      ];
+      final completed = {_id(DateTime(2026, 1, 1))};
+      final adjusted = PlanPace.byChaptersPerDay(
+        days: days,
+        completedDateIds: completed,
+        resumeDate: today,
+        chaptersPerDay: 2,
+      );
+      expect(adjusted.length, 1);
+      expect(adjusted.first.chapters, ['Gen 1']);
+    });
+  });
 }

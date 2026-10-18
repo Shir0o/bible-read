@@ -164,6 +164,49 @@ class PlanPace {
     return [...kept, ...adjusted];
   }
 
+  /// Set chapters a day: keeps completed readings and their exact dates,
+  /// re-slices all uncompleted readings into batches of [chaptersPerDay]
+  /// starting from [resumeDate].
+  static List<GroupSchedule> byChaptersPerDay({
+    required List<GroupSchedule> days,
+    required Set<String> completedDateIds,
+    required DateTime resumeDate,
+    required int chaptersPerDay,
+  }) {
+    final perDay = chaptersPerDay < 1 ? 1 : chaptersPerDay;
+    final resume = _dateOnly(resumeDate);
+
+    final kept = days
+        .where((day) => completedDateIds.contains(dateId(day.date)))
+        .toList()
+      ..sort((a, b) => _dateOnly(a.date).compareTo(_dateOnly(b.date)));
+
+    final remaining = <String>[
+      for (final day in days)
+        if (!completedDateIds.contains(dateId(day.date))) ...day.chapters,
+    ];
+
+    if (remaining.isEmpty) return kept;
+
+    final adjusted = <GroupSchedule>[];
+    var cursor = 0;
+    var dayOffset = 0;
+    while (cursor < remaining.length) {
+      final end = (cursor + perDay).clamp(0, remaining.length);
+      final chunk = remaining.sublist(cursor, end);
+      adjusted.add(
+        GroupSchedule(
+          date: resume.add(Duration(days: dayOffset)),
+          chapters: chunk,
+        ),
+      );
+      cursor = end;
+      dayOffset++;
+    }
+
+    return [...kept, ...adjusted];
+  }
+
   /// Begin again: the same readings in the same order (and with the same gaps
   /// between reading days), re-anchored so the first reading day is
   /// [startDate].

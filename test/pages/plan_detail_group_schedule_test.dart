@@ -219,4 +219,40 @@ void main() {
       ),
     ).called(2);
   });
+
+  testWidgets(
+      'PlanDetailPage shows "Adjust pace" button when member with schedule',
+      (tester) async {
+    final today = DateTime.now();
+    final schedules = [
+      GroupSchedule(date: today, chapters: ['Genesis 1']),
+    ];
+    when(
+      () => mockGroupService.schedule('test_group'),
+    ).thenAnswer((_) => Stream.value(schedules));
+
+    await tester.pumpWidget(createWidgetUnderTest(isMember: true));
+    await tester.pumpAndSettle();
+
+    final adjustFinder = find.byTooltip('Adjust pace');
+    expect(adjustFinder, findsOneWidget);
+    expect(find.byIcon(Icons.tune), findsOneWidget);
+  });
+
+  testWidgets(
+      'PlanDetailPage does not show "Adjust pace" button when not a member',
+      (tester) async {
+    final today = DateTime.now();
+    final schedules = [
+      GroupSchedule(date: today, chapters: ['Genesis 1']),
+    ];
+    when(
+      () => mockGroupService.schedule('test_group'),
+    ).thenAnswer((_) => Stream.value(schedules));
+
+    await tester.pumpWidget(createWidgetUnderTest(isMember: false));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Adjust pace'), findsNothing);
+  });
 }

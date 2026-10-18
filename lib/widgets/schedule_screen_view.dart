@@ -52,6 +52,9 @@ class ScheduleScreenView extends StatefulWidget {
 
   /// Optional leading widget (e.g. a plan description) rendered above the
   /// summary card.
+  /// Optional date representing "today" (defaults to DateTime.now() if null).
+  final DateTime? today;
+
   final Widget? header;
 
   const ScheduleScreenView({
@@ -64,6 +67,7 @@ class ScheduleScreenView extends StatefulWidget {
     this.todayAnchorBuilder,
     this.readOnly = false,
     this.header,
+    this.today,
   });
 
   @override
@@ -82,6 +86,7 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
       _resumeKeys.putIfAbsent(index, GlobalKey.new);
 
   bool _hasScrolled = false;
+  bool _showScrollToTop = false;
 
   /// Entry most recently toggled, kept highlighted briefly so the reader sees
   /// completion land on the row they tapped (issue #777).
@@ -107,13 +112,32 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_scrollToResume(initial: true));
     });
   }
 
+  void _onScroll() {
+    final shouldShow = _controller.hasClients && _controller.offset > 300;
+    if (shouldShow != _showScrollToTop) {
+      setState(() => _showScrollToTop = shouldShow);
+    }
+  }
+
+  void _scrollToTop() {
+    if (_controller.hasClients) {
+      _controller.animateTo(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_onScroll);
     _feedbackTimer?.cancel();
     _controller.dispose();
     super.dispose();
@@ -209,11 +233,38 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     return _isWeekly() ? '$unit each week' : '$unit a day';
   }
 
+  DateTime get _effectiveToday => widget.today ?? DateTime.now();
+
   /// Cadence-aware label for the current reading row.
   String _currentLabel() {
     final cur = widget.status.currentEntry;
-    if (cur != null && _sameDay(cur.date, DateTime.now())) return 'Today';
+    if (cur != null && _sameDay(cur.date, _effectiveToday)) return 'Today';
     return _isWeekly() ? 'This week' : 'Current';
+  }
+
+  /// Label for the summary card's jump button.
+  String _jumpLabel() {
+    final curLabel = _currentLabel();
+    if (curLabel == 'Today') return 'Jump to today';
+    return 'Jump to current';
+  }
+
+  Future<void> _scrollToCurrent() async {
+    final curIndex = widget.status.currentIndex;
+    if (curIndex < 0) return;
+    final ctx = _resumeKeys[curIndex]?.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    Scrollable.ensureVisible(ctx, alignment: 0.3);
+    await Future.delayed(const Duration(milliseconds: 100));
+    final after = _resumeKeys[curIndex]?.currentContext;
+    if (after != null && after.mounted) {
+      await Scrollable.ensureVisible(
+        after,
+        alignment: 0.1,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   Future<void> _scrollToResume({bool initial = false}) async {
@@ -250,44 +301,68 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
         if (status.statuses[i] == ReadingStatus.missed) i,
     ];
 
-    return SingleChildScrollView(
-      controller: _controller,
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.gap16, AppSpacing.gap4, AppSpacing.gap16, 80),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.header != null) ...[
-            widget.header!,
-            const SizedBox(height: AppSpacing.gap8),
-          ],
-          _buildSummaryCard(context),
-          if (showAnchor) ...[
-            const SizedBox(height: AppSpacing.gap16),
-            widget.todayAnchorBuilder!(context),
-          ],
-          if (missedItems.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.gap16),
-            widget.isGroup
-                ? _buildCatchUpTray(context, missedItems)
-                : _buildCatchUpNote(context, missedItems.length),
-          ],
-          if (widget.isGroup && status.inStep && status.doneCount > 0) ...[
-            const SizedBox(height: AppSpacing.gap16),
-            _buildInStepCard(context),
-          ],
-          const SizedBox(height: AppSpacing.gap20),
-          KeyedSubtree(
-            key: _scheduleHeaderKey,
-            child: _buildFullScheduleHeader(context),
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          controller: _controller,
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.gap16, AppSpacing.gap4, AppSpacing.gap16, 80),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.header != null) ...[
+                widget.header!,
+                const SizedBox(height: AppSpacing.gap8),
+              ],
+              _buildSummaryCard(context),
+              if (showAnchor) ...[
+                const SizedBox(height: AppSpacing.gap16),
+                widget.todayAnchorBuilder!(context),
+              ],
+              if (missedItems.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.gap16),
+                widget.isGroup
+                    ? _buildCatchUpTray(context, missedItems)
+                    : _buildCatchUpNote(context, missedItems.length),
+              ],
+              if (widget.isGroup && status.inStep && status.doneCount > 0) ...[
+                const SizedBox(height: AppSpacing.gap16),
+                _buildInStepCard(context),
+              ],
+              const SizedBox(height: AppSpacing.gap20),
+              KeyedSubtree(
+                key: _scheduleHeaderKey,
+                child: _buildFullScheduleHeader(context),
+              ),
+              const SizedBox(height: AppSpacing.gap4),
+              if (entries.isEmpty)
+                _buildEmpty(context)
+              else
+                ..._buildScheduleRows(context),
+            ],
           ),
-          const SizedBox(height: AppSpacing.gap4),
-          if (entries.isEmpty)
-            _buildEmpty(context)
-          else
-            ..._buildScheduleRows(context),
-        ],
-      ),
+        ),
+        Positioned(
+          right: AppSpacing.gap16,
+          bottom: AppSpacing.gap16,
+          child: AnimatedScale(
+            scale: _showScrollToTop ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: AnimatedOpacity(
+              opacity: _showScrollToTop ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: FloatingActionButton.small(
+                key: const Key('schedule_scroll_to_top_fab'),
+                heroTag: 'schedule_scroll_to_top_fab',
+                onPressed: _showScrollToTop ? _scrollToTop : null,
+                tooltip: 'Scroll to top',
+                child: const Icon(Icons.arrow_upward),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -301,8 +376,8 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
     final total = entries.length;
     final pct = total > 0 ? status.doneCount / total : 0.0;
 
-    // "Jump to current" only when caught up (no catch-up card is showing).
-    final showJump = status.missedCount == 0 && status.resumeIndex >= 0;
+    // "Jump to today/current" whenever a current reading exists.
+    final showJump = status.currentIndex >= 0;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -369,8 +444,8 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
                 if (showJump)
                   _Chip(
                     icon: Icons.calendar_today_outlined,
-                    label: 'Jump to current',
-                    onTap: () => unawaited(_scrollToResume()),
+                    label: _jumpLabel(),
+                    onTap: () => unawaited(_scrollToCurrent()),
                   ),
               ],
             ),

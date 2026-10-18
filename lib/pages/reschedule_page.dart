@@ -57,6 +57,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
   List<GroupSchedule> _adjusted(
     PaceOption option, {
     Set<String>? completedDateIds,
+    int? chaptersPerDay,
   }) {
     final completed = completedDateIds ?? const <String>{};
     switch (option) {
@@ -76,6 +77,17 @@ class _ReschedulePageState extends State<ReschedulePage> {
             today: widget.today,
           ),
           finishDate: PlanPace.finishOf(widget.schedule) ?? widget.today,
+        );
+      case PaceOption.chaptersPerDay:
+        return PlanPace.byChaptersPerDay(
+          days: widget.schedule,
+          completedDateIds: completed,
+          resumeDate: PlanPace.resumeDate(
+            widget.schedule,
+            completed,
+            today: widget.today,
+          ),
+          chaptersPerDay: chaptersPerDay ?? 2,
         );
       case PaceOption.beginAgain:
         return PlanPace.beginAgain(
@@ -102,6 +114,8 @@ class _ReschedulePageState extends State<ReschedulePage> {
       case PaceOption.keepFinish:
         return 'The remaining readings spread across the days that are left'
             '$suffix';
+      case PaceOption.chaptersPerDay:
+        return 'Read at a set chapters-per-day pace$suffix';
       case PaceOption.beginAgain:
         return 'Restart from today at the original pace$suffix';
     }
@@ -177,7 +191,7 @@ class _ReschedulePageState extends State<ReschedulePage> {
   Future<void> _adjustMyPaceInstead() async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null || _saving) return;
-    final choice = await Navigator.of(context).push<PaceOption>(
+    final choice = await Navigator.of(context).push<AdjustPaceResult>(
       MaterialPageRoute(
         builder: (_) => AdjustPacePage(
           days: widget.schedule,
@@ -193,8 +207,9 @@ class _ReschedulePageState extends State<ReschedulePage> {
     setState(() => _saving = true);
     try {
       final adjusted = _adjusted(
-        choice,
+        choice.option,
         completedDateIds: widget.completedDateIds,
+        chaptersPerDay: choice.chaptersPerDay,
       );
       await widget.paceService.applySharedPlanOverlay(
         uid: uid,
@@ -382,6 +397,10 @@ class _ReschedulePageState extends State<ReschedulePage> {
           'Begin again',
           'Restart from today at the original pace. Nothing already marked '
               'is lost.',
+        ),
+      PaceOption.chaptersPerDay => (
+          'Set chapters a day',
+          'Read at a set number of chapters per day.',
         ),
     };
     return InkWell(
