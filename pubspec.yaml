@@ -35,6 +35,8 @@ dependencies:
   sign_in_with_apple: ^8.2.0
   crypto: ^3.0.7
   share_plus: ^13.3.1
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

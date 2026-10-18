@@ -32,6 +32,10 @@ class JoinByCodePage extends StatefulWidget {
   /// Firebase beyond the injected GroupService.
   final FriendService? friendService;
 
+  /// A code to resolve immediately on open (e.g. from the QR scanner). The
+  /// reader still confirms; this only prefills the field and looks it up.
+  final String? initialCode;
+
   /// Creates a [JoinByCodePage].
   JoinByCodePage({
     super.key,
@@ -39,6 +43,7 @@ class JoinByCodePage extends StatefulWidget {
     FirebaseAuth? auth,
     VibrationService? vibrationService,
     this.friendService,
+    this.initialCode,
   })  : groupService = groupService ?? GroupService(),
         auth = auth ?? FirebaseAuth.instance,
         vibrationService = vibrationService ?? const VibrationService();
@@ -59,6 +64,18 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
   /// never depends on a Firebase singleton in tests.
   late final FriendService _friendService =
       widget.friendService ?? FriendService();
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialCode;
+    if (initial != null && initial.trim().isNotEmpty) {
+      _controller.text = initial;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _findCode();
+      });
+    }
+  }
 
   @override
   void dispose() {

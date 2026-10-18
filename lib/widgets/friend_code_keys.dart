@@ -10,4 +10,7 @@ abstract final class FriendCodeKeys {
 
   static const previewCard = Key('friend_code_preview');
   static const confirmButton = Key('friend_code_confirm');
+
+  static const qrCode = Key('friend_code_qr');
+  static const scanError = Key('friend_code_scan_error');
 }

@@ -66,6 +66,8 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Bible Read uses your camera only to scan a friend’s code.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
