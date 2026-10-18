@@ -8,18 +8,24 @@ import 'package:share_plus/share_plus.dart';
 import '../services/error_logger.dart';
 import '../services/friend_service.dart';
 import '../services/group_service.dart';
+import '../services/join_code_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/friend_code_keys.dart';
+import '../widgets/friend_qr_code.dart';
+import '../widgets/qr_scan_view.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/sub_header.dart';
 import 'join_by_code_page.dart';
 
-/// "Add a friend": the reader's personal friend code, which they can copy,
-/// share or reset, and a way into the same "Have a code?" field the Group
-/// flow uses.
+/// Which half of "Add a friend" is showing.
+enum _FriendTab { myCode, scan }
+
+/// "Add a friend": the reader's personal friend code as a QR (and text) they
+/// can copy, share or reset, and a Scan view that reads someone else's code
+/// and routes it through the same "Have a code?" flow (ADR-0012 V2).
 class FriendCodePage extends StatefulWidget {
   /// Auth used to identify the code's owner.
   final FirebaseAuth auth;
@@ -33,12 +39,17 @@ class FriendCodePage extends StatefulWidget {
   /// Haptics for interactions.
   final VibrationService vibrationService;
 
+  /// Camera scanner for the Scan tab. Defaults to the real camera; tests
+  /// inject a fake so no camera is needed.
+  final QrScanViewBuilder? scanViewBuilder;
+
   FriendCodePage({
     super.key,
     FirebaseAuth? auth,
     FriendService? friendService,
     GroupService? groupService,
     VibrationService? vibrationService,
+    this.scanViewBuilder,
   })  : auth = auth ?? FirebaseAuth.instance,
         friendService = friendService ?? FriendService(),
         groupService = groupService ?? GroupService(),
@@ -53,6 +64,24 @@ class _FriendCodePageState extends State<FriendCodePage> {
   String? _error;
   bool _loading = true;
   bool _resetting = false;
+  _FriendTab _tab = _FriendTab.myCode;
+
+  /// Inline message under the Scan view when a payload is not a code.
+  String? _scanError;
+
+  /// True while the scanner should ignore detections: from the moment a
+  /// payload is routed until its QR has been out of frame for a moment, so
+  /// returning from the confirm screen does not immediately re-open it.
+  bool _scanPaused = false;
+
+  /// Resumes scanning once detections stop arriving (the code left the frame).
+  Timer? _scanIdle;
+
+  @override
+  void dispose() {
+    _scanIdle?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -178,6 +207,52 @@ class _FriendCodePageState extends State<FriendCodePage> {
     );
   }
 
+  /// Routes a scanned payload like "Have a code?": six characters to the group
+  /// flow, eight to the friend flow, anything else is not a Bible Read code.
+  Future<void> _onScanned(String raw) async {
+    if (!mounted) return;
+    if (_scanPaused) {
+      // A code is still in frame — keep the scanner paused until it leaves.
+      _armScanResume();
+      return;
+    }
+
+    final code = FriendService.normalize(raw);
+    final isGroup = code.length == JoinCodeService.codeLength;
+    final isFriend = code.length == FriendService.codeLength;
+    if (!isGroup && !isFriend) {
+      unawaited(widget.vibrationService.lightImpact());
+      setState(() => _scanError = 'Not a Bible Read code.');
+      return;
+    }
+
+    _scanPaused = true;
+    unawaited(widget.vibrationService.lightImpact());
+    setState(() => _scanError = null);
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => JoinByCodePage(
+          groupService: widget.groupService,
+          auth: widget.auth,
+          vibrationService: widget.vibrationService,
+          friendService: widget.friendService,
+          initialCode: code,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    _armScanResume();
+  }
+
+  /// Re-arms the resume timer. Called again on every detection while paused, so
+  /// the scanner only resumes after the code has been out of frame for a beat.
+  void _armScanResume() {
+    _scanIdle?.cancel();
+    _scanIdle = Timer(const Duration(seconds: 2), () {
+      _scanPaused = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -190,23 +265,113 @@ class _FriendCodePageState extends State<FriendCodePage> {
               title: 'Add a friend',
               onBack: () => Navigator.of(context).maybePop(),
             ),
-            Expanded(
-              child: Container(
-                decoration: CommonStyles.backgroundDecoration(colorScheme),
-                child: SafeArea(
-                  child: SkeletonLoader(
-                    loading: _loading,
-                    skeleton: const _FriendCodeSkeleton(),
-                    child: _loading
-                        ? const SizedBox.shrink()
-                        : _buildLoadedBody(context),
-                  ),
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.hPadding,
+                AppSpacing.gap4,
+                AppSpacing.hPadding,
+                AppSpacing.gap12,
               ),
+              child: SegmentedButton<_FriendTab>(
+                segments: const [
+                  ButtonSegment(
+                    value: _FriendTab.myCode,
+                    label: Text('My code'),
+                  ),
+                  ButtonSegment(
+                    value: _FriendTab.scan,
+                    label: Text('Scan'),
+                  ),
+                ],
+                selected: {_tab},
+                showSelectedIcon: false,
+                onSelectionChanged: (selection) {
+                  final next = selection.first;
+                  if (next == _tab) return;
+                  unawaited(widget.vibrationService.lightImpact());
+                  setState(() {
+                    _tab = next;
+                    _scanError = null;
+                  });
+                },
+              ),
+            ),
+            Expanded(
+              child: _tab == _FriendTab.myCode
+                  ? _buildMyCodeTab()
+                  : _buildScanTab(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMyCodeTab() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: CommonStyles.backgroundDecoration(colorScheme),
+      child: SafeArea(
+        child: SkeletonLoader(
+          loading: _loading,
+          skeleton: const _FriendCodeSkeleton(),
+          child: _loading ? const SizedBox.shrink() : _buildLoadedBody(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScanTab() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final buildScan = widget.scanViewBuilder ?? cameraQrScanView;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: Colors.black, child: buildScan(context, _onScanned)),
+        const IgnorePointer(child: _ScanOverlay()),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_scanError != null)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.gap16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.gap16,
+                        vertical: AppSpacing.gap12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                      ),
+                      child: Text(
+                        _scanError!,
+                        key: FriendCodeKeys.scanError,
+                        style: AppTextStyles.body(context),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.gap8),
+                  child: TextButton(
+                    key: FriendCodeKeys.enterCodeButton,
+                    onPressed: _openEnterCode,
+                    style: TextButton.styleFrom(
+                      // token-exempt: white action over the dark camera preview
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Enter a code instead'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -238,6 +403,9 @@ class _FriendCodePageState extends State<FriendCodePage> {
       return const Center(child: Text('Please sign in'));
     }
 
+    final rawName = widget.auth.currentUser?.displayName?.trim();
+    final displayName = (rawName == null || rawName.isEmpty) ? 'You' : rawName;
+
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.gap16),
       children: [
@@ -258,6 +426,21 @@ class _FriendCodePageState extends State<FriendCodePage> {
             ),
             child: Column(
               children: [
+                FriendQrCode(data: code, key: FriendCodeKeys.qrCode),
+                const SizedBox(height: AppSpacing.gap16),
+                Text(
+                  displayName,
+                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.gap2),
+                Text(
+                  'Scan to be friends',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.gap20),
                 Text(
                   'YOUR FRIEND CODE',
                   style: theme.textTheme.labelSmall?.copyWith(
@@ -265,7 +448,7 @@ class _FriendCodePageState extends State<FriendCodePage> {
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.gap16),
+                const SizedBox(height: AppSpacing.gap12),
                 Text(
                   _spacedCode(code),
                   key: FriendCodeKeys.codeText,
@@ -385,8 +568,12 @@ class _FriendCodeSkeleton extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Skeleton(width: 140, height: 12),
+                Skeleton(width: 200, height: 200),
                 SizedBox(height: AppSpacing.gap16),
+                Skeleton(width: 120, height: 20),
+                SizedBox(height: AppSpacing.gap12),
+                Skeleton(width: 140, height: 12),
+                SizedBox(height: AppSpacing.gap12),
                 Skeleton(width: 220, height: 34),
               ],
             ),
@@ -395,6 +582,36 @@ class _FriendCodeSkeleton extends StatelessWidget {
         const SizedBox(height: AppSpacing.gap16),
         const Skeleton(width: double.infinity, height: 48),
       ],
+    );
+  }
+}
+
+/// The scanning frame: a rounded guide and the "point at" hint, drawn over the
+/// camera preview.
+class _ScanOverlay extends StatelessWidget {
+  const _ScanOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 240,
+            height: 240,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white, width: 3),
+              borderRadius: BorderRadius.circular(AppSpacing.rCard),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.gap20),
+          const Text(
+            'Point at your friend’s code',
+            style: TextStyle(color: Colors.white70, fontSize: 15),
+          ),
+        ],
+      ),
     );
   }
 }
