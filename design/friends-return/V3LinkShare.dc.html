@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>V3 Link — sending</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #6A53AD; } a:hover { color: #5B449E; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #F4F0E8; color: #231E2C; font-family: 'Hanken Grotesk', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; position: relative">
+  <div style="height: 44px; flex-shrink: 0"></div>
+
+  <div style="padding: 8px 16px 14px; display: flex; align-items: center; gap: 12px; flex-shrink: 0">
+    <div style="width: 40px; height: 40px; border-radius: 999px; background: #FFFDFA; border: 1px solid rgba(43,33,58,0.085); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#231E2C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></div>
+    <div style="font-family: Spectral, Georgia, serif; font-size: 22px; font-weight: 500; letter-spacing: -0.25px">Add a friend</div>
+  </div>
+  <div style="flex: 1 1 auto; overflow: hidden; padding: 6px 16px 24px; display: flex; flex-direction: column; gap: 16px">
+    <div style="font-size: 15px; line-height: 1.5; color: #6C6577">Send a link to someone who isn&rsquo;t next to you. Opening it makes you friends.</div>
+    <div style="height: 52px; border-radius: 16px; background: #6A53AD; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L12 15 M7.5 7.5 L12 3 L16.5 7.5"></path><path d="M5 12 V18.5 A2.5 2.5 0 0 0 7.5 21 H16.5 A2.5 2.5 0 0 0 19 18.5 V12"></path></svg>Share invite link</div>
+    <div style="font-size: 12.5px; line-height: 1.5; color: #8C8694; text-align: left">Anyone with the link can add you. <a>Reset link</a></div>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(35,30,44,0.38)"></div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 330px; background: #F4F0E8; border-radius: 28px 28px 0 0; padding: 10px 16px 28px; display: flex; flex-direction: column; gap: 16px">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: rgba(43,33,58,0.15); align-self: center; margin-bottom: 4px"></div>
+    <div style="display: flex; align-items: center; gap: 12px; background: #FFFDFA; border-radius: 16px; padding: 12px; border: 1px solid rgba(43,33,58,0.085)">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: #6A53AD; display: flex; align-items: center; justify-content: center; color: #fff; font-family: Spectral, Georgia, serif; font-size: 20px">B</div>
+      <div style="min-width: 0"><div style="font-size: 14px; font-weight: 600">Read with me &mdash; Tony on Bible Read</div><div style="font-size: 12.5px; color: #6C6577">bibleread.app/f/7QK4M2PX</div></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; padding: 4px 6px"><div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 66px"><div style="width: 56px; height: 56px; border-radius: 16px; background: #3FBF5A; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700">…</div><span style="font-size: 11px; color: #231E2C">Messages</span></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 66px"><div style="width: 56px; height: 56px; border-radius: 16px; background: #2BA864; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700">W</div><span style="font-size: 11px; color: #231E2C">WhatsApp</span></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 66px"><div style="width: 56px; height: 56px; border-radius: 16px; background: #3D7BE0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700">@</div><span style="font-size: 11px; color: #231E2C">Mail</span></div><div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 66px"><div style="width: 56px; height: 56px; border-radius: 16px; background: #8C8694; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700">⧉</div><span style="font-size: 11px; color: #231E2C">Copy</span></div></div>
+    <div style="font-size: 12.5px; line-height: 1.5; color: #8C8694; text-align: center">System share sheet, drawn generically.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
