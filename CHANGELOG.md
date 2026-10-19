@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.37.0](https://github.com/Shir0o/bible-read/compare/v1.36.0...v1.37.0) (2026-10-19)
+
+
+### Features
+
+* **friends:** add a friend by invite link (closes [#1006](https://github.com/Shir0o/bible-read/issues/1006)) ([#1023](https://github.com/Shir0o/bible-read/issues/1023)) ([15a32ab](https://github.com/Shir0o/bible-read/commit/15a32abeb33fa32f23462a9c1e627c830d258fb2))
+* **friends:** add a friend by QR (closes [#1005](https://github.com/Shir0o/bible-read/issues/1005)) ([#1022](https://github.com/Shir0o/bible-read/issues/1022)) ([d0dfa58](https://github.com/Shir0o/bible-read/commit/d0dfa5829c9d205f5153f2f3a1e07ccee3afcff2))
+* **friends:** Friends alongside Circle — friend code (V1) ([#1021](https://github.com/Shir0o/bible-read/issues/1021)) ([dba020d](https://github.com/Shir0o/bible-read/commit/dba020d3a79c679944abe9032e33126409cd7b9a))
+* **friends:** one screen for code, QR and link (closes [#1007](https://github.com/Shir0o/bible-read/issues/1007)) ([#1024](https://github.com/Shir0o/bible-read/issues/1024)) ([0daf989](https://github.com/Shir0o/bible-read/commit/0daf98976e92acb68351a5fa2a08f4d882995341))
+* **plans:** improve schedule navigation and pace adjustment with dry run (closes [#1018](https://github.com/Shir0o/bible-read/issues/1018)) ([#1019](https://github.com/Shir0o/bible-read/issues/1019)) ([9ba8882](https://github.com/Shir0o/bible-read/commit/9ba888206d82839bd280571e20ce2ef4d8d1e794))
+
 ## [1.36.0](https://github.com/Shir0o/bible-read/compare/v1.35.3...v1.36.0) (2026-10-18)
 
 
