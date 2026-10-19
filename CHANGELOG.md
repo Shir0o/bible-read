@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.37.1](https://github.com/Shir0o/bible-read/compare/v1.37.0...v1.37.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **friends:** post-merge review fixes for Friends ([#1025](https://github.com/Shir0o/bible-read/issues/1025)) ([e7f809e](https://github.com/Shir0o/bible-read/commit/e7f809e404bffc4e2af3bcf2532bc292eddf3ce6))
+
 ## [1.37.0](https://github.com/Shir0o/bible-read/compare/v1.36.0...v1.37.0) (2026-10-19)
 
 
