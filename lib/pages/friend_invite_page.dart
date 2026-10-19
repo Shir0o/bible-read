@@ -8,7 +8,9 @@ import '../services/friend_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/friend_avatar.dart';
 import '../widgets/friend_code_keys.dart';
+import '../widgets/friend_redeem.dart';
 
 /// What the invite is showing: the confirm card, or one of the ways it can
 /// fail. The invite never adds anyone by itself — only the Add button does.
@@ -104,43 +106,22 @@ class _FriendInvitePageState extends State<FriendInvitePage> {
     unawaited(widget.vibrationService.lightImpact());
 
     setState(() => _adding = true);
-    try {
-      final result = await widget.friendService.redeem(widget.code);
-      if (!mounted) return;
-      switch (result) {
-        case FriendRedemption.added:
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'You’re now friends with ${_displayName(match.name)}',
-              ),
-            ),
-          );
-          Navigator.of(context).maybePop();
-        case FriendRedemption.self:
-          setState(() {
-            _adding = false;
-            _state = _InviteState.self;
-          });
-        case FriendRedemption.alreadyFriends:
-          setState(() {
-            _adding = false;
-            _state = _InviteState.alreadyFriends;
-          });
-        case FriendRedemption.unknown:
-          setState(() {
-            _adding = false;
-            _state = _InviteState.invalid;
-          });
-      }
-    } catch (e, st) {
-      unawaited(ErrorLogger.log(e, st));
-      if (!mounted) return;
-      setState(() => _adding = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Try again.')),
-      );
-    }
+    final result = await redeemFriendCode(
+      context,
+      friendService: widget.friendService,
+      code: widget.code,
+      displayName: _displayName(match.name),
+    );
+    if (!mounted || result == FriendRedemption.added) return;
+    setState(() {
+      _adding = false;
+      _state = switch (result) {
+        FriendRedemption.self => _InviteState.self,
+        FriendRedemption.alreadyFriends => _InviteState.alreadyFriends,
+        FriendRedemption.unknown => _InviteState.invalid,
+        _ => _state,
+      };
+    });
   }
 
   @override
@@ -307,43 +288,12 @@ class _InviteAvatars extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _Avatar(name: inviterName, photoUrl: inviterPhotoUrl, radius: 42),
+        FriendAvatar(name: inviterName, photoUrl: inviterPhotoUrl, radius: 42),
         Transform.translate(
           offset: const Offset(-16, 0),
-          child: _Avatar(name: viewerName, radius: 42),
+          child: FriendAvatar(name: viewerName, radius: 42),
         ),
       ],
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  final String? name;
-  final String? photoUrl;
-  final double radius;
-
-  const _Avatar({this.name, this.photoUrl, required this.radius});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final trimmed = name?.trim() ?? '';
-    final initial =
-        trimmed.isEmpty ? '?' : trimmed.substring(0, 1).toUpperCase();
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: colorScheme.secondaryContainer,
-      foregroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
-          ? NetworkImage(photoUrl!)
-          : null,
-      child: Text(
-        initial,
-        style: TextStyle(
-          fontSize: radius * 0.72,
-          fontWeight: FontWeight.w600,
-          color: colorScheme.onSecondaryContainer,
-        ),
-      ),
     );
   }
 }

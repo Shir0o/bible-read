@@ -81,6 +81,21 @@ class FriendService {
   /// The per-author Fan-out read by their Friends: daily entries and Amens.
   static const String feedCollection = 'friend_feed';
 
+  /// Path of [authorUid]'s Friend-source entries for [dateKey]:
+  /// `users/{uid}/friend_feed/{dateKey}/entries`. The author's own entry is
+  /// the document keyed by their uid. Every reader and writer of the Friend
+  /// source builds the path here.
+  static String feedEntriesPath(String authorUid, String dateKey) =>
+      'users/$authorUid/$feedCollection/$dateKey/entries';
+
+  /// [authorUid]'s own Friend-source entry for [dateKey].
+  static DocumentReference<Map<String, dynamic>> feedEntry(
+    FirebaseFirestore firestore,
+    String authorUid,
+    String dateKey,
+  ) =>
+      firestore.collection(feedEntriesPath(authorUid, dateKey)).doc(authorUid);
+
   /// The per-author log of Badges, read by their Friends.
   static const String badgeLog = 'friend_badge_log';
 
@@ -144,7 +159,7 @@ class FriendService {
       firestore
           .collection('users')
           .doc(uid)
-          .collection('friends')
+          .collection('friendships')
           .doc(friendUid);
 
   Future<String> _claimNewCode(Transaction tx, String uid) async {
@@ -249,7 +264,7 @@ class FriendService {
     return firestore
         .collection('users')
         .doc(uid)
-        .collection('friends')
+        .collection('friendships')
         .snapshots()
         .map((snap) {
       final friends = [
@@ -275,7 +290,7 @@ class FriendService {
     final snap = await firestore
         .collection('users')
         .doc(uid)
-        .collection('friends')
+        .collection('friendships')
         .get();
     return {
       for (final doc in snap.docs) (doc.data()['uid'] as String?) ?? doc.id,
@@ -291,9 +306,10 @@ class FriendService {
   Future<void> unfriend(String friendUid) => _unfriendFn(friendUid);
 
   /// Removes everything the reader owns in the friend graph: their code
-  /// lookup, both sides of every friendship, and their Friend source. Called
-  /// during account deletion (ADR-0006); the server does it because a client
-  /// may not delete another reader's side.
+  /// lookup, both sides of every friendship, their Friend source and their
+  /// private data (which holds the code). Called during account deletion
+  /// (ADR-0006); the server does it because a client may not delete another
+  /// reader's side.
   Future<void> deleteMyFriendData() => _deleteFriendDataFn();
 
   static Future<FriendRedemption> _defaultRedeem(String code) async {
@@ -322,7 +338,7 @@ class FriendService {
     return switch (status) {
       'self' => FriendRedemption.self,
       'alreadyFriends' => FriendRedemption.alreadyFriends,
-      'added' || 'ok' => FriendRedemption.added,
+      'added' => FriendRedemption.added,
       _ => FriendRedemption.unknown,
     };
   }

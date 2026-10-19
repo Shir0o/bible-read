@@ -10,7 +10,9 @@ import '../services/group_service.dart';
 import '../services/join_code_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/friend_avatar.dart';
 import '../widgets/friend_code_keys.dart';
+import '../widgets/friend_redeem.dart';
 import '../widgets/join_code_keys.dart';
 import '../widgets/qr_scan_view.dart';
 import '../widgets/sub_header.dart';
@@ -38,10 +40,6 @@ class JoinByCodePage extends StatefulWidget {
   /// Firebase beyond the injected GroupService.
   final FriendService? friendService;
 
-  /// A code to resolve immediately on open (e.g. from a link). The reader
-  /// still confirms; this only prefills the field and looks it up.
-  final String? initialCode;
-
   /// Header title. The friend add side reads "Their code".
   final String title;
 
@@ -56,7 +54,6 @@ class JoinByCodePage extends StatefulWidget {
     FirebaseAuth? auth,
     VibrationService? vibrationService,
     this.friendService,
-    this.initialCode,
     this.title = 'Enter a code',
     this.scanViewBuilder,
   })  : groupService = groupService ?? GroupService(),
@@ -92,18 +89,6 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
       widget.friendService ?? FriendService();
 
   @override
-  void initState() {
-    super.initState();
-    final initial = widget.initialCode;
-    if (initial != null && initial.trim().isNotEmpty) {
-      _controller.text = initial;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _findCode();
-      });
-    }
-  }
-
-  @override
   void dispose() {
     _scanIdle?.cancel();
     _controller.dispose();
@@ -134,7 +119,12 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
       setState(() {
         _match = null;
         _friendMatch = null;
-        _error = 'Codes are 6 characters for a group or 8 for a friend.';
+        // Eight characters is the right length for a friend code, so the
+        // only way to get here with eight is a character outside the
+        // alphabet.
+        _error = code.length == FriendService.codeLength
+            ? "That's not a valid friend code. Check it and try again."
+            : 'Codes are 6 characters for a group or 8 for a friend.';
       });
       return;
     }
@@ -256,44 +246,29 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
     unawaited(widget.vibrationService.lightImpact());
 
     setState(() => _joining = true);
-    try {
-      final result = await _friendService.redeem(match.code);
-      if (!mounted) return;
-      switch (result) {
-        case FriendRedemption.added:
-          final name = _displayName(match.name);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('You’re now friends with $name')),
-          );
-          Navigator.of(context).maybePop();
-        case FriendRedemption.self:
-          setState(() {
-            _joining = false;
-            _friendMatch = null;
-            _error = "That's your own code. Share it with someone instead.";
-          });
-        case FriendRedemption.alreadyFriends:
-          setState(() {
-            _joining = false;
-            _friendMatch = null;
-            _error = 'You’re already friends with '
-                '${_displayName(match.name)}.';
-          });
-        case FriendRedemption.unknown:
-          setState(() {
-            _joining = false;
-            _friendMatch = null;
-            _error = 'That code no longer works. Check it and try again.';
-          });
+    final result = await redeemFriendCode(
+      context,
+      friendService: _friendService,
+      code: match.code,
+      displayName: _displayName(match.name),
+    );
+    if (!mounted || result == FriendRedemption.added) return;
+    setState(() {
+      _joining = false;
+      final error = switch (result) {
+        FriendRedemption.self =>
+          "That's your own code. Share it with someone instead.",
+        FriendRedemption.alreadyFriends =>
+          'You’re already friends with ${_displayName(match.name)}.',
+        FriendRedemption.unknown =>
+          'That code no longer works. Check it and try again.',
+        _ => null,
+      };
+      if (error != null) {
+        _friendMatch = null;
+        _error = error;
       }
-    } catch (e, st) {
-      unawaited(ErrorLogger.log(e, st));
-      if (!mounted) return;
-      setState(() => _joining = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Try again.')),
-      );
-    }
+    });
   }
 
   Future<void> _confirmJoin() async {
@@ -471,9 +446,10 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                 children: [
                   Row(
                     children: [
-                      _FriendAvatar(
+                      FriendAvatar(
                         name: _friendMatch!.name,
                         photoUrl: _friendMatch!.photoUrl,
+                        radius: 22,
                       ),
                       const SizedBox(width: AppSpacing.gap12),
                       Expanded(
@@ -615,36 +591,6 @@ class _OrTypeIt extends StatelessWidget {
         ),
         const Expanded(child: Divider()),
       ],
-    );
-  }
-}
-
-/// A small avatar for the friend preview card.
-class _FriendAvatar extends StatelessWidget {
-  final String? name;
-  final String? photoUrl;
-
-  const _FriendAvatar({this.name, this.photoUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final initial = (name?.trim().isNotEmpty ?? false)
-        ? name!.trim().substring(0, 1).toUpperCase()
-        : '?';
-    return CircleAvatar(
-      radius: 22,
-      backgroundColor: colorScheme.secondaryContainer,
-      foregroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
-          ? NetworkImage(photoUrl!)
-          : null,
-      child: Text(
-        initial,
-        style: TextStyle(
-          color: colorScheme.onSecondaryContainer,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     );
   }
 }

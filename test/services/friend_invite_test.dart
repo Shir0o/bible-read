@@ -14,15 +14,6 @@ void main() {
     });
   });
 
-  group('appLinkFor', () {
-    test('builds a custom-scheme link that opens the app', () {
-      final link = FriendInvite.appLinkFor(code);
-
-      expect(link, startsWith('${FriendInvite.scheme}://'));
-      expect(FriendInvite.codeFrom(Uri.parse(link)), code);
-    });
-  });
-
   group('codeFrom', () {
     test('reads the code from a shared https link', () {
       final uri = Uri.parse(FriendInvite.linkFor(code));
@@ -31,7 +22,8 @@ void main() {
     });
 
     test('reads the code from a custom-scheme link', () {
-      final uri = Uri.parse(FriendInvite.appLinkFor(code));
+      // The form the hosted landing page opens (docs/f/index.html).
+      final uri = Uri.parse('bibleread://friend?code=$code');
 
       expect(FriendInvite.codeFrom(uri), code);
     });

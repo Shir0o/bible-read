@@ -267,7 +267,7 @@ describe('other cloud functions', () => {
     assert.equal(res.alreadySent, false);
     const joined = touched.join(',');
     assert.ok(
-      joined.includes('users/friends'),
+      joined.includes('users/friendships'),
       `nudge path did not check Friends: ${joined}`,
     );
     Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
@@ -522,7 +522,7 @@ describe('other cloud functions', () => {
             doc: () => ({
               // The friendship exists on the sender's side; the nudge ledger
               // and reading lookup do not yet.
-              get: async () => ({exists: sub === 'friends'}),
+              get: async () => ({exists: sub === 'friendships'}),
               set: async () => {},
             }),
           }),

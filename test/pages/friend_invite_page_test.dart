@@ -130,7 +130,7 @@ void main() {
     await firestore
         .collection('users')
         .doc('me')
-        .collection('friends')
+        .collection('friendships')
         .doc('tony')
         .set({'uid': 'tony'});
 

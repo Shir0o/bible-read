@@ -1096,7 +1096,6 @@ class _HomePageState extends State<HomePage>
     return 'Good evening';
   }
 
-  /// Groups sequential chapters (e.g., "Genesis 1", "Genesis 2" -> "Genesis 1–2").
   /// A short label for what the reader is on today, used to carry "what
   /// they're reading" onto their Friend-visible entry. Null when nothing is
   /// active yet.
@@ -1112,6 +1111,7 @@ class _HomePageState extends State<HomePage>
     return title.isEmpty ? null : title;
   }
 
+  /// Groups sequential chapters (e.g., "Genesis 1", "Genesis 2" -> "Genesis 1–2").
   String _formatReadings(List<String> readings) {
     if (readings.isEmpty) return '';
 

@@ -95,13 +95,7 @@ class MilestoneAnnouncer {
         );
       }
       batch.set(
-        firestore
-            .collection('users')
-            .doc(uid)
-            .collection(FriendService.feedCollection)
-            .doc(dateKey)
-            .collection('entries')
-            .doc(uid),
+        FriendService.feedEntry(firestore, uid, dateKey),
         data,
         SetOptions(merge: true),
       );

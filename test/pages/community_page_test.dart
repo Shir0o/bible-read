@@ -1,5 +1,6 @@
 import 'package:bible_read/pages/community_page.dart';
 import 'package:bible_read/services/group_service.dart';
+import 'package:bible_read/services/nudge_service.dart';
 import 'package:bible_read/services/reading_status_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -39,7 +40,14 @@ void main() {
     );
   });
 
-  Future<void> pumpPage(WidgetTester tester, {DateTime? date}) async {
+  Future<void> pumpPage(
+    WidgetTester tester, {
+    DateTime? date,
+    NudgeService? nudgeService,
+  }) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         home: CommunityPage(
@@ -48,10 +56,14 @@ void main() {
           groupService: groupService,
           readingStatusService: readingStatusService,
           vibrationService: vibration,
+          nudgeService: nudgeService,
           dateProvider: () => date ?? DateTime(2024, 1, 1),
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    // SkeletonLoader holds for its 1000ms minimum.
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
   }
 
@@ -173,7 +185,7 @@ void main() {
     await firestore
         .collection('users')
         .doc('u1')
-        .collection('friends')
+        .collection('friendships')
         .doc(friendUid)
         .set({
       'uid': friendUid,
@@ -262,5 +274,125 @@ void main() {
 
     expect(find.byKey(const ValueKey('status_f1')), findsOneWidget);
     expect(find.byKey(const ValueKey('status_u2')), findsNothing);
+  });
+
+  Future<void> seedGroupWith(String uid, String name) async {
+    await firestore.collection('groups').doc('g1').set({
+      'name': 'My Group',
+      'ownerUid': 'u1',
+      'memberCount': 2,
+    });
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({'uid': 'u1', 'role': 'owner'});
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc(uid)
+        .set({'uid': uid, 'role': 'member', 'name': name});
+  }
+
+  testWidgets('a Friend who is also a co-member is labelled with both',
+      (tester) async {
+    final date = DateTime(2026, 10, 18, 7);
+    await seedGroupWith('f1', 'Mei');
+    await seedFriend('f1');
+    await seedFriendDay('f1', date);
+    await firestore.doc('groups/g1/read_log/2026-10-18/entries/f1').set({
+      'uid': 'f1',
+      'name': 'Mei',
+      'dateId': '2026-10-18',
+      'timestamp': Timestamp.fromDate(date),
+    });
+
+    await pumpPage(tester, date: date);
+
+    expect(find.text('7:00 AM · My Group · Friend'), findsOneWidget);
+  });
+
+  testWidgets('the reader’s own update is never labelled Friend',
+      (tester) async {
+    final date = DateTime(2026, 10, 18, 7);
+    await seedFriend('f1');
+    await firestore.doc('users/u1/friend_feed/2026-10-18/entries/u1').set({
+      'uid': 'u1',
+      'name': 'Test User',
+      'dateId': '2026-10-18',
+      'timestamp': Timestamp.fromDate(date),
+    });
+
+    await pumpPage(tester, date: date);
+
+    expect(find.text('7:00 AM'), findsOneWidget);
+    expect(find.text('7:00 AM · Friend'), findsNothing);
+  });
+
+  group('a Friend in the status row', () {
+    late List<String> nudged;
+    late NudgeService nudgeService;
+
+    setUp(() {
+      nudged = [];
+      nudgeService = NudgeService(
+        firestore: firestore,
+        sendNudgeNotificationFn: ({
+          required String fromUid,
+          required String toUid,
+          required String fromName,
+        }) async {
+          nudged.add(toUid);
+          return NudgeResult.sent;
+        },
+      );
+    });
+
+    testWidgets('who has not Shown up is Nudged with one tap', (tester) async {
+      final date = DateTime(2026, 10, 18);
+      await seedFriend('f1');
+
+      await pumpPage(tester, date: date, nudgeService: nudgeService);
+
+      expect(
+          find.bySemanticsLabel('Mei, not yet today. Nudge'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('status_f1')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Unfriend'), findsNothing);
+      await tester.tap(find.text('Send nudge'));
+      await tester.pumpAndSettle();
+      expect(nudged, ['f1']);
+    });
+
+    testWidgets('who has Shown up does nothing on tap', (tester) async {
+      final date = DateTime(2026, 10, 18, 7);
+      await seedFriend('f1');
+      await seedFriendDay('f1', date);
+
+      await pumpPage(tester, date: date, nudgeService: nudgeService);
+
+      expect(find.bySemanticsLabel('Mei, shown up today'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('status_f1')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Send nudge'), findsNothing);
+      expect(find.text('Unfriend'), findsNothing);
+    });
+
+    testWidgets('still opens their sheet from the Feed', (tester) async {
+      final date = DateTime(2026, 10, 18, 7);
+      await seedFriend('f1');
+      await seedFriendDay('f1', date);
+
+      await pumpPage(tester, date: date, nudgeService: nudgeService);
+
+      await tester.tap(find.text('Mei showed up'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Unfriend'), findsOneWidget);
+    });
   });
 }

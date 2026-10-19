@@ -98,7 +98,7 @@ void main() {
       await firestore
           .collection('users')
           .doc('alice')
-          .collection('friends')
+          .collection('friendships')
           .doc('bob')
           .set({'uid': 'bob'});
 
@@ -107,7 +107,7 @@ void main() {
       final friend = await firestore
           .collection('users')
           .doc('alice')
-          .collection('friends')
+          .collection('friendships')
           .doc('bob')
           .get();
       expect(friend.exists, isTrue);
@@ -143,7 +143,7 @@ void main() {
       await firestore
           .collection('users')
           .doc('bob')
-          .collection('friends')
+          .collection('friendships')
           .doc('alice')
           .set({'uid': 'alice'});
 
@@ -163,7 +163,7 @@ void main() {
       await firestore
           .collection('users')
           .doc('alice')
-          .collection('friends')
+          .collection('friendships')
           .doc('bob')
           .set({
         'uid': 'bob',
@@ -185,7 +185,7 @@ void main() {
       await firestore
           .collection('users')
           .doc('alice')
-          .collection('friends')
+          .collection('friendships')
           .doc('bob')
           .set({'uid': 'bob'});
 

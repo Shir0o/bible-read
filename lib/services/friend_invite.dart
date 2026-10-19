@@ -10,24 +10,11 @@ abstract final class FriendInvite {
   /// Custom URL scheme that the app registers to receive invites.
   static const String scheme = 'bibleread';
 
-  /// Host used inside the custom-scheme link.
-  static const String appHost = 'friend';
-
   /// Host that serves the invite landing page.
   static const String webHost = 'shir0o.github.io';
 
   /// Path of the invite landing page on [webHost].
   static const String webPath = '/bible-read/f';
-
-  /// The custom-scheme link that opens the app on the confirm screen.
-  static String appLinkFor(String code) {
-    final normalized = FriendService.normalize(code);
-    return Uri(
-      scheme: scheme,
-      host: appHost,
-      queryParameters: {'code': normalized},
-    ).toString();
-  }
 
   /// The shareable https link carrying [code].
   static String linkFor(String code) {
@@ -45,7 +32,6 @@ abstract final class FriendInvite {
     if (!isWebLink && !isAppLink) return null;
 
     final candidate = uri.queryParameters['code'] ??
-        uri.queryParameters['c'] ??
         (uri.pathSegments.isEmpty ? null : uri.pathSegments.last);
     if (candidate == null) return null;
 
