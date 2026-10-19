@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/pages/join_by_code_page.dart';
+import 'package:bible_read/services/friend_invite.dart';
 import 'package:bible_read/services/friend_service.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/widgets/friend_code_keys.dart';
@@ -263,5 +264,94 @@ void main() {
 
     expect(find.byKey(JoinCodeKeys.errorText), findsOneWidget);
     expect(find.byKey(FriendCodeKeys.previewCard), findsNothing);
+  });
+
+  group('add side', () {
+    Future<ValueChanged<String>> pumpWithScanner(WidgetTester tester) async {
+      late ValueChanged<String> emit;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: JoinByCodePage(
+            groupService: groupService,
+            auth: auth,
+            vibrationService: vibration,
+            friendService: friendService,
+            title: 'Their code',
+            scanViewBuilder: (context, onDetect) {
+              emit = onDetect;
+              return const ColoredBox(color: Colors.black);
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return emit;
+    }
+
+    testWidgets('a scanned friend payload reaches the confirm card',
+        (tester) async {
+      await firestore.collection('users').doc('owner').set({'name': 'Mei'});
+      final code = await friendService.ensureMyCode('owner');
+
+      final emit = await pumpWithScanner(tester);
+      emit(code);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(FriendCodeKeys.previewCard), findsOneWidget);
+      expect(find.text('Add Mei as a friend'), findsOneWidget);
+    });
+
+    testWidgets('a scanned group payload reaches the group preview',
+        (tester) async {
+      final groupId = await seedCodedGroup();
+      final code = await firestore
+          .collection('groups')
+          .doc(groupId)
+          .get()
+          .then((doc) => doc.data()!['joinCode'] as String);
+
+      final emit = await pumpWithScanner(tester);
+      emit(code);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(JoinCodeKeys.previewCard), findsOneWidget);
+      expect(find.text('Evening Readers'), findsOneWidget);
+      expect(find.byKey(FriendCodeKeys.previewCard), findsNothing);
+    });
+
+    testWidgets('a payload that is not a code says so', (tester) async {
+      final emit = await pumpWithScanner(tester);
+
+      emit('hello there');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Not a Bible Read code.'), findsOneWidget);
+    });
+
+    testWidgets('a pasted invite link reaches the confirm card',
+        (tester) async {
+      await firestore.collection('users').doc('owner').set({'name': 'Mei'});
+      final code = await friendService.ensureMyCode('owner');
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: JoinByCodePage(
+            groupService: groupService,
+            auth: auth,
+            vibrationService: vibration,
+            friendService: friendService,
+          ),
+        ),
+      );
+      await tester.enterText(
+        find.byKey(JoinCodeKeys.codeField),
+        FriendInvite.linkFor(code),
+      );
+      await tester.tap(find.byKey(JoinCodeKeys.findButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(FriendCodeKeys.previewCard), findsOneWidget);
+      expect(find.text('Add Mei as a friend'), findsOneWidget);
+    });
   });
 }
