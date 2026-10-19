@@ -15,6 +15,7 @@ import '../app_bottom_sheet.dart';
 import '../find_group_card.dart';
 import '../group_preview_sheet.dart';
 import '../nav_glyphs.dart';
+import '../qr_scan_view.dart';
 
 /// The empty state for Circle when the reader has no active groups.
 ///
@@ -69,7 +70,8 @@ class EmptyGroupState extends StatelessWidget {
         vibrationService: _vibrationService,
       );
 
-  /// Opens [JoinByCodePage]. Shared with Circle's Invite sheet.
+  /// Opens the combined add side (ADR-0012 V4). Shared with Circle's Invite
+  /// sheet.
   static void openHaveCode(
     BuildContext context, {
     required GroupService groupService,
@@ -83,6 +85,8 @@ class EmptyGroupState extends StatelessWidget {
           groupService: groupService,
           auth: auth,
           vibrationService: vibrationService,
+          title: 'Their code',
+          scanViewBuilder: cameraQrScanView,
         ),
       ),
     );
