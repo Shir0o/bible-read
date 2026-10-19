@@ -225,8 +225,8 @@ describe('friend callables (ADR-0012)', () => {
     const result = await wrapped({data: {code}, auth: {uid: 'joiner'}});
 
     assert.equal(result.status, 'added');
-    const ownerSide = db.read('users/owner/friends/joiner');
-    const joinerSide = db.read('users/joiner/friends/owner');
+    const ownerSide = db.read('users/owner/friendships/joiner');
+    const joinerSide = db.read('users/joiner/friendships/owner');
     assert.equal(ownerSide.uid, 'joiner');
     assert.equal(ownerSide.name, 'Jonah');
     assert.equal(joinerSide.uid, 'owner');
@@ -265,7 +265,7 @@ describe('friend callables (ADR-0012)', () => {
     const result = await wrapped({data: {code}, auth: {uid: 'owner'}});
 
     assert.equal(result.status, 'self');
-    assert.equal(db.read('users/owner/friends/owner'), undefined);
+    assert.equal(db.read('users/owner/friendships/owner'), undefined);
   });
 
   it('reports unknown, malformed and reset codes as unknown', async () => {
@@ -292,7 +292,7 @@ describe('friend callables (ADR-0012)', () => {
     db.write(`friendCodes/${code}`, {ownerUid: 'owner'});
     db.write('users/owner', {name: 'Mei'});
     db.write('users/joiner', {name: 'Jonah'});
-    db.write('users/owner/friends/joiner', {uid: 'joiner'});
+    db.write('users/owner/friendships/joiner', {uid: 'joiner'});
 
     const wrapped = functionsTest.wrap(myFunctions.redeemFriendCode);
     const result = await wrapped({data: {code}, auth: {uid: 'joiner'}});
@@ -307,8 +307,8 @@ describe('friend callables (ADR-0012)', () => {
   });
 
   it('unfriends for both readers', async () => {
-    db.write('users/a/friends/b', {uid: 'b'});
-    db.write('users/b/friends/a', {uid: 'a'});
+    db.write('users/a/friendships/b', {uid: 'b'});
+    db.write('users/b/friendships/a', {uid: 'a'});
 
     const wrapped = functionsTest.wrap(myFunctions.unfriend);
     const result = await wrapped({
@@ -317,8 +317,8 @@ describe('friend callables (ADR-0012)', () => {
     });
 
     assert.equal(result.success, true);
-    assert.equal(db.read('users/a/friends/b'), undefined);
-    assert.equal(db.read('users/b/friends/a'), undefined);
+    assert.equal(db.read('users/a/friendships/b'), undefined);
+    assert.equal(db.read('users/b/friendships/a'), undefined);
   });
 
   it('rejects unfriending yourself', async () => {
@@ -395,10 +395,10 @@ describe('friend callables (ADR-0012)', () => {
     db.write('friendCodes/ABCDEFGH', {ownerUid: 'owner'});
     db.write('friendCodes/OTHER234', {ownerUid: 'other'});
     db.write('users/owner/private/friendCode', {code: 'ABCDEFGH'});
-    db.write('users/owner/friends/f1', {uid: 'f1'});
-    db.write('users/f1/friends/owner', {uid: 'owner'});
-    db.write('users/owner/friends/f2', {uid: 'f2'});
-    db.write('users/f2/friends/owner', {uid: 'owner'});
+    db.write('users/owner/friendships/f1', {uid: 'f1'});
+    db.write('users/f1/friendships/owner', {uid: 'owner'});
+    db.write('users/owner/friendships/f2', {uid: 'f2'});
+    db.write('users/f2/friendships/owner', {uid: 'owner'});
     db.write('users/owner/friend_feed/2026-10-18/entries/owner', {
       uid: 'owner',
     });
@@ -411,10 +411,10 @@ describe('friend callables (ADR-0012)', () => {
     assert.equal(result.friends, 2);
     assert.equal(db.read('friendCodes/ABCDEFGH'), undefined);
     assert.ok(db.read('friendCodes/OTHER234'), 'other codes are untouched');
-    assert.equal(db.read('users/owner/friends/f1'), undefined);
-    assert.equal(db.read('users/f1/friends/owner'), undefined);
-    assert.equal(db.read('users/owner/friends/f2'), undefined);
-    assert.equal(db.read('users/f2/friends/owner'), undefined);
+    assert.equal(db.read('users/owner/friendships/f1'), undefined);
+    assert.equal(db.read('users/f1/friendships/owner'), undefined);
+    assert.equal(db.read('users/owner/friendships/f2'), undefined);
+    assert.equal(db.read('users/f2/friendships/owner'), undefined);
     assert.equal(
       db.read('users/owner/friend_feed/2026-10-18/entries/owner'),
       undefined,

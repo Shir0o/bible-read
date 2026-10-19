@@ -130,13 +130,7 @@ class ReflectionService {
     // The Friend-visible copy (ADR-0012) lives under the author, so it
     // exists with or without Groups. Only the opted-in text is copied; the
     // private reflection stays owner-only.
-    final friendEntry = firestore
-        .collection('users')
-        .doc(uid)
-        .collection(FriendService.feedCollection)
-        .doc(dateKey)
-        .collection('entries')
-        .doc(uid);
+    final friendEntry = FriendService.feedEntry(firestore, uid, dateKey);
     // Only update a copy that exists: sharing a Reflection before Showing
     // up must not invent a Friend-source entry with no author or timestamp.
     if ((await friendEntry.get()).exists) {

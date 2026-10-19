@@ -325,7 +325,7 @@ void main() {
       await firestore
           .collection('users')
           .doc(uid)
-          .collection('friends')
+          .collection('friendships')
           .doc(friendUid)
           .set({
         'uid': friendUid,
@@ -413,7 +413,7 @@ void main() {
       await firestore
           .collection('users')
           .doc('u1')
-          .collection('friends')
+          .collection('friendships')
           .doc('f1')
           .delete();
 
@@ -447,7 +447,7 @@ void main() {
       await firestore
           .collection('users')
           .doc('u1')
-          .collection('friends')
+          .collection('friendships')
           .doc('f1')
           .delete();
 

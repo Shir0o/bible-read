@@ -43,7 +43,7 @@ service cloud.firestore {
   // read on a path the viewer owns.
   function isFriendOf(authorUid) {
     return request.auth != null &&
-      exists(/databases/$(database)/documents/users/$(request.auth.uid)/friends/$(authorUid));
+      exists(/databases/$(database)/documents/users/$(request.auth.uid)/friendships/$(authorUid));
   }
 
   // 🔐 Collection Group Rules
@@ -124,7 +124,7 @@ service cloud.firestore {
       // One side of a mutual friendship. Only the owner can read their side;
       // both sides are written together by the redeemFriendCode callable, so
       // no client may write here (a client write could leave one side only).
-      match /friends/{friendUid} {
+      match /friendships/{friendUid} {
         allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if false;
       }

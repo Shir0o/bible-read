@@ -16,7 +16,7 @@ const {
 const CODE = '7QK4M2PX';
 
 async function seedFriendship(viewerUid, authorUid) {
-  await seed(`users/${viewerUid}/friends/${authorUid}`, {
+  await seed(`users/${viewerUid}/friendships/${authorUid}`, {
     uid: authorUid,
     since: new Date('2026-10-03T00:00:00Z'),
   });
@@ -92,19 +92,19 @@ describe('friendCodes/{code}', () => {
   });
 });
 
-describe('users/{uid}/friends', () => {
+describe('users/{uid}/friendships', () => {
   before(async () => {
     await seedFriendship('alice', 'mei');
   });
 
   it('lets a reader read their own side', async () => {
     const alice = await asUser('alice');
-    await assertSucceeds(alice.doc('users/alice/friends/mei').get());
+    await assertSucceeds(alice.doc('users/alice/friendships/mei').get());
   });
 
   it('denies reading the other reader’s side', async () => {
     const mei = await asUser('mei');
-    await assertFails(mei.doc('users/alice/friends/mei').get());
+    await assertFails(mei.doc('users/alice/friendships/mei').get());
   });
 
   it('denies listing another reader’s friends', async () => {
@@ -115,13 +115,13 @@ describe('users/{uid}/friends', () => {
   it('denies every client write, even to the owner’s side', async () => {
     const alice = await asUser('alice');
     await assertFails(
-      alice.doc('users/alice/friends/carol').set({ uid: 'carol' }),
+      alice.doc('users/alice/friendships/carol').set({ uid: 'carol' }),
     );
     await assertFails(
-      alice.doc('users/alice/friends/mei').delete(),
+      alice.doc('users/alice/friendships/mei').delete(),
     );
     await assertFails(
-      alice.doc('users/alice/friends/mei').update({ since: 'now' }),
+      alice.doc('users/alice/friendships/mei').update({ since: 'now' }),
     );
   });
 });
@@ -133,7 +133,7 @@ describe('users/{uid}/friend_feed', () => {
   });
 
   after(async () => {
-    await unseed('users/alice/friends/mei');
+    await unseed('users/alice/friendships/mei');
   });
 
   it('lets a Friend read the author’s source', async () => {
@@ -219,8 +219,17 @@ describe('users/{uid}/friend_feed', () => {
     );
   });
 
+  it('ignores a leftover doc on the retired friends path', async () => {
+    await seed('users/carol/friends/mei', { uid: 'mei' });
+    const carol = await asUser('carol');
+    await assertFails(
+      carol.collection('users/mei/friend_feed/2026-10-18/entries').get(),
+    );
+    await unseed('users/carol/friends/mei');
+  });
+
   it('loses access as soon as the friendship is gone', async () => {
-    await unseed('users/alice/friends/mei');
+    await unseed('users/alice/friendships/mei');
     const alice = await asUser('alice');
     await assertFails(
       alice.collection('users/mei/friend_feed/2026-10-18/entries').get(),
@@ -267,6 +276,7 @@ describe('users/{uid}/friend_badge_log', () => {
 
 describe('retired friend-graph paths', () => {
   const retired = [
+    'users/alice/friends/bob',
     'users/alice/friendRequestsSent/bob',
     'users/alice/friendRequestsReceived/bob',
     'users/alice/friendStreakInvites/bob',

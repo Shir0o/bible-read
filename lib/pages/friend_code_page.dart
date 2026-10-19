@@ -303,7 +303,8 @@ class _FriendCodePageState extends State<FriendCodePage> {
         ),
         const SizedBox(height: AppSpacing.gap12),
         Text(
-          'One code, three ways: they scan it, type it, or tap the link.',
+          'Anyone with this code can add you. One code, three ways: they '
+          'scan it, type it, or tap the link.',
           style: theme.textTheme.bodySmall?.copyWith(
             color: colorScheme.outline,
           ),

@@ -232,7 +232,7 @@ async function isCircleMember(db, fromUid, toUid) {
   if (!fromUid || !toUid || fromUid === toUid) return false;
   const friend = await db
     .collection('users').doc(fromUid)
-    .collection('friends').doc(toUid)
+    .collection('friendships').doc(toUid)
     .get();
   if (friend.exists) return true;
 
@@ -400,10 +400,10 @@ exports.redeemFriendCode = onCall({ region: 'us-central1' }, async (req) => {
 
   const ownerFriendRef = db
     .collection('users').doc(ownerUid)
-    .collection('friends').doc(redeemerUid);
+    .collection('friendships').doc(redeemerUid);
   const redeemerFriendRef = db
     .collection('users').doc(redeemerUid)
-    .collection('friends').doc(ownerUid);
+    .collection('friendships').doc(ownerUid);
 
   const [ownerSnap, redeemerSnap] = await Promise.all([
     db.collection('users').doc(ownerUid).get(),
@@ -498,10 +498,10 @@ exports.unfriend = onCall({ region: 'us-central1' }, async (req) => {
   const db = admin.firestore();
   const batch = db.batch();
   batch.delete(
-    db.collection('users').doc(req.auth.uid).collection('friends').doc(friendUid),
+    db.collection('users').doc(req.auth.uid).collection('friendships').doc(friendUid),
   );
   batch.delete(
-    db.collection('users').doc(friendUid).collection('friends').doc(req.auth.uid),
+    db.collection('users').doc(friendUid).collection('friendships').doc(req.auth.uid),
   );
   await batch.commit();
   return { success: true };
@@ -509,9 +509,12 @@ exports.unfriend = onCall({ region: 'us-central1' }, async (req) => {
 
 /**
  * Account deletion (ADR-0006, ADR-0012): removes everything the reader owns
- * in the friend graph — their code lookup, both sides of every friendship,
- * and their Friend source. A client may not write another reader's side, so
- * this runs server-side. The client calls it before deleting its own tree.
+ * in the friend graph — every code lookup they own, both sides of every
+ * friendship, their Friend source (daily entries, Badge log and the Amens
+ * under both), and their whole `private` subcollection, which holds the
+ * friend code. A client may not delete the other reader's side of a
+ * friendship, so this runs server-side. The client calls it before deleting
+ * its own tree.
  */
 exports.deleteFriendData = onCall({ region: 'us-central1' }, async (req) => {
   if (!req.auth) {
@@ -535,7 +538,7 @@ exports.deleteFriendData = onCall({ region: 'us-central1' }, async (req) => {
   // Both sides of every friendship, in chunks that respect the batch cap.
   const friends = await db
     .collection('users').doc(uid)
-    .collection('friends')
+    .collection('friendships')
     .get();
   for (let i = 0; i < friends.docs.length; i += 200) {
     const batch = db.batch();
@@ -543,13 +546,13 @@ exports.deleteFriendData = onCall({ region: 'us-central1' }, async (req) => {
       batch.delete(friend.ref);
       batch.delete(
         db.collection('users').doc(friend.id)
-          .collection('friends').doc(uid),
+          .collection('friendships').doc(uid),
       );
     }
     await batch.commit();
   }
 
-  // The reader's own Friend-visible source and private code document.
+  // The reader's Friend source and private data, subcollections included.
   for (const collection of ['friend_feed', 'friend_badge_log', 'private']) {
     await db.recursiveDelete(
       db.collection('users').doc(uid).collection(collection),

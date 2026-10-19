@@ -249,7 +249,7 @@ void main() {
     await firestore
         .collection('users')
         .doc('joiner')
-        .collection('friends')
+        .collection('friendships')
         .doc('owner')
         .set({'uid': 'owner'});
 
@@ -264,6 +264,21 @@ void main() {
 
     expect(find.byKey(JoinCodeKeys.errorText), findsOneWidget);
     expect(find.byKey(FriendCodeKeys.previewCard), findsNothing);
+  });
+
+  testWidgets('an eight-character typo is called invalid, not the wrong length',
+      (tester) async {
+    // O is outside the code alphabet.
+    await pumpFriendPage(tester, '7QK4M2PO');
+
+    expect(
+      find.text("That's not a valid friend code. Check it and try again."),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Codes are 6 characters for a group or 8 for a friend.'),
+      findsNothing,
+    );
   });
 
   group('add side', () {

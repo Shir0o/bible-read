@@ -11,6 +11,7 @@ import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import 'app_bottom_sheet.dart';
 import 'common_styles.dart';
+import 'friend_avatar.dart';
 
 /// A Friend's sheet: who they are, how long you have been Friends, their
 /// week, a Nudge and Unfriend. Unfriending is silent and ends the connection
@@ -200,8 +201,8 @@ class _FriendSheetState extends State<_FriendSheet> {
           Center(
             child: Column(
               children: [
-                _Avatar(
-                    name: _name, photoUrl: widget.friend.photoUrl, size: 72),
+                FriendAvatar(
+                    name: _name, photoUrl: widget.friend.photoUrl, radius: 36),
                 const SizedBox(height: AppSpacing.gap8),
                 Text(
                   _name,
@@ -333,36 +334,5 @@ class _FriendSheetState extends State<_FriendSheet> {
           return (dateKey: key, shownUp: widget.shownUpDateKeys.contains(key));
         }(),
     ];
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  final String name;
-  final String? photoUrl;
-  final double size;
-
-  const _Avatar(
-      {required this.name, required this.photoUrl, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final initial =
-        name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase();
-    return CircleAvatar(
-      radius: size / 2,
-      backgroundColor: colorScheme.secondaryContainer,
-      foregroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
-          ? NetworkImage(photoUrl!)
-          : null,
-      child: Text(
-        initial,
-        style: TextStyle(
-          fontSize: size * 0.36,
-          fontWeight: FontWeight.w600,
-          color: colorScheme.onSecondaryContainer,
-        ),
-      ),
-    );
   }
 }

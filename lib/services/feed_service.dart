@@ -176,11 +176,7 @@ class FeedService {
         for (final dateKey in dateKeys) {
           final key = 'f/$friendUid/$dateKey';
           subs.add(firestore
-              .collection('users')
-              .doc(friendUid)
-              .collection(FriendService.feedCollection)
-              .doc(dateKey)
-              .collection('entries')
+              .collection(FriendService.feedEntriesPath(friendUid, dateKey))
               .snapshots()
               .listen(
             (snap) => hydrate(
@@ -468,7 +464,7 @@ class AmenTarget {
   String get likesPath {
     if (friendUid != null) {
       return awardId == null
-          ? 'users/$friendUid/${FriendService.feedCollection}/$dateKey/entries/$uid/likes'
+          ? '${FriendService.feedEntriesPath(friendUid!, dateKey)}/$uid/likes'
           : 'users/$friendUid/${FriendService.badgeLog}/$awardId/likes';
     }
     return awardId == null
@@ -700,7 +696,7 @@ List<FeedDay> assembleFeed({
         time: plain.first.time,
         people: [for (final u in ordered) u.people.first],
         groupIds: {for (final u in plain) ...u.groupIds},
-        isFriend: plain.any((u) => u.isFriend),
+        isFriend: plain.any((u) => u.isFriend && !u.people.first.isMe),
         // Amen celebrates the others; the reader never Amens themselves.
         targets: [
           for (final u in plain)

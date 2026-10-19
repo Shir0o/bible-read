@@ -296,13 +296,7 @@ class ReadLogService {
     String uid,
     String dateKey,
   ) =>
-      firestore
-          .collection('users')
-          .doc(uid)
-          .collection(FriendService.feedCollection)
-          .doc(dateKey)
-          .collection(_entries)
-          .doc(uid);
+      FriendService.feedEntry(firestore, uid, dateKey);
 }
 
 const String _readLog = 'read_log';

@@ -75,6 +75,20 @@ void main() {
     expect(find.text('Share link'), findsOneWidget);
   });
 
+  testWidgets('warns that anyone holding the code can add you', (tester) async {
+    final service = FriendService(
+      firestore: firestore,
+      generateCode: () => '7QK4M2PX',
+    );
+
+    await pumpPage(tester, service);
+
+    expect(
+      find.textContaining('Anyone with this code can add you.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('Reset retires the code and refreshes the QR and text',
       (tester) async {
     final codes = ['7QK4M2PX', 'ABCD2345'];
