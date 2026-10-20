@@ -884,7 +884,11 @@ class _ScheduleScreenViewState extends State<ScheduleScreenView> {
       child: InkWell(
         onTap: interactive ? () => _handleToggle(i) : null,
         child: KeyedSubtree(
-          key: isResume ? _resumeKeyFor(i) : null,
+          // The jump chips scroll to either the resume row (first missed) or
+          // the current row, so both need a key to ensureVisible against.
+          key: isResume || i == widget.status.currentIndex
+              ? _resumeKeyFor(i)
+              : null,
           child: inner,
         ),
       ),

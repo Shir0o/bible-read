@@ -400,6 +400,44 @@ void main() {
     expect(controller.offset, greaterThan(0));
   });
 
+  testWidgets('"Jump to today" lands on the current row while behind', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _OptimisticHost(
+        today: today,
+        isGroup: false,
+        days: [
+          for (var i = 15; i >= 1; i--) (dayOffset: -i, completed: false),
+          (dayOffset: 0, completed: false), // current
+          (dayOffset: 1, completed: false),
+          (dayOffset: 2, completed: false),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final controller = tester
+        .widget<SingleChildScrollView>(find.byType(SingleChildScrollView))
+        .controller!;
+
+    // Behind: the catch-up note is showing and the current reading is below the
+    // fold, so the jump has real work to do.
+    expect(find.text('Jump to today'), findsOneWidget);
+    controller.jumpTo(0);
+    await tester.pump();
+    expect(tester.getRect(find.text('Genesis 16')).top, greaterThan(600));
+
+    await tester.tap(find.text('Jump to today'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getRect(find.text('Genesis 16')).top,
+      inInclusiveRange(0, 599),
+    );
+    expect(controller.offset, greaterThan(0));
+  });
+
   testWidgets(
       'marking yesterday reading as read in group plan does not jump past today reading',
       (tester) async {
