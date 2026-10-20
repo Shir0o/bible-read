@@ -424,7 +424,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
-    if (_titleController.text.trim().isEmpty) {
+    if (_audience == PlanAudience.solo &&
+        _titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a plan title.')),
       );
@@ -866,19 +867,22 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       _buildAudienceSection(context),
                       first: true,
                     ),
-                  _section(
-                    context,
-                    'Name',
-                    TextField(
-                      key: const Key('create_plan_title'),
-                      controller: _titleController,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        hintText: 'e.g., Daily Walk',
+                  // A Shared plan has no title of its own: the Group name
+                  // above is its only name.
+                  if (_audience == PlanAudience.solo)
+                    _section(
+                      context,
+                      'Name',
+                      TextField(
+                        key: const Key('create_plan_title'),
+                        controller: _titleController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          hintText: 'e.g., Daily Walk',
+                        ),
                       ),
+                      first: _isEditing,
                     ),
-                    first: _isEditing,
-                  ),
                   _section(context, 'What to read', _buildReadingCard(context)),
                   _section(context, 'Pace', _buildPaceCard(context)),
                   _section(context, 'Start', _buildStartCard(context)),

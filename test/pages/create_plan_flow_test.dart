@@ -90,13 +90,10 @@ void main() {
       'the shared plan together', (tester) async {
     await pumpPage(tester);
 
-    await tester.enterText(
-      find.byKey(const Key('create_plan_title')),
-      'Jonah Together',
-    );
-
     await tester.tap(find.text('With a group'));
     await tester.pumpAndSettle();
+    // The Group name is the Shared plan's only name.
+    expect(find.byKey(const Key('create_plan_title')), findsNothing);
     await tester.enterText(
       find.byKey(const Key('create_plan_group_name')),
       'Thursday morning group',
@@ -155,13 +152,10 @@ void main() {
   testWidgets('with a group requires a group name', (tester) async {
     await pumpPage(tester);
 
-    await tester.enterText(
-      find.byKey(const Key('create_plan_title')),
-      'Jonah Together',
-    );
-
     await tester.tap(find.text('With a group'));
     await tester.pumpAndSettle();
+    // The Group name is the Shared plan's only name.
+    expect(find.byKey(const Key('create_plan_title')), findsNothing);
 
     await tester.tap(find.text('Start plan'));
     await tester.pumpAndSettle();
