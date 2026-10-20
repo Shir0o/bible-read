@@ -43,9 +43,12 @@ class MemberPresenceStack extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final member in displayMembers)
+          for (final (i, member) in displayMembers.indexed)
             Align(
-              widthFactor: 0.7, // Overlap
+              // Overlap the next avatar; the last one keeps its full width so
+              // whatever follows the stack doesn't sit on top of it.
+              widthFactor:
+                  i == displayMembers.length - 1 && remainder == 0 ? 1.0 : 0.7,
               alignment: Alignment.centerLeft,
               child: _buildAvatar(context, member),
             ),

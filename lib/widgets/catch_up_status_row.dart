@@ -103,7 +103,7 @@ class CatchUpStatusRow extends StatelessWidget {
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: accent,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: AppSpacing.gap2),

@@ -50,6 +50,8 @@ class AppHeader extends StatelessWidget {
     this.status,
   });
 
+  static const double _maxTitleScale = 1.5;
+
   @override
   Widget build(BuildContext context) {
     final user = auth.currentUser;
@@ -77,12 +79,17 @@ class AppHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.gap4),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.topBarTitle(context).copyWith(
-                    color: colorScheme.onSurface,
+                // The title is already display-sized; past 1.5x it would
+                // squeeze to an ellipsis beside the action pill.
+                MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: _maxTitleScale,
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.topBarTitle(context).copyWith(
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],
@@ -90,7 +97,11 @@ class AppHeader extends StatelessWidget {
           ),
           if (action != null) ...[
             const SizedBox(width: AppSpacing.gap12),
-            _ActionPill(action: action!, vibrationService: vibrationService),
+            MediaQuery.withClampedTextScaling(
+              maxScaleFactor: _maxTitleScale,
+              child: _ActionPill(
+                  action: action!, vibrationService: vibrationService),
+            ),
           ],
           if (status != null) ...[
             const SizedBox(width: AppSpacing.gap12),
@@ -137,7 +148,7 @@ class _ActionPill extends StatelessWidget {
           action.onPressed();
         },
         child: Container(
-          height: 40,
+          height: 44,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap12),
           alignment: Alignment.center,
           child: Row(
