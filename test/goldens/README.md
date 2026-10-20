@@ -9,4 +9,6 @@ To update golden files (when UI changes intentionally):
 `flutter test --update-goldens test/goldens`
 
 **Note:** Golden files are platform-dependent (Mac vs Linux vs Windows).
-Ensure you run/update them on the same platform as your CI/team standard.
+The committed goldens are rendered on Linux with the current Flutter stable
+release (the CI platform), so run and update them on Linux only. Failure diffs
+are written to `failures/`, which is git-ignored.
