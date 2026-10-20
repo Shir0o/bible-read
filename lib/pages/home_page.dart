@@ -161,7 +161,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+    with
+        AutomaticKeepAliveClientMixin,
+        SingleTickerProviderStateMixin,
+        WidgetsBindingObserver {
   bool _disposed = false;
   bool _readToday = false;
 
@@ -235,9 +238,13 @@ class _HomePageState extends State<HomePage>
 
   late final AnimationController _animationController;
 
+  DateTime? _lastObservedDate;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lastObservedDate = widget.dateProvider();
     _habitService = widget.habitLifecycleService ??
         HabitLifecycleService(
           firestore: widget.firestore,
@@ -341,8 +348,12 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Future<void> _loadInitialData({bool forceRefresh = false}) async {
-    final shouldAutoOpenCheckIn = !_hasAutoOpenedCheckIn;
+  Future<void> _loadInitialData({
+    bool forceRefresh = false,
+    bool allowAutoOpenCheckIn = false,
+  }) async {
+    final shouldAutoOpenCheckIn =
+        !_hasAutoOpenedCheckIn || allowAutoOpenCheckIn;
     _hasAutoOpenedCheckIn = true;
 
     // Resolve the pinned-reading preference first so _loadActiveReadings can prefer the
@@ -548,6 +559,34 @@ class _HomePageState extends State<HomePage>
         ErrorLogger.log(e, st);
       },
     );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkDayRolloverAndRefresh();
+    }
+  }
+
+  void _checkDayRolloverAndRefresh() {
+    if (_disposed || !mounted) return;
+    final now = widget.dateProvider();
+    final last = _lastObservedDate;
+    final isNewDay = last == null ||
+        last.year != now.year ||
+        last.month != now.month ||
+        last.day != now.day;
+
+    _lastObservedDate = now;
+
+    if (isNewDay) {
+      // Allow check-in to auto-open for the new day if unread.
+      _hasAutoOpenedCheckIn = false;
+      // Re-establish live data listeners bound to the new dateKey (e.g. reflections, circle feed)
+      _watchLiveData();
+      // Force refresh read status and active readings for the new day
+      unawaited(_loadInitialData(forceRefresh: true));
+    }
   }
 
   @override
@@ -1005,7 +1044,10 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: RefreshIndicator(
-        onRefresh: () => _loadInitialData(forceRefresh: true),
+        onRefresh: () => _loadInitialData(
+          forceRefresh: true,
+          allowAutoOpenCheckIn: true,
+        ),
         child: SkeletonLoader(
           loading: _initialLoading || _isSyncing,
           minTime: const Duration(milliseconds: 1000),
@@ -2488,6 +2530,7 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _disposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     _burstUndo.dispose();
     _animationController.dispose();
     _syncSub?.cancel();
