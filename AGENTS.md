@@ -162,6 +162,13 @@ To run integration tests:
 ```bash
 flutter test integration_test/
 (Specific integration test files: `integration_test/first_reader_test.dart`, `integration_test/main_flow_test.dart`)
+### Golden Tests
+Golden (screenshot) tests live in `test/goldens/` and are excluded from CI. The committed images are rendered on **Linux** (the CI platform, `ubuntu-latest`) with the current Flutter **stable** release, which is what CI installs. Renders from macOS or Windows differ in text rasterisation and in platform-gated widgets (e.g. Apple Sign-In), so run and regenerate goldens on Linux only:
+```bash
+flutter test --no-pub test/goldens
+flutter test --no-pub --update-goldens test/goldens/<file>_golden_test.dart
+```
+Regenerate only goldens whose new render is the intended design, and check the diff images under `test/goldens/failures/` (git-ignored) first.
 ### Firebase Functions Tests
 To run tests for Firebase Cloud Functions:
 ```bash

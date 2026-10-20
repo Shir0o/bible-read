@@ -111,3 +111,6 @@ design/store-assets/captures/_*.png
 # Seeded design-canvas payload (~2.5MB, editor baked in).
 # Regenerate from design/canvas/*.dc.html; the published artifact is the shared copy.
 circle-and-path.html
+
+# Golden test failure output (flutter test writes diffs here)
+test/goldens/failures/
