@@ -17,6 +17,7 @@ class PlanGenerator {
     List<String>? selectedBooks,
     int? customChaptersPerDay,
     int? customVersesPerDay,
+    int? firstDayChapters,
   }) {
     startDate ??= DateTime.now();
     final List<String> allChapters = [];
@@ -90,6 +91,7 @@ class PlanGenerator {
         startDate,
         customChaptersPerDay,
         readingDays,
+        firstDayChapters: firstDayChapters,
       );
     } else if (customVersesPerDay != null) {
       // Custom amount per day (verses) - approximate to chapters
@@ -244,8 +246,9 @@ class PlanGenerator {
     List<String> allChapters,
     DateTime startDate,
     int chaptersPerDay,
-    List<int>? readingDays,
-  ) {
+    List<int>? readingDays, {
+    int? firstDayChapters,
+  }) {
     final List<ReadingPlanDay> schedule = [];
     int chaptersAssigned = 0;
     int dayCount = 0;
@@ -257,7 +260,10 @@ class PlanGenerator {
       // If user only reads Mon-Fri, Day 1 is Monday, Day 2 is Tuesday...
       // The startDate determines when Day 1 is.
 
-      int count = chaptersPerDay;
+      int count =
+          (dayCount == 1 && firstDayChapters != null && firstDayChapters > 0)
+              ? firstDayChapters
+              : chaptersPerDay;
       if (chaptersAssigned + count > allChapters.length) {
         count = allChapters.length - chaptersAssigned;
       }

@@ -228,4 +228,43 @@ void main() {
     expect(after.completedDays, [1, 2]);
     expect(after.startDate, progress.startDate);
   });
+
+  testWidgets(
+      'first-day pace: 1 chapter on Day 1, 2 chapters on remaining days', (
+    tester,
+  ) async {
+    await pumpNewPlan(tester);
+
+    await tester.enterText(
+      find.byKey(const Key('create_plan_title')),
+      'Two Chapters A Day',
+    );
+    // Expand "Choose books"
+    await tester.tap(find.text('Choose books'));
+    await tester.pumpAndSettle();
+
+    // Select "Chapters a day"
+    await tester.tap(find.text('Chapters a day'));
+    await tester.pumpAndSettle();
+
+    // Chapters a day defaults to 3; decrement to 2
+    await tester.tap(find.byKey(const Key('create_plan_chapters_dec')));
+    await tester.pumpAndSettle();
+
+    // "First day" option appears when chaptersPerDay > 1; decrement first day to 1
+    expect(find.text('First day'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('create_plan_first_day_dec')));
+    await tester.pumpAndSettle();
+    expect(find.text('1 chapter on day one'), findsOneWidget);
+
+    await tester.tap(find.text('Start plan'));
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+
+    final plan = await planService.getPlanById(await onlyPlanId());
+    expect(plan!.config!['customChaptersPerDay'], 2);
+    expect(plan.config!['firstDayChapters'], 1);
+    expect(plan.schedule[0].readings, ['Genesis 1']);
+    expect(plan.schedule[1].readings, ['Genesis 2', 'Genesis 3']);
+    expect(plan.schedule[2].readings, ['Genesis 4', 'Genesis 5']);
+  });
 }
