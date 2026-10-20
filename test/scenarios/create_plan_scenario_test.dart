@@ -103,10 +103,6 @@ void main() {
     await pumpNewPlan(tester, initialAudience: PlanAudience.group);
 
     await tester.enterText(
-      find.byKey(const Key('create_plan_title')),
-      'Gospels Together',
-    );
-    await tester.enterText(
       find.byKey(const Key('create_plan_group_name')),
       'Thursday morning group',
     );
