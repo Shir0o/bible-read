@@ -86,6 +86,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   }; // 1 = Mon, 6 = Sat (no Sun default)
   final Set<String> _selectedBooks = Set.from(ReferenceParser.allBooks);
   int? _customChaptersPerDay;
+  int? _firstDayChapters;
   int? _customVersesPerDay;
   _PlanGoalMethod _goalMethod = _PlanGoalMethod.endDate;
   late PlanAudience _audience = widget.initialAudience;
@@ -208,6 +209,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         orElse: () => _goalMethod,
       );
       _customChaptersPerDay = (config['customChaptersPerDay'] as num?)?.toInt();
+      _firstDayChapters = (config['firstDayChapters'] as num?)?.toInt();
       _customVersesPerDay = (config['customVersesPerDay'] as num?)?.toInt();
       final days = (config['readingDays'] as List?)?.cast<num>();
       if (days != null && days.isNotEmpty) {
@@ -247,6 +249,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         'goalMethod': _goalMethod.name,
         'customChaptersPerDay': _goalMethod == _PlanGoalMethod.chaptersPerDay
             ? _customChaptersPerDay
+            : null,
+        'firstDayChapters': _goalMethod == _PlanGoalMethod.chaptersPerDay &&
+                (_customChaptersPerDay ?? 1) > 1
+            ? _firstDayChapters
             : null,
         'customVersesPerDay': _goalMethod == _PlanGoalMethod.versesPerDay
             ? _customVersesPerDay
@@ -689,6 +695,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           : _selectedBooks.toList(),
       customChaptersPerDay: _goalMethod == _PlanGoalMethod.chaptersPerDay
           ? _customChaptersPerDay
+          : null,
+      firstDayChapters: _goalMethod == _PlanGoalMethod.chaptersPerDay &&
+              (_customChaptersPerDay ?? 1) > 1
+          ? _firstDayChapters
           : null,
       customVersesPerDay: _goalMethod == _PlanGoalMethod.versesPerDay
           ? _customVersesPerDay
@@ -1192,8 +1202,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               incrementKey: const Key('create_plan_chapters_inc'),
               onDecrement: (_customChaptersPerDay ?? 1) > 1
                   ? () => setState(
-                        () =>
-                            _customChaptersPerDay = _customChaptersPerDay! - 1,
+                        () {
+                          final next = _customChaptersPerDay! - 1;
+                          _customChaptersPerDay = next;
+                          if (_firstDayChapters != null &&
+                              _firstDayChapters! > next) {
+                            _firstDayChapters = next;
+                          }
+                        },
                       )
                   : null,
               onIncrement: (_customChaptersPerDay ?? 1) < _maxChaptersPerDay
@@ -1205,6 +1221,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               vibrationService: widget.vibrationService,
             ),
           ),
+          if (_goalMethod == _PlanGoalMethod.chaptersPerDay &&
+              (_customChaptersPerDay ?? 1) > 1)
+            _buildFirstDayPaceOption(context),
           _buildGoalOption(
             _PlanGoalMethod.versesPerDay,
             'Verses a day',
@@ -1238,6 +1257,65 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   static const _maxChaptersPerDay = 20;
   static const _verseStep = 5;
   static const _maxVersesPerDay = 200;
+
+  Widget _buildFirstDayPaceOption(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final max = _customChaptersPerDay ?? 1;
+    final current = (_firstDayChapters ?? max).clamp(1, max);
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: 18.0 + AppSpacing.gap12,
+        top: AppSpacing.gap4,
+        bottom: AppSpacing.gap4,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'First day',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.gap2),
+                  Text(
+                    current == 1
+                        ? '1 chapter on day one'
+                        : '$current chapters on day one',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _RoundStepper(
+              value: '$current',
+              decrementLabel: 'One chapter fewer on first day',
+              incrementLabel: 'One chapter more on first day',
+              decrementKey: const Key('create_plan_first_day_dec'),
+              incrementKey: const Key('create_plan_first_day_inc'),
+              onDecrement: current > 1
+                  ? () => setState(() => _firstDayChapters = current - 1)
+                  : null,
+              onIncrement: current < max
+                  ? () => setState(() => _firstDayChapters = current + 1)
+                  : null,
+              vibrationService: widget.vibrationService,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildGoalOption(
     _PlanGoalMethod method,

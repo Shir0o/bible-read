@@ -251,3 +251,8 @@ the app as it is. See `docs/community_journey_ia.md`,
   relation to Catch-up is the same as Backfilled Read-Through to Detected:
   a claim about reading done before the app, entered by hand, never announced.
   _Avoid_: Head start, "read up to", backfill (reserved for Read-Throughs)
+- **First-day pace**: An intentional custom chapter count allocated to day one
+  of a Plan (e.g. 1 chapter on day one when reading 2 chapters a day). Unlike
+  a Starting point, day one's reading remains unread and presence-driven; only
+  the schedule slice is asymmetric.
+  _Avoid_: Starting point (reserved for pre-app reading claims)
