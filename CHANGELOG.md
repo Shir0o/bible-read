@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.38.0](https://github.com/Shir0o/bible-read/compare/v1.37.1...v1.38.0) (2026-10-20)
+
+
+### Features
+
+* **plans:** support first-day custom chapter pacing in plan creation ([#1034](https://github.com/Shir0o/bible-read/issues/1034)) ([a124f23](https://github.com/Shir0o/bible-read/commit/a124f238230e0013ef522c154263bc32445d3679))
+
+
+### Bug Fixes
+
+* **home:** refresh reading status on background resume and pull-to-refresh ([#1035](https://github.com/Shir0o/bible-read/issues/1035)) ([c78dd37](https://github.com/Shir0o/bible-read/commit/c78dd3714ba28613c3ec7c5609084b57edcf72f6))
+* **schedule:** jump to current row while readings are unread ([#1033](https://github.com/Shir0o/bible-read/issues/1033)) ([c5a3ffd](https://github.com/Shir0o/bible-read/commit/c5a3ffda45781d6cd14f0629e965b07213d5b7ec))
+* **ui:** main tabs hold up at large text sizes ([#1028](https://github.com/Shir0o/bible-read/issues/1028)) ([fbc50b2](https://github.com/Shir0o/bible-read/commit/fbc50b2b0a11eae95332c2595f663a61cee79492))
+
 ## [1.37.1](https://github.com/Shir0o/bible-read/compare/v1.37.0...v1.37.1) (2026-10-19)
 
 
