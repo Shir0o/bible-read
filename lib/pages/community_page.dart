@@ -720,7 +720,9 @@ class _StatusRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final colors = AppColors.of(context);
     return SizedBox(
-      height: 84,
+      // 64 for the ringed avatar and gap, plus one name line that grows with
+      // the system text size (84 at 1.0).
+      height: 68 + MediaQuery.textScalerOf(context).scale(16),
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: AppSpacing.horizontal,
@@ -1289,7 +1291,9 @@ class _StatusRowSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 84,
+      // 64 for the ringed avatar and gap, plus one name line that grows with
+      // the system text size (84 at 1.0).
+      height: 68 + MediaQuery.textScalerOf(context).scale(16),
       child: ListView(
         scrollDirection: Axis.horizontal,
         physics: const NeverScrollableScrollPhysics(),

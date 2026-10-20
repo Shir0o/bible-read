@@ -1376,10 +1376,12 @@ class _HomePageState extends State<HomePage>
               size: AppSpacing.iconSm, color: colorScheme.onPrimary),
         ),
         const SizedBox(width: AppSpacing.gap12),
-        Text(
-          label,
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: colorScheme.onSurface,
+        Flexible(
+          child: Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: colorScheme.onSurface,
+            ),
           ),
         ),
       ],
@@ -1447,9 +1449,13 @@ class _HomePageState extends State<HomePage>
             ),
           ),
           const SizedBox(height: AppSpacing.gap16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
+          ConstrainedBox(
+            // A floor, not a fixed height, so the label can wrap at large
+            // text sizes instead of being clipped.
+            constraints: const BoxConstraints(
+              minWidth: double.infinity,
+              minHeight: AppSpacing.buttonHeight,
+            ),
             child: isRead
                 ? _buildReadConfirmationRow(context, 'Read · $currentRef')
                 : FilledButton.tonalIcon(
@@ -1555,9 +1561,11 @@ class _HomePageState extends State<HomePage>
             ),
           ],
           const SizedBox(height: AppSpacing.gap16),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
+          ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: double.infinity,
+              minHeight: AppSpacing.buttonHeight,
+            ),
             child: !canMark
                 ? OutlinedButton.icon(
                     onPressed: () => _openGroupSchedule(item),
@@ -1822,16 +1830,18 @@ class _HomePageState extends State<HomePage>
   String _miniStatusText(ActiveReadingItem item) {
     final s = item.status;
     final ref = _formatReadings(s.currentReadings);
+    // No reading scheduled right now: drop the dangling "· ".
+    String withRef(String lead) => ref.isEmpty ? lead : '$lead · $ref';
     switch (item.state) {
       case PlanLifecycle.due:
-        return 'Today · $ref';
+        return withRef('Today');
       case PlanLifecycle.behind:
-        return '${s.missedCount} behind · $ref';
+        return withRef('${s.missedCount} behind');
       case PlanLifecycle.wrapup:
         return 'Ended · ${s.remaining} reading${s.remaining == 1 ? '' : 's'} left';
       case PlanLifecycle.ontrack:
       case PlanLifecycle.complete:
-        return 'On track · $ref';
+        return withRef('On track');
     }
   }
 

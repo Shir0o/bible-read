@@ -44,12 +44,18 @@ void main() {
     WidgetTester tester, {
     DateTime? date,
     NudgeService? nudgeService,
+    double textScale = 1,
   }) async {
     tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: CommunityPage(
           auth: auth,
           firestore: firestore,
@@ -141,6 +147,25 @@ void main() {
 
     // The dead "Manage" passthrough is gone with the hero.
     expect(find.text('Manage'), findsNothing);
+  });
+
+  testWidgets('the status row grows with large text instead of overflowing',
+      (tester) async {
+    final group = firestore.collection('groups').doc('g1');
+    await group.set({'name': 'My Group', 'ownerUid': 'u1', 'memberCount': 2});
+    await group
+        .collection('members')
+        .doc('u1')
+        .set({'uid': 'u1', 'role': 'owner', 'name': 'Test User'});
+    await group
+        .collection('members')
+        .doc('u2')
+        .set({'uid': 'u2', 'role': 'member', 'name': 'Bea'});
+
+    // A RenderFlex overflow would fail the test.
+    await pumpPage(tester, textScale: 2);
+
+    expect(find.text('Bea'), findsOneWidget);
   });
 
   testWidgets('filter chips have a 48px target and centered label',
