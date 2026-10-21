@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.39.0](https://github.com/Shir0o/bible-read/compare/v1.38.0...v1.39.0) (2026-10-21)
+
+
+### Features
+
+* **groups:** group invite links over shared invite route (closes [#785](https://github.com/Shir0o/bible-read/issues/785)) ([#1037](https://github.com/Shir0o/bible-read/issues/1037)) ([775a77b](https://github.com/Shir0o/bible-read/commit/775a77bac051b3ab7f79be5614ee5852076b70ad))
+
 ## [1.38.0](https://github.com/Shir0o/bible-read/compare/v1.37.1...v1.38.0) (2026-10-20)
 
 
