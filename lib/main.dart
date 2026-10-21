@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:app_links/app_links.dart';
 import 'package:bible_read/pages/friend_invite_page.dart';
 import 'package:bible_read/pages/group_join_requests_page.dart';
+import 'package:bible_read/pages/join_by_code_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/services/friend_invite.dart';
+import 'package:bible_read/services/join_code_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -221,9 +223,11 @@ class NotificationNavigator {
 // Global instance for convenience, can be overridden in tests.
 NotificationNavigator notificationNavigator = NotificationNavigator();
 
-/// Routes an incoming invite link to the friend confirm screen. A link that
-/// arrives while signed out, or before the navigator is ready, is held until
-/// sign-in so the invite is not lost.
+/// Routes an incoming invite link to the appropriate confirm screen. An
+/// eight-character friend code opens [FriendInvitePage], while a six-character
+/// group code opens [JoinByCodePage]. A link that arrives while signed out,
+/// or before the navigator is ready, is held until sign-in so the invite is
+/// not lost.
 class IncomingLinkHandler {
   final FirebaseAuth auth;
   final GlobalKey<NavigatorState> navigatorKey;
@@ -237,9 +241,14 @@ class IncomingLinkHandler {
     Widget Function(String code)? pageBuilder,
   })  : auth = auth ?? FirebaseAuth.instance,
         navigatorKey = navigatorKey ?? _rootNavigatorKey,
-        pageBuilder = pageBuilder ?? _friendInvitePage;
+        pageBuilder = pageBuilder ?? _defaultInvitePage;
 
-  static Widget _friendInvitePage(String code) => FriendInvitePage(code: code);
+  static Widget _defaultInvitePage(String code) {
+    if (code.length == JoinCodeService.codeLength) {
+      return JoinByCodePage(initialCode: code);
+    }
+    return FriendInvitePage(code: code);
+  }
 
   /// Reads an invite out of [uri] and opens the confirm screen, or holds it
   /// until the reader is signed in.

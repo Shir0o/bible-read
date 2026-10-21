@@ -38,7 +38,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>app.bibleread.friend</string>
+			<string>app.bibleread.invite</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>bibleread</string>

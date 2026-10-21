@@ -13,5 +13,6 @@ abstract final class JoinCodeKeys {
 
   static const codeText = Key('share_code_text');
   static const copyButton = Key('share_code_copy');
+  static const shareButton = Key('share_code_share');
   static const regenerateButton = Key('share_code_regenerate');
 }
