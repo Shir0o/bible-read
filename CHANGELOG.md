@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.0](https://github.com/Shir0o/bible-read/compare/v1.39.0...v1.40.0) (2026-10-21)
+
+
+### Features
+
+* **plans:** audience radio card, one Name field, group invite step ([#1039](https://github.com/Shir0o/bible-read/issues/1039)) ([98546eb](https://github.com/Shir0o/bible-read/commit/98546ebb9aa46be9649f232d441f41f0adaace32))
+
 ## [1.39.0](https://github.com/Shir0o/bible-read/compare/v1.38.0...v1.39.0) (2026-10-21)
 
 
