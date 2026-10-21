@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/models/reading_plan_progress.dart';
 import 'package:bible_read/pages/create_plan_page.dart';
+import 'package:bible_read/pages/group_invite_page.dart';
 import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/pages/plan_detail_page.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -103,12 +104,12 @@ void main() {
     await pumpNewPlan(tester, initialAudience: PlanAudience.group);
 
     await tester.enterText(
-      find.byKey(const Key('create_plan_group_name')),
+      find.byKey(const Key('create_plan_title')),
       'Thursday morning group',
     );
     await tester.tap(find.text('New Testament'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Start plan'));
+    await tester.tap(find.text('Start group plan'));
     await tester.pumpAndSettle(const Duration(seconds: 1));
 
     final group = (await firestore.collection('groups').get()).docs.single;
@@ -121,6 +122,10 @@ void main() {
     expect((group.data()['planConfig'] as Map)['books'], contains('Genesis'));
     // A Shared plan is the Group's schedule — no personal plan is written.
     expect((await firestore.collection('custom_plans').get()).docs, isEmpty);
+    // The new group offers its invite first, then lands in the group.
+    expect(find.byType(GroupInvitePage), findsOneWidget);
+    await tester.tap(find.byKey(const Key('group_invite_done')));
+    await tester.pumpAndSettle(const Duration(seconds: 1));
     expect(find.byType(GroupMembersPage), findsOneWidget);
   });
 

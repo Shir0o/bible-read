@@ -1,4 +1,5 @@
 import 'package:bible_read/pages/create_plan_page.dart';
+import 'package:bible_read/pages/group_invite_page.dart';
 import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
@@ -58,8 +59,8 @@ void main() {
       'Morning Light',
     );
 
-    // The default answer is "Just you" — no group name field, no group.
-    expect(find.byKey(const Key('create_plan_group_name')), findsNothing);
+    // The default answer is "Just you" — no group hint, no group.
+    expect(find.text("Members see this as the group's name."), findsNothing);
 
     await tester.tap(find.text('Start plan'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
@@ -92,15 +93,15 @@ void main() {
 
     await tester.tap(find.text('With a group'));
     await tester.pumpAndSettle();
-    // The Group name is the Shared plan's only name.
-    expect(find.byKey(const Key('create_plan_title')), findsNothing);
+    // The one Name field names the Group, the Shared plan's only name.
+    expect(find.text("Members see this as the group's name."), findsOneWidget);
     await tester.enterText(
-      find.byKey(const Key('create_plan_group_name')),
+      find.byKey(const Key('create_plan_title')),
       'Thursday morning group',
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Start plan'));
+    await tester.tap(find.text('Start group plan'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1500));
 
     // The group exists, owned by the reader, with them as its first member.
@@ -122,8 +123,17 @@ void main() {
     // A join code was assigned so the group is shareable immediately.
     expect(group.data()['joinCode'], isNotEmpty);
 
-    // The flow lands the reader in the group members page.
+    // The flow offers the group's invite, then lands in the members page.
+    expect(find.byType(GroupInvitePage), findsOneWidget);
+    expect(find.text('Thursday morning group is ready'), findsOneWidget);
+    expect(
+      find.text(group.data()['joinCode'] as String),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('group_invite_done')));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1500));
     expect(find.byType(GroupMembersPage), findsOneWidget);
+    expect(find.text('Invite people'), findsOneWidget);
   });
 
   testWidgets(
@@ -154,10 +164,8 @@ void main() {
 
     await tester.tap(find.text('With a group'));
     await tester.pumpAndSettle();
-    // The Group name is the Shared plan's only name.
-    expect(find.byKey(const Key('create_plan_title')), findsNothing);
 
-    await tester.tap(find.text('Start plan'));
+    await tester.tap(find.text('Start group plan'));
     await tester.pumpAndSettle();
 
     expect(find.text('Please name your group.'), findsOneWidget);
