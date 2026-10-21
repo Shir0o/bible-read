@@ -21,6 +21,7 @@ import '../widgets/skeletons/list_rows_skeleton.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/nudge_sheet.dart';
 import 'edit_group_page.dart';
+import 'share_code_page.dart';
 
 /// Roster management for a reading group: roles, per-member read status,
 /// nudge, promote / transfer ownership / remove, and pending invites.
@@ -78,6 +79,12 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
             SubHeader(
               title: 'Members',
               onBack: () => Navigator.of(context).maybePop(),
+              right: IconButton(
+                key: const Key('group_members_invite_action'),
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                tooltip: 'Invite people',
+                onPressed: _openInvite,
+              ),
             ),
             Expanded(
               child: Container(
@@ -124,6 +131,8 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
           padding: const EdgeInsets.all(AppSpacing.gap16),
           children: [
             _buildRoster(roster, readByUid),
+            const SizedBox(height: AppSpacing.gap12),
+            _buildInviteRow(),
             const SizedBox(height: AppSpacing.gap20),
             _buildPendingInvites(roster),
             _buildGroupSettingsLink(),
@@ -584,6 +593,65 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
         'admin' => 'Admin',
         _ => 'Member',
       };
+
+  /// Opens the group's link and code so any member can invite people.
+  void _openInvite() {
+    unawaited(widget.vibrationService.lightImpact());
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ShareCodePage(
+        group: widget.group,
+        groupService: widget.groupService,
+        vibrationService: widget.vibrationService,
+      ),
+    ));
+  }
+
+  /// Same shape as the Group settings link, so both entries read alike.
+  Widget _buildInviteRow() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final appColors = AppColors.of(context);
+    return InkWell(
+      key: const Key('group_members_invite_row'),
+      onTap: _openInvite,
+      borderRadius: BorderRadius.circular(AppSpacing.rInset),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.gap16),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppSpacing.rInset),
+          border: Border.all(color: appColors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.person_add_alt_1_rounded, color: colorScheme.primary),
+            const SizedBox(width: AppSpacing.gap12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Invite people',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.gap2),
+                  Text(
+                    'Share a link or code',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: colorScheme.outline),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildGroupSettingsLink() {
     final theme = Theme.of(context);

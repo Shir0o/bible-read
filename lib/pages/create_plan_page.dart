@@ -23,6 +23,7 @@ import '../widgets/common_styles.dart';
 import '../widgets/start_chapter_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../services/nudge_service.dart';
+import 'group_invite_page.dart';
 import 'group_members_page.dart';
 import 'plan_detail_page.dart';
 
@@ -90,7 +91,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   int? _customVersesPerDay;
   _PlanGoalMethod _goalMethod = _PlanGoalMethod.endDate;
   late PlanAudience _audience = widget.initialAudience;
-  final TextEditingController _groupNameController = TextEditingController();
   bool _isCreating = false;
   bool _isCustomPlanExpanded = false;
 
@@ -234,7 +234,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   @override
   void dispose() {
     _titleController.dispose();
-    _groupNameController.dispose();
     super.dispose();
   }
 
@@ -430,18 +429,13 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
-    if (_audience == PlanAudience.solo &&
-        _titleController.text.trim().isEmpty) {
+    if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a plan title.')),
-      );
-      return;
-    }
-
-    if (_audience == PlanAudience.group &&
-        _groupNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please name your group.')),
+        SnackBar(
+          content: Text(_audience == PlanAudience.group
+              ? 'Please name your group.'
+              : 'Please enter a plan title.'),
+        ),
       );
       return;
     }
@@ -544,7 +538,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   /// together in this flow, then lands the reader in it (#809).
   Future<void> _createSharedPlan(String uid) async {
     final groupService = widget.groupService ?? GroupService();
-    final name = _groupNameController.text.trim();
+    final name = _titleController.text.trim();
     final draft = _buildGroupDraft();
     final generated = ScheduleGenerator.planFromDraft(draft);
 
@@ -560,23 +554,36 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
     if (!mounted) return;
 
+    final group = Group(
+      id: groupId,
+      name: name,
+      ownerUid: uid,
+      memberCount: 1,
+      planConfig: draft,
+    );
+
     // The creation pages replace themselves with a detail page on success, so
     // the hub reloads when this route eventually pops (see PlansHub._enroll).
+    // A new group first offers its invite, then lands in the group.
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => GroupMembersPage(
-          group: Group(
-            id: groupId,
-            name: name,
-            ownerUid: uid,
-            memberCount: 1,
-            planConfig: draft,
-          ),
+        builder: (inviteContext) => GroupInvitePage(
+          group: group,
           groupService: groupService,
-          nudgeService: NudgeService(firestore: widget.firestore),
-          auth: widget.auth,
           vibrationService: widget.vibrationService,
+          onDone: () => Navigator.pushReplacement(
+            inviteContext,
+            MaterialPageRoute(
+              builder: (_) => GroupMembersPage(
+                group: group,
+                groupService: groupService,
+                nudgeService: NudgeService(firestore: widget.firestore),
+                auth: widget.auth,
+                vibrationService: widget.vibrationService,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -877,22 +884,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                       _buildAudienceSection(context),
                       first: true,
                     ),
-                  // A Shared plan has no title of its own: the Group name
-                  // above is its only name.
-                  if (_audience == PlanAudience.solo)
-                    _section(
-                      context,
-                      'Name',
-                      TextField(
-                        key: const Key('create_plan_title'),
-                        controller: _titleController,
-                        textCapitalization: TextCapitalization.words,
-                        decoration: const InputDecoration(
-                          hintText: 'e.g., Daily Walk',
-                        ),
-                      ),
-                      first: _isEditing,
-                    ),
+                  // One Name field for both audiences: a Shared plan has no
+                  // title of its own, so for a group this names the Group.
+                  _section(
+                    context,
+                    'Name',
+                    _buildNameField(context),
+                    first: _isEditing,
+                  ),
                   _section(context, 'What to read', _buildReadingCard(context)),
                   _section(context, 'Pace', _buildPaceCard(context)),
                   _section(context, 'Start', _buildStartCard(context)),
@@ -924,7 +923,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               onPressed: _createPlan,
               isLoading: _isCreating,
               enableHapticFeedback: false,
-              child: Text(_isEditing ? 'Save changes' : 'Start plan'),
+              child: Text(_isEditing
+                  ? 'Save changes'
+                  : _audience == PlanAudience.group
+                      ? 'Start group plan'
+                      : 'Start plan'),
             ),
           ),
         ),
@@ -968,84 +971,83 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
-  /// "Just you" / "With a group", with the group name once a group is chosen.
+  /// "Just you" / "With a group" as radio rows, matching "What to read".
   Widget _buildAudienceSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isGroup = _audience == PlanAudience.group;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    return _card(context, [
+      _readingRow(
+        context,
+        title: 'Just you',
+        subtitle: 'Your own pace and progress',
+        selected: !isGroup,
+        onTap: () => _selectAudience(PlanAudience.solo),
+      ),
+      const Divider(height: 1),
+      _readingRow(
+        context,
+        title: 'With a group',
+        subtitle: 'One shared schedule for everyone',
+        selected: isGroup,
+        onTap: () => _selectAudience(PlanAudience.group),
+      ),
+      if (isGroup)
         Container(
-          padding: const EdgeInsets.all(AppSpacing.gap4),
+          margin: const EdgeInsets.fromLTRB(
+            AppSpacing.cardPadding,
+            0,
+            AppSpacing.cardPadding,
+            AppSpacing.gap12,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.gap12,
+            vertical: AppSpacing.gap8,
+          ),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(AppSpacing.rPill),
+            color: colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(AppSpacing.rInset),
           ),
           child: Row(
             children: [
-              _audienceSegment(context, PlanAudience.solo, 'Just you'),
-              _audienceSegment(context, PlanAudience.group, 'With a group'),
+              Icon(
+                Icons.link_rounded,
+                size: AppSpacing.iconMd,
+                color: colorScheme.onSecondaryContainer,
+              ),
+              const SizedBox(width: AppSpacing.gap8),
+              Expanded(
+                child: Text(
+                  "After you start, you'll get a link and code to invite "
+                  'people.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-        if (_audience == PlanAudience.group) ...[
-          const SizedBox(height: AppSpacing.gap12),
-          TextField(
-            key: const Key('create_plan_group_name'),
-            controller: _groupNameController,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Group name',
-              hintText: 'e.g., Thursday morning group',
-            ),
-          ),
-        ],
-      ],
-    );
+    ]);
   }
 
-  Widget _audienceSegment(
-    BuildContext context,
-    PlanAudience value,
-    String label,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final selected = _audience == value;
+  void _selectAudience(PlanAudience value) {
+    if (_audience == value) return;
+    unawaited(widget.vibrationService.lightImpact());
+    setState(() => _audience = value);
+  }
 
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: selected,
-        inMutuallyExclusiveGroup: true,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            if (selected) return;
-            unawaited(widget.vibrationService.lightImpact());
-            setState(() => _audience = value);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            height: AppSpacing.gap40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: selected
-                  ? colorScheme.surfaceContainerLowest
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppSpacing.rPill),
-              boxShadow: selected ? AppSpacing.cardShadow(context) : null,
-            ),
-            child: Text(
-              label,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: selected
-                    ? colorScheme.onSurface
-                    : colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ),
+  /// The plan's name, or for a group the Group's name.
+  Widget _buildNameField(BuildContext context) {
+    final isGroup = _audience == PlanAudience.group;
+    return TextField(
+      key: const Key('create_plan_title'),
+      controller: _titleController,
+      textCapitalization: TextCapitalization.words,
+      decoration: InputDecoration(
+        hintText: isGroup ? 'e.g., Thursday morning group' : 'e.g., Daily Walk',
+        helperText: isGroup ? "Members see this as the group's name." : null,
       ),
     );
   }
