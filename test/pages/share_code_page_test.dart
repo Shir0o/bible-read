@@ -58,7 +58,7 @@ void main() {
     return {'groupId': groupId, 'code': code};
   }
 
-  testWidgets('shows the group code for sharing', (tester) async {
+  testWidgets('shows the group code and actions for sharing', (tester) async {
     final seeded = await pumpPage(tester);
 
     final codeText = tester.widget<Text>(
@@ -66,6 +66,8 @@ void main() {
     );
     expect(codeText.data, seeded['code']);
     expect(find.textContaining('Evening Readers'), findsOneWidget);
+    expect(find.byKey(JoinCodeKeys.copyButton), findsOneWidget);
+    expect(find.byKey(JoinCodeKeys.shareButton), findsOneWidget);
   });
 
   testWidgets('copy puts the code on the clipboard', (tester) async {

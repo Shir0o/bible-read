@@ -31,7 +31,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Friend invite links: bibleread://friend?code=XXXXXXXX -->
+            <!-- Invite links: bibleread://friend?code=... or bibleread://group?code=... -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

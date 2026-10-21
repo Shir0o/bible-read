@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../widgets/skeleton.dart';
 import '../widgets/skeleton_loader.dart';
 import '../models/group.dart';
 import '../services/error_logger.dart';
+import '../services/friend_invite.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
@@ -82,6 +84,17 @@ class _ShareCodePageState extends State<ShareCodePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Code copied')),
     );
+  }
+
+  Future<void> _shareCode() async {
+    final code = _code;
+    if (code == null) return;
+    unawaited(widget.vibrationService.lightImpact());
+    final link = FriendInvite.linkFor(code);
+    await SharePlus.instance.share(ShareParams(
+      text:
+          'Join my group "${widget.group.name}" on Bible Reading Challenge: $link',
+    ));
   }
 
   Future<void> _regenerate() async {
@@ -242,14 +255,26 @@ class _ShareCodePageState extends State<ShareCodePage> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.gap24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    key: JoinCodeKeys.copyButton,
-                    onPressed: _copyCode,
-                    icon: const Icon(Icons.copy, size: 18),
-                    label: const Text('Copy code'),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        key: JoinCodeKeys.copyButton,
+                        onPressed: _copyCode,
+                        icon: const Icon(Icons.copy, size: 18),
+                        label: const Text('Copy'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.gap8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        key: JoinCodeKeys.shareButton,
+                        onPressed: _shareCode,
+                        icon: const Icon(Icons.ios_share_rounded, size: 18),
+                        label: const Text('Share link'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

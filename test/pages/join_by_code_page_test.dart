@@ -368,5 +368,52 @@ void main() {
       expect(find.byKey(FriendCodeKeys.previewCard), findsOneWidget);
       expect(find.text('Add Mei as a friend'), findsOneWidget);
     });
+
+    testWidgets('a pasted group invite link reaches the group preview',
+        (tester) async {
+      final groupId = await seedCodedGroup(isPublic: true);
+      final code = await groupService.joinCodeService.ensureGroupCode(groupId);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: JoinByCodePage(
+            groupService: groupService,
+            auth: auth,
+            vibrationService: vibration,
+            friendService: friendService,
+          ),
+        ),
+      );
+      await tester.enterText(
+        find.byKey(JoinCodeKeys.codeField),
+        FriendInvite.linkFor(code),
+      );
+      await tester.tap(find.byKey(JoinCodeKeys.findButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(JoinCodeKeys.previewCard), findsOneWidget);
+      expect(find.text('Evening Readers'), findsOneWidget);
+    });
+
+    testWidgets('initialCode resolves immediately on open', (tester) async {
+      final groupId = await seedCodedGroup(isPublic: true);
+      final code = await groupService.joinCodeService.ensureGroupCode(groupId);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: JoinByCodePage(
+            groupService: groupService,
+            auth: auth,
+            vibrationService: vibration,
+            friendService: friendService,
+            initialCode: code,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(JoinCodeKeys.previewCard), findsOneWidget);
+      expect(find.text('Evening Readers'), findsOneWidget);
+    });
   });
 }

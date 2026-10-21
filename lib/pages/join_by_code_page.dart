@@ -47,6 +47,9 @@ class JoinByCodePage extends StatefulWidget {
   /// field-only; tests inject a fake so no camera is needed.
   final QrScanViewBuilder? scanViewBuilder;
 
+  /// A code to resolve immediately on open (e.g. from an incoming deep link).
+  final String? initialCode;
+
   /// Creates a [JoinByCodePage].
   JoinByCodePage({
     super.key,
@@ -54,6 +57,7 @@ class JoinByCodePage extends StatefulWidget {
     FirebaseAuth? auth,
     VibrationService? vibrationService,
     this.friendService,
+    this.initialCode,
     this.title = 'Enter a code',
     this.scanViewBuilder,
   })  : groupService = groupService ?? GroupService(),
@@ -89,6 +93,18 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
       widget.friendService ?? FriendService();
 
   @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialCode;
+    if (initial != null && initial.trim().isNotEmpty) {
+      _controller.text = initial.trim();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _findCode();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _scanIdle?.cancel();
     _controller.dispose();
@@ -110,10 +126,11 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
       return;
     }
 
-    // A pasted invite link carries a friend code; a bare code is normalised
+    // A pasted invite link carries an invite code; a bare code is normalised
     // and told apart by length (6 = group, 8 = friend).
     final linkedCode = FriendInvite.codeFromText(raw);
-    final isFriend = linkedCode != null;
+    final isFriend =
+        linkedCode != null && linkedCode.length == FriendService.codeLength;
     final code = linkedCode ?? FriendService.normalize(raw);
     if (!isFriend && code.length != JoinCodeService.codeLength) {
       setState(() {

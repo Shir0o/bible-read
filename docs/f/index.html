@@ -81,15 +81,15 @@
 <body>
   <main>
     <h1>You're invited</h1>
-    <p>Read together with a friend on Bible Reading Challenge.</p>
+    <p id="subtitle">Read together with a friend on Bible Reading Challenge.</p>
 
     <div id="codeBlock" class="hidden">
-      <div id="code" class="code" aria-label="Friend code"></div>
+      <div id="code" class="code" aria-label="Invite code"></div>
       <div class="actions">
         <a id="openApp" class="button" href="#">Open in Bible Read</a>
         <button id="copy" class="copy" type="button">Copy code</button>
       </div>
-      <p class="hint">
+      <p id="hint" class="hint">
         If the app doesn't open, install Bible Read and enter this code on the
         “Add a friend” screen.
       </p>
@@ -104,20 +104,35 @@
     (function () {
       var params = new URLSearchParams(window.location.search);
       var code = (params.get('code') || '').replace(/[\s-]/g, '').toUpperCase();
-      var valid = /^[A-HJ-NP-Z2-9]{8}$/.test(code);
+      var isFriend = /^[A-HJ-NP-Z2-9]{8}$/.test(code);
+      var isGroup = /^[A-HJ-NP-Z2-9]{6}$/.test(code);
 
       var codeBlock = document.getElementById('codeBlock');
       var empty = document.getElementById('empty');
+      var subtitle = document.getElementById('subtitle');
+      var hint = document.getElementById('hint');
+      var codeEl = document.getElementById('code');
+      var openApp = document.getElementById('openApp');
 
-      if (!valid) {
+      if (!isFriend && !isGroup) {
         empty.classList.remove('hidden');
         return;
       }
 
-      var spaced = code.slice(0, 4) + ' ' + code.slice(4);
-      document.getElementById('code').textContent = spaced;
-      document.getElementById('openApp').href =
-        'bibleread://friend?code=' + encodeURIComponent(code);
+      if (isGroup) {
+        subtitle.textContent = 'Read together in a group on Bible Reading Challenge.';
+        hint.textContent = 'If the app doesn\'t open, install Bible Read and enter this code on the “Enter a code” screen.';
+        codeEl.setAttribute('aria-label', 'Group join code');
+        codeEl.textContent = code.slice(0, 3) + ' ' + code.slice(3);
+        openApp.href = 'bibleread://group?code=' + encodeURIComponent(code);
+      } else {
+        subtitle.textContent = 'Read together with a friend on Bible Reading Challenge.';
+        hint.textContent = 'If the app doesn\'t open, install Bible Read and enter this code on the “Add a friend” screen.';
+        codeEl.setAttribute('aria-label', 'Friend code');
+        codeEl.textContent = code.slice(0, 4) + ' ' + code.slice(4);
+        openApp.href = 'bibleread://friend?code=' + encodeURIComponent(code);
+      }
+
       codeBlock.classList.remove('hidden');
 
       document.getElementById('copy').addEventListener('click', function () {
