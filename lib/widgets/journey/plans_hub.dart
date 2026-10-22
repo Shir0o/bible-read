@@ -18,6 +18,7 @@ import '../../services/reading_plan_service.dart';
 import '../../services/user_preferences_service.dart';
 import '../../services/vibration_service.dart';
 import '../catch_up_status_row.dart';
+import '../delete_plan_sheet.dart';
 import '../member_presence_stack.dart';
 import '../../pages/adjust_pace_page.dart';
 import '../../pages/archived_page.dart';
@@ -510,6 +511,186 @@ class PlansHubState extends State<PlansHub> {
     }
   }
 
+  /// Owner or member, decided as on the Edit group page.
+  bool _isOwner(ActiveGroupReading row) =>
+      widget.auth.currentUser?.uid == row.group.ownerUid;
+
+  void _setGroupShown(ActiveGroupReading row, bool shown) {
+    final rest = _groups.where((r) => r.group.id != row.group.id).toList();
+    setState(() => _groups = shown ? [...rest, row] : rest);
+  }
+
+  void _showSnack(String message, {VoidCallback? onUndo}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: onUndo == null
+            ? null
+            : SnackBarAction(label: 'Undo', onPressed: onUndo),
+      ),
+    );
+  }
+
+  /// Archives a Shared plan straight away (#776) — the owner shelves it for
+  /// every member, a member shelves only their own participation. Fully
+  /// reversible, so an Undo snackbar stands in for a confirmation step.
+  Future<void> _archiveGroup(ActiveGroupReading row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    final owner = _isOwner(row);
+    widget.vibrationService.lightImpact();
+    _setGroupShown(row, false);
+    try {
+      if (owner) {
+        await widget.groupService.archiveGroup(
+          groupId: row.group.id,
+          ownerUid: uid,
+        );
+      } else {
+        await widget.groupService.archiveMemberParticipation(
+          groupId: row.group.id,
+          uid: uid,
+        );
+      }
+      if (!mounted) return;
+      _showSnack(
+        'Archived "${row.group.name}"',
+        onUndo: () => _unarchiveGroup(row, owner: owner),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setGroupShown(row, true);
+        _showSnack('Failed to archive "${row.group.name}". Please try again.');
+      }
+    }
+  }
+
+  Future<void> _unarchiveGroup(
+    ActiveGroupReading row, {
+    required bool owner,
+  }) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    _setGroupShown(row, true);
+    try {
+      if (owner) {
+        await widget.groupService.unarchiveGroup(
+          groupId: row.group.id,
+          ownerUid: uid,
+        );
+      } else {
+        await widget.groupService.unarchiveMemberParticipation(
+          groupId: row.group.id,
+          uid: uid,
+        );
+      }
+      if (!mounted) return;
+      _showSnack('"${row.group.name}" restored');
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setGroupShown(row, false);
+        _showSnack('Failed to restore "${row.group.name}". Please try again.');
+      }
+    }
+  }
+
+  /// The menu's destructive item: the owner deletes the plan for everyone,
+  /// a member leaves it — each confirmed on a sheet that offers archiving
+  /// instead.
+  Future<void> _confirmRemoveGroup(ActiveGroupReading row) async {
+    final owner = _isOwner(row);
+    final choice = await DeletePlanSheet.show(
+      context,
+      planName: row.group.name,
+      isOwner: owner,
+      readerCount: row.group.memberCount,
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case PlanRemovalChoice.remove:
+        await (owner ? _deleteGroup(row) : _leaveGroup(row));
+      case PlanRemovalChoice.archive:
+        await _archiveGroup(row);
+      case null:
+        break;
+    }
+  }
+
+  /// Owner action (#776): soft-deletes the plan — 30 days in Recently
+  /// Deleted, restorable, then purged. The card leaves Path at once and
+  /// returns if the write fails.
+  Future<void> _deleteGroup(ActiveGroupReading row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    _setGroupShown(row, false);
+    try {
+      await widget.groupService.softDeleteGroup(
+        groupId: row.group.id,
+        ownerUid: uid,
+      );
+      if (!mounted) return;
+      _showSnack(
+        'Moved to Recently Deleted',
+        onUndo: () => _restoreDeletedGroup(row),
+      );
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setGroupShown(row, true);
+        _showSnack('Couldn’t delete “${row.group.name}”. Please try again.');
+      }
+    }
+  }
+
+  Future<void> _restoreDeletedGroup(ActiveGroupReading row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    _setGroupShown(row, true);
+    try {
+      await widget.groupService.restoreGroup(
+        groupId: row.group.id,
+        ownerUid: uid,
+      );
+      if (!mounted) return;
+      _showSnack('"${row.group.name}" restored');
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setGroupShown(row, false);
+        _showSnack('Failed to restore "${row.group.name}". Please try again.');
+      }
+    }
+  }
+
+  /// Member action (#776): leaves the plan; it carries on for everyone else.
+  Future<void> _leaveGroup(ActiveGroupReading row) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    widget.vibrationService.lightImpact();
+    _setGroupShown(row, false);
+    try {
+      await widget.groupService.leaveGroup(groupId: row.group.id, uid: uid);
+      if (!mounted) return;
+      _showSnack('You left “${row.group.name}”');
+      await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _setGroupShown(row, true);
+        _showSnack('Couldn’t leave “${row.group.name}”. Please try again.');
+      }
+    }
+  }
+
   /// Restores a left plan to active — it reappears in "On your own".
   Future<void> _restorePlan(ActivePersonalReading row) async {
     final uid = widget.auth.currentUser?.uid;
@@ -891,10 +1072,20 @@ class PlansHubState extends State<PlansHub> {
                     ),
                   (
                     Icons.settings_outlined,
-                    'Manage members',
+                    'Members and invites',
                     () => _manageGroup(row),
                   ),
+                  (
+                    Icons.archive_outlined,
+                    'Archive',
+                    () => _archiveGroup(row),
+                  ),
                 ],
+                destructive: (
+                  Icons.delete_outline,
+                  _isOwner(row) ? 'Delete plan' : 'Leave plan',
+                  () => _confirmRemoveGroup(row),
+                ),
               ),
             ],
           ),
@@ -1345,6 +1536,7 @@ class PlansHubState extends State<PlansHub> {
   Widget _moreMenu(
     BuildContext context, {
     required List<(IconData, String, VoidCallback)> items,
+    (IconData, String, VoidCallback)? destructive,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     return PopupMenuButton<VoidCallback>(
@@ -1358,10 +1550,28 @@ class PlansHubState extends State<PlansHub> {
               children: [
                 Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
                 const SizedBox(width: AppSpacing.gap12),
-                Text(label),
+                Flexible(child: Text(label)),
               ],
             ),
           ),
+        if (destructive case (final icon, final label, final action)) ...[
+          const PopupMenuDivider(),
+          PopupMenuItem<VoidCallback>(
+            value: action,
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: colorScheme.error),
+                const SizedBox(width: AppSpacing.gap12),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
       child: SizedBox(
         width: 46,

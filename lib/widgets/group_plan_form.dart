@@ -175,7 +175,7 @@ class _GroupPlanFormState extends State<GroupPlanForm> {
     );
     if (picked == null || !mounted) return;
     // Day indices mean nothing once the plan starts somewhere else.
-    _apply(_draft.copyWith(startRef: picked), clearOverrides: true);
+    _apply(_draft.copyWith(startRef: picked.ref), clearOverrides: true);
   }
 
   Future<void> _seeAllDays() async {
