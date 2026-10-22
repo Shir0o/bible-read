@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.41.0](https://github.com/Shir0o/bible-read/compare/v1.40.0...v1.41.0) (2026-10-22)
+
+
+### Features
+
+* **plans:** day one card, begin-at choice, book sheet, delete plan ([#1041](https://github.com/Shir0o/bible-read/issues/1041)) ([bd3f7a9](https://github.com/Shir0o/bible-read/commit/bd3f7a99da699936f4adc75fb9a856832252a75b))
+
 ## [1.40.0](https://github.com/Shir0o/bible-read/compare/v1.39.0...v1.40.0) (2026-10-21)
 
 
