@@ -56,4 +56,55 @@ void main() {
       expect(plan.schedule[1].readings, ['Genesis 3', 'Genesis 4']);
     });
   });
+
+  group('PlanGenerator with startRef', () {
+    test('day one begins at the start chapter; earlier ones are left out', () {
+      final plan = PlanGenerator.generatePlan(
+        id: 'test_plan',
+        title: 'Isaiah',
+        description: 'Test description',
+        type: PlanType.sequential,
+        selectedBooks: ['Isaiah', 'Jeremiah'], // 66 + 52 chapters
+        customChaptersPerDay: 2,
+        firstDayChapters: 1,
+        startRef: 'Isaiah 40',
+      );
+
+      expect(plan.schedule[0].readings, ['Isaiah 40']);
+      expect(plan.schedule[1].readings, ['Isaiah 41', 'Isaiah 42']);
+      final allReadings = plan.schedule.expand((d) => d.readings).toList();
+      // Isaiah 40–66 (27) plus Jeremiah (52).
+      expect(allReadings.length, 79);
+      expect(allReadings, isNot(contains('Isaiah 39')));
+      expect(allReadings.last, 'Jeremiah 52');
+    });
+
+    test('a length-paced plan spreads only the chapters from the start', () {
+      final plan = PlanGenerator.generatePlan(
+        id: 'test_plan',
+        title: 'Rest of the Bible',
+        description: 'Test description',
+        type: PlanType.sequential,
+        startRef: 'Malachi 1',
+      );
+
+      expect(plan.schedule.first.readings.first, 'Malachi 1');
+      final allReadings = plan.schedule.expand((d) => d.readings).toList();
+      // Malachi (4) plus the New Testament (260).
+      expect(allReadings.length, 264);
+    });
+
+    test('an unmatched startRef leaves the pool whole', () {
+      final plan = PlanGenerator.generatePlan(
+        id: 'test_plan',
+        title: 'New Testament',
+        description: 'Test description',
+        type: PlanType.ntOnly,
+        customChaptersPerDay: 3,
+        startRef: 'Genesis 5',
+      );
+
+      expect(plan.schedule.first.readings.first, 'Matthew 1');
+    });
+  });
 }

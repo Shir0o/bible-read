@@ -16,6 +16,8 @@ abstract final class GroupPlanKeys {
   static const startSheet = Key('group_plan_start_sheet');
   static const startSheetCta = Key('group_plan_start_sheet_cta');
   static const startSheetClose = Key('group_plan_start_sheet_close');
+  static const startSheetLeaveOut = Key('group_plan_start_sheet_leave_out');
+  static const startSheetMarkRead = Key('group_plan_start_sheet_mark_read');
 
   static const paceModeSegment = Key('group_plan_pace_mode');
   static const chaptersPerDayStepper = Key('group_plan_chapters_per_day');

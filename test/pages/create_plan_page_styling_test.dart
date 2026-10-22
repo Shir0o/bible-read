@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bible_read/pages/create_plan_page.dart';
+import 'package:bible_read/widgets/book_picker_sheet.dart';
+import 'package:bible_read/widgets/plan_day_list.dart';
 import 'package:bible_read/widgets/sub_header.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -39,6 +41,13 @@ void main() {
   String lengthText(WidgetTester tester) =>
       tester.widget<Text>(find.byKey(const Key('create_plan_length'))).data!;
 
+  String previewText(WidgetTester tester) => tester
+      .widget<Text>(find.descendant(
+        of: find.byKey(const Key('create_plan_preview')),
+        matching: find.byType(Text),
+      ))
+      .data!;
+
   testWidgets('a sub-page header and the five sections', (tester) async {
     await pumpPage(tester);
 
@@ -49,7 +58,7 @@ void main() {
       'Name',
       'What to read',
       'Pace',
-      'Start',
+      'Day one',
     ]) {
       expect(find.text(title), findsOneWidget, reason: title);
     }
@@ -64,11 +73,20 @@ void main() {
       expect(find.text(row), findsOneWidget, reason: row);
     }
     expect(find.text('Start date'), findsOneWidget);
-    expect(find.text('Today'), findsOneWidget);
-    expect(find.text('Starting point'), findsOneWidget);
-    expect(find.text('Start fresh'), findsOneWidget);
+    expect(
+      find.text('Today, ${formatPlanDateShort(DateTime.now())}'),
+      findsOneWidget,
+    );
+    expect(find.text('Begins at'), findsOneWidget);
+    expect(find.text('Genesis 1'), findsOneWidget);
+    // Day one reads the pace, so there is nothing to set apart.
+    expect(find.text('Day one reads'), findsNothing);
+    // The first three days, then where the plan lands.
+    expect(find.text('Genesis 1–4'), findsOneWidget);
+    expect(find.textContaining('DAY 3 · ', findRichText: true), findsOneWidget);
+    expect(find.textContaining('DAY 4 · ', findRichText: true), findsNothing);
     expect(lengthText(tester), '365 days');
-    expect(find.textContaining('about 3 chapters a day'), findsOneWidget);
+    expect(previewText(tester), startsWith('365 reading days · ends '));
     expect(find.text('Start plan'), findsOneWidget);
   });
 
@@ -78,7 +96,7 @@ void main() {
     await tester.tap(find.byKey(const Key('create_plan_length_inc')));
     await tester.pumpAndSettle();
     expect(lengthText(tester), '730 days');
-    expect(find.textContaining('about 2 chapters a day'), findsOneWidget);
+    expect(previewText(tester), startsWith('730 reading days · ends '));
 
     await tester.tap(find.byKey(const Key('create_plan_length_dec')));
     await tester.pumpAndSettle();
@@ -103,38 +121,75 @@ void main() {
     expect(lengthText(tester), isNot('730 days'));
   });
 
-  testWidgets('Choose books opens the book picker and daily amounts', (
+  testWidgets('Choose books opens the book sheet and daily amounts', (
     tester,
   ) async {
     await pumpPage(tester);
 
-    expect(find.text('Pentateuch'), findsNothing);
+    // Nothing is picked yet, so the book sheet opens straight away.
     await tester.tap(find.text('Choose books'));
     await tester.pumpAndSettle();
+    expect(find.byKey(BookPickerKeys.sheet), findsOneWidget);
+    await tester.tap(find.byKey(BookPickerKeys.quickSet('Gospels')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(BookPickerKeys.done));
+    await tester.pumpAndSettle();
 
+    expect(find.byKey(BookPickerKeys.sheet), findsNothing);
+    expect(find.text('4 books · 89 chapters scheduled'), findsOneWidget);
+    expect(find.text('Change books'), findsOneWidget);
     expect(find.text('Pace by'), findsOneWidget);
     expect(find.text('Chapters a day'), findsOneWidget);
     expect(find.text('Verses a day'), findsOneWidget);
 
-    // Expand the Old Testament category of the book picker.
-    await tester.tap(
-      find.byKey(const Key('create_plan_category_Old Testament')),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Pentateuch'), findsOneWidget);
-    expect(find.text('Books of History'), findsOneWidget);
-
     // A daily amount takes a stepper and reshapes the preview.
     await tester.tap(find.text('Chapters a day'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('about 3 chapters a day'), findsOneWidget);
+    expect(previewText(tester), startsWith('30 reading days'));
     await tester.tap(find.byKey(const Key('create_plan_chapters_inc')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('about 4 chapters a day'), findsOneWidget);
+    expect(previewText(tester), startsWith('23 reading days'));
+
+    // Beginning mid-book trims the books it reads.
+    await tester.tap(find.byKey(const Key('create_plan_begins_at')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Matthew').last);
+    await tester.tap(find.text('5').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Begin at Matthew 5'));
+    await tester.pumpAndSettle();
+    expect(find.text('4 books · 85 chapters scheduled'), findsOneWidget);
+    expect(find.text('Matthew 1–4 left out'), findsOneWidget);
+    expect(find.text('Matthew · from 5', findRichText: true), findsOneWidget);
+
+    // Removing that book moves day one back to the start of what is left.
+    await tester.tap(find.text('Change books'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(BookPickerKeys.tile('Matthew')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(BookPickerKeys.done));
+    await tester.pumpAndSettle();
+    expect(find.text('3 books · 61 chapters scheduled'), findsOneWidget);
+    expect(find.text('Mark 1'), findsOneWidget);
 
     // Leaving Choose books goes back to the whole Bible paced by length.
     await tester.tap(find.text('In order'));
     await tester.pumpAndSettle();
+    expect(find.text('Pace by'), findsNothing);
+    expect(lengthText(tester), '365 days');
+  });
+
+  testWidgets('backing out of the book sheet keeps the reading method', (
+    tester,
+  ) async {
+    await pumpPage(tester);
+
+    await tester.tap(find.text('Choose books'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(BookPickerKeys.close));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Change books'), findsNothing);
     expect(find.text('Pace by'), findsNothing);
     expect(lengthText(tester), '365 days');
   });
@@ -157,6 +212,10 @@ void main() {
 
     // Switch to Choose books with 1 chapter a day to keep schedule small and inspectable
     await tester.tap(find.text('Choose books'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(BookPickerKeys.tile('Genesis')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(BookPickerKeys.done));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Chapters a day'));
     await tester.pumpAndSettle();
@@ -221,15 +280,9 @@ void main() {
     Navigator.of(tester.element(find.text('Full Schedule'))).pop();
     await tester.pumpAndSettle();
 
-    // Verify preview line text has Ends <expected end date>
-    final previewText = tester
-        .widget<Text>(find.descendant(
-          of: find.byKey(const Key('create_plan_preview')),
-          matching: find.byType(Text),
-        ))
-        .data!;
-    expect(previewText, startsWith('Ends '));
-    expect(previewText, contains('about 3 chapters a day'));
+    // Verify the preview line counts the reading days and names the end:
+    // Genesis at 3 chapters a day is 17 reading days.
+    expect(previewText(tester), startsWith('17 reading days · ends '));
   });
 
   testWidgets('a title is required', (tester) async {

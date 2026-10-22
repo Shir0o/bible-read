@@ -9,23 +9,41 @@ import 'app_bottom_sheet.dart';
 import 'common_styles.dart';
 import 'group_plan_keys.dart';
 
+/// Where day one of a plan begins, and what happens to the chapters before it.
+class StartChapterChoice {
+  /// The chapter day one begins with, e.g. `'Isaiah 40'`.
+  final String ref;
+
+  /// Whether the chapters before [ref] count as read (a Starting point,
+  /// ADR-0005) rather than being left out of the plan.
+  final bool markEarlierRead;
+
+  const StartChapterChoice(this.ref, {this.markEarlierRead = false});
+}
+
 /// Asks which chapter a plan should begin with.
 ///
-/// [books] is the plan's book list in reading order. Resolves to the chosen
-/// reference (e.g. `'Jeremiah 1'`), or null if the reader backed out.
-Future<String?> showStartChapterSheet(
+/// [books] is the plan's book list in reading order. With [allowMarkAsRead]
+/// the reader may also say they have already read the chapters before it;
+/// shared plans never offer that. Resolves to the choice, or null if the
+/// reader backed out.
+Future<StartChapterChoice?> showStartChapterSheet(
   BuildContext context, {
   required List<String> books,
   required String currentRef,
+  bool allowMarkAsRead = false,
+  bool markEarlierRead = false,
   VibrationService vibrationService = const VibrationService(),
 }) {
-  if (books.isEmpty) return Future<String?>.value(null);
-  return showAppSheet<String>(
+  if (books.isEmpty) return Future<StartChapterChoice?>.value(null);
+  return showAppSheet<StartChapterChoice>(
     context: context,
     fullHeight: true,
     builder: (_) => _StartChapterSheet(
       books: books,
       currentRef: currentRef,
+      allowMarkAsRead: allowMarkAsRead,
+      markEarlierRead: allowMarkAsRead && markEarlierRead,
       vibrationService: vibrationService,
     ),
   );
@@ -34,11 +52,15 @@ Future<String?> showStartChapterSheet(
 class _StartChapterSheet extends StatefulWidget {
   final List<String> books;
   final String currentRef;
+  final bool allowMarkAsRead;
+  final bool markEarlierRead;
   final VibrationService vibrationService;
 
   const _StartChapterSheet({
     required this.books,
     required this.currentRef,
+    required this.allowMarkAsRead,
+    required this.markEarlierRead,
     required this.vibrationService,
   });
 
@@ -50,6 +72,7 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
   late String _openBook;
   late String _draftBook;
   late int _draftChapter;
+  late bool _markEarlierRead = widget.markEarlierRead;
 
   @override
   void initState() {
@@ -88,6 +111,7 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
     final openChapters = ReferenceParser.chapterCount(_openBook) ?? 0;
     final draftIndex = _planIndex(_draftBook, _draftChapter);
     final wholeBookIsBefore = _planIndex(_openBook, openChapters) < draftIndex;
+    final draftRef = '$_draftBook $_draftChapter';
 
     return Column(
       key: GroupPlanKeys.startSheet,
@@ -104,13 +128,12 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Start at',
+                      'Day one begins at',
                       style: theme.textTheme.headlineSmall,
                     ),
                     const SizedBox(height: AppSpacing.gap4),
                     Text(
-                      'Pick the chapter day one begins with. Anything before '
-                      'it is left out of the plan.',
+                      'Pick a book, then a chapter.',
                       style: theme.textTheme.bodyMedium,
                     ),
                   ],
@@ -226,25 +249,71 @@ class _StartChapterSheetState extends State<_StartChapterSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                draftIndex == 0
-                    ? 'Nothing is left out — this is the very beginning.'
-                    : '$draftIndex chapters before $_draftBook $_draftChapter '
-                        'will not be scheduled.',
-                style: theme.textTheme.bodySmall,
-              ),
+              if (draftIndex == 0)
+                Text(
+                  'This is the very beginning. Nothing is left out.',
+                  style: theme.textTheme.bodySmall,
+                )
+              else
+                _buildBeforeChoice(context, draftIndex, draftRef),
               const SizedBox(height: AppSpacing.gap12),
               FilledButton(
                 key: GroupPlanKeys.startSheetCta,
                 onPressed: () {
                   unawaited(widget.vibrationService.mediumImpact());
-                  Navigator.of(context).pop('$_draftBook $_draftChapter');
+                  Navigator.of(context).pop(
+                    StartChapterChoice(
+                      draftRef,
+                      markEarlierRead: draftIndex > 0 && _markEarlierRead,
+                    ),
+                  );
                 },
-                child: Text('Start at $_draftBook $_draftChapter'),
+                child: Text('Begin at $draftRef'),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  /// What happens to the chapters before the pick: left out, or — when the
+  /// caller allows it — counted as read.
+  Widget _buildBeforeChoice(BuildContext context, int before, String ref) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          before == 1
+              ? '1 chapter comes before $ref'
+              : '$before chapters come before $ref',
+          style: theme.textTheme.titleSmall,
+        ),
+        const SizedBox(height: AppSpacing.gap4),
+        _ChoiceRow(
+          key: GroupPlanKeys.startSheetLeaveOut,
+          title: 'Leave them out',
+          subtitle: 'Day one is $ref.',
+          selected: !_markEarlierRead,
+          showRadio: widget.allowMarkAsRead,
+          onTap: () {
+            unawaited(widget.vibrationService.lightImpact());
+            setState(() => _markEarlierRead = false);
+          },
+        ),
+        if (widget.allowMarkAsRead)
+          _ChoiceRow(
+            key: GroupPlanKeys.startSheetMarkRead,
+            title: "I've read them",
+            subtitle: 'They count as read, and you pick up at $ref today.',
+            selected: _markEarlierRead,
+            showRadio: true,
+            onTap: () {
+              unawaited(widget.vibrationService.lightImpact());
+              setState(() => _markEarlierRead = true);
+            },
+          ),
       ],
     );
   }
@@ -350,6 +419,84 @@ class _ChapterCell extends StatelessWidget {
           child: Text(
             '$chapter',
             style: theme.textTheme.titleSmall?.copyWith(color: foreground),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChoiceRow extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final bool showRadio;
+  final VoidCallback onTap;
+
+  const _ChoiceRow({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.showRadio,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    const radioSize = 18.0;
+
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: AppSpacing.gap2),
+        Text(
+          subtitle,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+    if (!showRadio) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap8),
+        child: text,
+      );
+    }
+
+    return Semantics(
+      checked: selected,
+      inMutuallyExclusiveGroup: true,
+      button: true,
+      label: '$title, $subtitle',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.rChip),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap8),
+          child: Row(
+            children: [
+              Container(
+                width: radioSize,
+                height: radioSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected
+                        ? colorScheme.primary
+                        : colorScheme.outlineVariant,
+                    width: selected ? radioSize * 0.3 : 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.gap12),
+              Expanded(child: text),
+            ],
           ),
         ),
       ),

@@ -19,7 +19,9 @@ import '../services/schedule_generator.dart';
 import '../services/vibration_service.dart';
 import '../widgets/animated_action_button.dart';
 import '../widgets/app_bottom_sheet.dart';
+import '../widgets/book_picker_sheet.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/plan_day_list.dart';
 import '../widgets/start_chapter_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../services/nudge_service.dart';
@@ -94,92 +96,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   bool _isCreating = false;
   bool _isCustomPlanExpanded = false;
 
-  /// The reader's Starting point (ADR-0005): "I've already read up to this
-  /// chapter" when migrating an existing plan from elsewhere. Null when the
-  /// plan starts fresh. Only offered for solo plans.
-  String? _startingPointRef;
+  /// The chapter day one begins at, as picked; null for the very beginning.
+  /// Read through [_beginAt], which drops a pick the plan no longer reads.
+  String? _beginAtRef;
 
-  static const Map<String, Map<String, List<String>>> _bookCategories = {
-    'Old Testament': {
-      'Pentateuch': [
-        'Genesis',
-        'Exodus',
-        'Leviticus',
-        'Numbers',
-        'Deuteronomy',
-      ],
-      'Books of History': [
-        'Joshua',
-        'Judges',
-        'Ruth',
-        '1 Samuel',
-        '2 Samuel',
-        '1 Kings',
-        '2 Kings',
-        '1 Chronicles',
-        '2 Chronicles',
-        'Ezra',
-        'Nehemiah',
-        'Esther',
-      ],
-      'Books of Poetry': [
-        'Job',
-        'Psalm',
-        'Proverbs',
-        'Ecclesiastes',
-        'Song of Songs',
-      ],
-      'Books of Prophecy': [
-        'Isaiah',
-        'Jeremiah',
-        'Lamentations',
-        'Ezekiel',
-        'Daniel',
-        'Hosea',
-        'Joel',
-        'Amos',
-        'Obadiah',
-        'Jonah',
-        'Micah',
-        'Nahum',
-        'Habakkuk',
-        'Zephaniah',
-        'Haggai',
-        'Zechariah',
-        'Malachi',
-      ],
-    },
-    'New Testament': {
-      'Gospels': ['Matthew', 'Mark', 'Luke', 'John'],
-      'History': ['Acts'],
-      'Epistles': [
-        'Romans',
-        '1 Corinthians',
-        '2 Corinthians',
-        'Galatians',
-        'Ephesians',
-        'Philippians',
-        'Colossians',
-        '1 Thessalonians',
-        '2 Thessalonians',
-        '1 Timothy',
-        '2 Timothy',
-        'Titus',
-        'Philemon',
-        'Hebrews',
-        'James',
-        '1 Peter',
-        '2 Peter',
-        '1 John',
-        '2 John',
-        '3 John',
-        'Jude',
-      ],
-      'Prophecy': ['Revelation'],
-    },
-  };
-
-  final Set<String> _expandedCategories = {};
+  /// Whether the chapters before [_beginAtRef] count as read — the reader's
+  /// Starting point (ADR-0005) when migrating a plan from elsewhere — rather
+  /// than being left out. Read through [_marksEarlierRead].
+  bool _markEarlierRead = false;
 
   bool get _isEditing => widget.editingPlan != null;
 
@@ -211,6 +135,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       _customChaptersPerDay = (config['customChaptersPerDay'] as num?)?.toInt();
       _firstDayChapters = (config['firstDayChapters'] as num?)?.toInt();
       _customVersesPerDay = (config['customVersesPerDay'] as num?)?.toInt();
+      _beginAtRef = config['startRef'] as String?;
       final days = (config['readingDays'] as List?)?.cast<num>();
       if (days != null && days.isNotEmpty) {
         _readingDays
@@ -249,13 +174,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         'customChaptersPerDay': _goalMethod == _PlanGoalMethod.chaptersPerDay
             ? _customChaptersPerDay
             : null,
-        'firstDayChapters': _goalMethod == _PlanGoalMethod.chaptersPerDay &&
-                (_customChaptersPerDay ?? 1) > 1
-            ? _firstDayChapters
-            : null,
+        'firstDayChapters': _firstDayCount,
         'customVersesPerDay': _goalMethod == _PlanGoalMethod.versesPerDay
             ? _customVersesPerDay
             : null,
+        'startRef': _scheduleStartRef,
         'readingDays': _readingDays.toList()..sort(),
         'selectedBooks':
             _selectedBooks.length == ReferenceParser.allBooks.length
@@ -263,12 +186,70 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                 : _selectedBooks.toList(),
       };
 
-  /// The chapter pool the current form configuration reads through, in order.
+  /// The books the current form configuration reads through, in Bible order.
   List<String> _plannedChapters() {
-    if (_selectedBooks.length == ReferenceParser.allBooks.length) {
-      return ReferenceParser.allBooks;
+    final books = ReferenceParser.allBooks;
+    switch (_selectedType) {
+      case PlanType.otOnly:
+        return books.take(39).toList();
+      case PlanType.ntOnly:
+        return books.skip(39).toList();
+      case PlanType.sequential:
+      case PlanType.portions:
+      case PlanType.threeOldOneNew:
+        if (_selectedBooks.length == books.length) return books;
+        return books.where(_selectedBooks.contains).toList();
     }
-    return _selectedBooks.toList();
+  }
+
+  /// Whether "Begins at" applies. The solo Balanced and 3-in-Old-1-in-New
+  /// schedules interleave both Testaments, so they have no single chapter to
+  /// begin at; as a Shared plan they read in order, and do.
+  bool get _supportsBeginAt =>
+      _audience == PlanAudience.group ||
+      (_selectedType != PlanType.portions &&
+          _selectedType != PlanType.threeOldOneNew);
+
+  /// The chapter day one begins at, or null for the very beginning — also
+  /// when the picked chapter is not in what the plan now reads.
+  String? get _beginAt {
+    final ref = _beginAtRef;
+    if (ref == null || !_supportsBeginAt) return null;
+    final books = _plannedChapters();
+    final book = ReferenceParser.parseBook(ref);
+    if (book == null || !books.contains(book)) return null;
+    return ref == '${books.first} 1' ? null : ref;
+  }
+
+  /// Whether the chapters before [_beginAt] count as read instead of being
+  /// left out. Shared plans always leave them out.
+  bool get _marksEarlierRead =>
+      _markEarlierRead && _audience == PlanAudience.solo && _beginAt != null;
+
+  /// The chapter the generated schedule starts at: [_beginAt] when the
+  /// chapters before it are left out.
+  String? get _scheduleStartRef => _marksEarlierRead ? null : _beginAt;
+
+  /// Whether day one can be set apart from the daily pace: only a
+  /// chapters-a-day pace has a fixed daily count, and with a Starting point
+  /// the plan's own day one is already read.
+  bool get _showsFirstDay =>
+      _goalMethod == _PlanGoalMethod.chaptersPerDay &&
+      (_customChaptersPerDay ?? 1) > 1 &&
+      !_marksEarlierRead;
+
+  /// Chapters on day one when set apart from the daily pace, else null.
+  int? get _firstDayCount => _showsFirstDay ? _firstDayChapters : null;
+
+  /// How many chapters of [books] come before [ref].
+  static int _chaptersBefore(List<String> books, String ref) {
+    final parsed = ReferenceParser.parseChapterRef(ref);
+    var total = 0;
+    for (final book in books) {
+      if (book == parsed?.book) return total + parsed!.chapter - 1;
+      total += ReferenceParser.chapterCount(book) ?? 0;
+    }
+    return 0;
   }
 
   /// The group-shape draft equivalent of the current solo configuration, used
@@ -278,7 +259,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   GroupPlanDraft _buildGroupDraft() {
     final start = DateTime(_startDate.year, _startDate.month, _startDate.day);
     final books = _plannedChapters();
-    final startRef = books.isEmpty ? '' : '${books.first} 1';
+    final startRef = _beginAt ?? (books.isEmpty ? '' : '${books.first} 1');
+    // A first-day length is the generator's override for day index 0.
+    final firstDay = _firstDayCount;
+    final dayOverrides = firstDay != null && firstDay < _customChaptersPerDay!
+        ? {0: firstDay.clamp(1, 12)}
+        : const <int, int>{};
 
     const weekdaysAll = [1, 2, 3, 4, 5, 6, 7];
     final readingEveryDay = _readingDays.length == 7;
@@ -300,7 +286,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             ),
             weekdays: weekdaysAll,
             bookBoundary: false,
-            dayOverrides: const {},
+            dayOverrides: dayOverrides,
           );
         }
         final spanDays = _endDate == null
@@ -324,7 +310,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           endDate: null,
           weekdays: _readingDays.toList()..sort(),
           bookBoundary: false,
-          dayOverrides: const {},
+          dayOverrides: dayOverrides,
         );
       case _PlanGoalMethod.chaptersPerDay:
         return GroupPlanDraft(
@@ -336,7 +322,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           endDate: null,
           weekdays: _readingDays.toList()..sort(),
           bookBoundary: false,
-          dayOverrides: const {},
+          dayOverrides: dayOverrides,
         );
       case _PlanGoalMethod.versesPerDay:
         // ~26 verses per chapter, matching PlanGenerator's approximation.
@@ -350,7 +336,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           endDate: null,
           weekdays: _readingDays.toList()..sort(),
           bookBoundary: false,
-          dayOverrides: const {},
+          dayOverrides: dayOverrides,
         );
     }
   }
@@ -408,21 +394,49 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     }
   }
 
-  /// Asks the reader where they've already read up to (ADR-0005), reusing the
-  /// group plan's chapter picker. Resolves to a canonical "Book Chapter" ref.
-  Future<void> _pickStartingPoint() async {
+  /// Asks where day one begins, reusing the shared plan's chapter picker. A
+  /// solo plan may instead count the chapters before it as read (ADR-0005).
+  Future<void> _pickBeginAt() async {
     final books = _plannedChapters();
     if (books.isEmpty) return;
-    final currentRef = _startingPointRef ?? '${books.first} 1';
+    unawaited(widget.vibrationService.lightImpact());
     final picked = await showStartChapterSheet(
       context,
       books: books,
-      currentRef: currentRef,
+      currentRef: _beginAt ?? '${books.first} 1',
+      allowMarkAsRead: _audience == PlanAudience.solo,
+      markEarlierRead: _marksEarlierRead,
       vibrationService: widget.vibrationService,
     );
     if (picked != null && mounted) {
-      setState(() => _startingPointRef = picked);
+      setState(() {
+        _beginAtRef = picked.ref;
+        _markEarlierRead = picked.markEarlierRead;
+      });
     }
+  }
+
+  /// Replaces the picked books. Dropping the book day one began in moves day
+  /// one back to the start of what is left.
+  void _applyBooks(List<String> books) {
+    _selectedBooks
+      ..clear()
+      ..addAll(books);
+    final ref = _beginAtRef;
+    if (ref != null && !books.contains(ReferenceParser.parseBook(ref))) {
+      _beginAtRef = null;
+      _markEarlierRead = false;
+    }
+  }
+
+  Future<void> _changeBooks() async {
+    unawaited(widget.vibrationService.lightImpact());
+    final picked = await showBookPickerSheet(
+      context,
+      selected: _selectedBooks,
+      vibrationService: widget.vibrationService,
+    );
+    if (picked != null && mounted) setState(() => _applyBooks(picked));
   }
 
   Future<void> _createPlan() async {
@@ -462,36 +476,30 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       final plan = _buildPlan(id: '');
       final planId = await planService.saveCustomPlan(user.uid, plan);
 
-      // Auto-start the plan. A Starting point (ADR-0005) shifts the start date
-      // so the reader's position lands on today, marks the days up to it, and
-      // credits them to coverage silently — never announced.
-      final startingPoint = _startingPointRef;
-      if (startingPoint != null) {
-        final parsed = ReferenceParser.parseChapterRef(startingPoint);
-        final dayNumber = parsed == null
-            ? null
-            : _dayNumberForChapter(plan, parsed.book, parsed.chapter);
-        if (dayNumber != null) {
-          final shifted = await planService.startPlanWithStartingPoint(
-            user.uid,
-            planId,
-            plan,
-            dayNumber: dayNumber,
-            today: DateTime.now(),
+      // Auto-start the plan. With "I've read them" (a Starting point,
+      // ADR-0005) the day that begins at the chapter lands on today, the days
+      // before it are marked, and they are credited to coverage silently —
+      // never announced.
+      final readDays = _readDaysBefore(plan);
+      if (readDays > 0) {
+        // The last read day lands on yesterday, so the day the reader picks
+        // up at is today.
+        final now = DateTime.now();
+        final shifted = await planService.startPlanWithStartingPoint(
+          user.uid,
+          planId,
+          plan,
+          dayNumber: readDays,
+          today: DateTime(now.year, now.month, now.day - 1),
+        );
+        if (shifted != null) {
+          await PlanCompletionCoordinator(
+            firestore: widget.firestore,
+          ).creditPlanDaysSilently(
+            uid: user.uid,
+            planId: planId,
+            days: List<int>.generate(readDays, (i) => i + 1),
           );
-          if (shifted != null) {
-            await PlanCompletionCoordinator(
-              firestore: widget.firestore,
-            ).creditPlanDaysSilently(
-              uid: user.uid,
-              planId: planId,
-              days: List<int>.generate(dayNumber, (i) => i + 1),
-            );
-          }
-        } else {
-          // The chapter isn't in this plan's schedule — fall back to a plain
-          // start rather than silently dropping the reader's claim.
-          await planService.startPlan(user.uid, planId, startDate: _startDate);
         }
       } else {
         await planService.startPlan(user.uid, planId, startDate: _startDate);
@@ -589,10 +597,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
-  List<DateTime> _scheduleDates(int count) {
+  List<DateTime> _scheduleDates(int count, {DateTime? from}) {
     final dates = <DateTime>[];
     if (count <= 0) return dates;
-    var cursor = DateTime(_startDate.year, _startDate.month, _startDate.day);
+    final start = from ?? _startDate;
+    var cursor = DateTime(start.year, start.month, start.day);
     while (dates.length < count) {
       if (_readingDays.contains(cursor.weekday)) {
         dates.add(cursor);
@@ -703,13 +712,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       customChaptersPerDay: _goalMethod == _PlanGoalMethod.chaptersPerDay
           ? _customChaptersPerDay
           : null,
-      firstDayChapters: _goalMethod == _PlanGoalMethod.chaptersPerDay &&
-              (_customChaptersPerDay ?? 1) > 1
-          ? _firstDayChapters
-          : null,
+      firstDayChapters: _firstDayCount,
       customVersesPerDay: _goalMethod == _PlanGoalMethod.versesPerDay
           ? _customVersesPerDay
           : null,
+      startRef: _scheduleStartRef,
     );
     return plan.copyWith(config: _buildConfig());
   }
@@ -764,6 +771,23 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     return null;
   }
 
+  /// How many of [plan]'s days come before the one [_beginAt] falls in —
+  /// the days a Starting point marks as read. 0 unless the chapters before it
+  /// count as read, or when the chapter is not scheduled.
+  int _readDaysBefore(ReadingPlan plan) {
+    if (!_marksEarlierRead) return 0;
+    final parsed = ReferenceParser.parseChapterRef(_beginAt!);
+    final day = parsed == null
+        ? null
+        : _dayNumberForChapter(plan, parsed.book, parsed.chapter);
+    return day == null ? 0 : day - 1;
+  }
+
+  /// The date the reader's first unread day falls on: today with a Starting
+  /// point, else the start date.
+  DateTime _pickUpDate(int readDays) =>
+      readDays > 0 ? DateTime.now() : _startDate;
+
   final _months = [
     'Jan',
     'Feb',
@@ -779,15 +803,20 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     'Dec',
   ];
 
-  String _formatDate(DateTime date) =>
-      '${_months[date.month - 1]} ${date.day}, ${date.year}';
+  /// `Wed, Oct 21`, with the year when it is not this one.
+  String _formatDate(DateTime date) {
+    final label = formatPlanDate(date);
+    return date.year == DateTime.now().year ? label : '$label, ${date.year}';
+  }
 
   String get _startDateLabel {
     final now = DateTime.now();
     final isToday = _startDate.year == now.year &&
         _startDate.month == now.month &&
         _startDate.day == now.day;
-    return isToday ? 'Today' : _formatDate(_startDate);
+    return isToday
+        ? 'Today, ${formatPlanDateShort(_startDate)}'
+        : _formatDate(_startDate);
   }
 
   /// Lengths the Length stepper moves between. Whole years keep the
@@ -829,25 +858,40 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     });
   }
 
-  /// Picks a reading method. "Choose books" is the sequential reading with
-  /// the book picker and daily-amount options open; leaving it goes back to
-  /// the whole Bible paced by length.
-  void _selectReading(PlanType type, {bool chooseBooks = false}) {
+  /// Picks a reading method. Leaving "Choose books" goes back to the whole
+  /// Bible paced by length.
+  void _selectReading(PlanType type) {
     unawaited(widget.vibrationService.lightImpact());
     setState(() {
       _selectedType = type;
       if (type == PlanType.threeOldOneNew) {
         _years = 1;
       }
-      if (chooseBooks) {
-        _isCustomPlanExpanded = true;
-      } else if (_isCustomPlanExpanded) {
+      if (_isCustomPlanExpanded) {
         _isCustomPlanExpanded = false;
         _selectedBooks
           ..clear()
           ..addAll(ReferenceParser.allBooks);
         _goalMethod = _PlanGoalMethod.endDate;
       }
+    });
+  }
+
+  /// "Choose books": the sequential reading of the books picked in the book
+  /// sheet, which opens straight away. Backing out of it changes nothing.
+  Future<void> _selectChooseBooks() async {
+    if (_isCustomPlanExpanded) return;
+    unawaited(widget.vibrationService.lightImpact());
+    final picked = await showBookPickerSheet(
+      context,
+      selected: const [],
+      vibrationService: widget.vibrationService,
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedType = PlanType.sequential;
+      _isCustomPlanExpanded = true;
+      _applyBooks(picked);
     });
   }
 
@@ -894,7 +938,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                   ),
                   _section(context, 'What to read', _buildReadingCard(context)),
                   _section(context, 'Pace', _buildPaceCard(context)),
-                  _section(context, 'Start', _buildStartCard(context)),
+                  _section(context, 'Day one', _buildDayOneCard(context)),
                   const SizedBox(height: AppSpacing.gap8),
                   _buildPreviewLine(context),
                 ],
@@ -1103,9 +1147,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         title: 'Choose books',
         subtitle: 'Pick exactly what to read',
         selected: _isCustomPlanExpanded,
-        onTap: () => _selectReading(PlanType.sequential, chooseBooks: true),
+        onTap: _selectChooseBooks,
       ),
-      if (_isCustomPlanExpanded) _buildChooseBooks(context),
+      if (_isCustomPlanExpanded) _buildChosenBooks(context),
     ]);
   }
 
@@ -1172,40 +1216,133 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
-  /// The "Choose books" flow: the book picker and the daily-amount pace.
-  Widget _buildChooseBooks(BuildContext context) {
+  /// What "Choose books" reads: a summary, a chip per book, and the way back
+  /// into the book sheet.
+  Widget _buildChosenBooks(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final appColors = AppColors.of(context);
+    final books = _plannedChapters();
+    final total = books.fold<int>(
+      0,
+      (acc, book) => acc + (ReferenceParser.chapterCount(book) ?? 0),
+    );
+    final startRef = _scheduleStartRef;
+    final start =
+        startRef == null ? null : ReferenceParser.parseChapterRef(startRef);
+    final startIndex = start == null ? 0 : books.indexOf(start.book);
+    final scheduled =
+        total - (startRef == null ? 0 : _chaptersBefore(books, startRef));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.cardPadding,
         0,
         AppSpacing.cardPadding,
+        AppSpacing.gap12,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${books.length} ${books.length == 1 ? 'book' : 'books'} · '
+            '$scheduled ${scheduled == 1 ? 'chapter' : 'chapters'} scheduled',
+            key: const Key('create_plan_books_summary'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.gap8),
+          Wrap(
+            spacing: AppSpacing.gap6,
+            runSpacing: AppSpacing.gap6,
+            children: [
+              for (var i = 0; i < books.length; i++)
+                Container(
+                  key: Key('create_plan_book_chip_${books[i]}'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.gap12,
+                    vertical: AppSpacing.gap6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: i < startIndex
+                        ? colorScheme.surfaceContainer
+                        : appColors.primarySoft,
+                    borderRadius: BorderRadius.circular(AppSpacing.rChip),
+                    border: Border.all(
+                      color: i < startIndex
+                          ? appColors.border
+                          : appColors.primaryLine,
+                    ),
+                  ),
+                  child: Text.rich(
+                    TextSpan(
+                      text: books[i],
+                      children: [
+                        if (i < startIndex)
+                          const TextSpan(text: ' · left out')
+                        else if (i == startIndex && (start?.chapter ?? 1) > 1)
+                          TextSpan(text: ' · from ${start!.chapter}'),
+                      ],
+                    ),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: i < startIndex
+                          ? colorScheme.outline
+                          : appColors.primaryPress,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.gap4),
+          TextButton(
+            key: const Key('create_plan_change_books'),
+            onPressed: _changeBooks,
+            style: AppButtonStyles.compactText(context),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.gap8),
+              child: Text('Change books'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The daily-amount pace "Choose books" offers on top of Length.
+  Widget _buildPaceBy(BuildContext context) {
+    final theme = Theme.of(context);
+    final perDay = _customChaptersPerDay ?? 1;
+    final firstDay = _firstDayCount;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
         AppSpacing.cardPadding,
+        AppSpacing.gap12,
+        AppSpacing.cardPadding,
+        AppSpacing.gap4,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ..._bookCategories.entries.map(
-            (entry) => _buildBookCategory(entry.key, entry.value),
-          ),
-          const SizedBox(height: AppSpacing.gap12),
           Text('Pace by', style: theme.textTheme.titleSmall),
           const SizedBox(height: AppSpacing.gap4),
           _buildGoalOption(_PlanGoalMethod.endDate, 'Length'),
           _buildGoalOption(
             _PlanGoalMethod.chaptersPerDay,
             'Chapters a day',
+            subtitle:
+                firstDay != null && firstDay < perDay ? 'After day one' : null,
             stepper: _RoundStepper(
-              value: '${_customChaptersPerDay ?? 1}',
+              value: '$perDay',
               decrementLabel: 'One chapter fewer',
               incrementLabel: 'One chapter more',
               decrementKey: const Key('create_plan_chapters_dec'),
               incrementKey: const Key('create_plan_chapters_inc'),
-              onDecrement: (_customChaptersPerDay ?? 1) > 1
+              onDecrement: perDay > 1
                   ? () => setState(
                         () {
-                          final next = _customChaptersPerDay! - 1;
+                          final next = perDay - 1;
                           _customChaptersPerDay = next;
                           if (_firstDayChapters != null &&
                               _firstDayChapters! > next) {
@@ -1214,18 +1351,12 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
                         },
                       )
                   : null,
-              onIncrement: (_customChaptersPerDay ?? 1) < _maxChaptersPerDay
-                  ? () => setState(
-                        () => _customChaptersPerDay =
-                            (_customChaptersPerDay ?? 1) + 1,
-                      )
+              onIncrement: perDay < _maxChaptersPerDay
+                  ? () => setState(() => _customChaptersPerDay = perDay + 1)
                   : null,
               vibrationService: widget.vibrationService,
             ),
           ),
-          if (_goalMethod == _PlanGoalMethod.chaptersPerDay &&
-              (_customChaptersPerDay ?? 1) > 1)
-            _buildFirstDayPaceOption(context),
           _buildGoalOption(
             _PlanGoalMethod.versesPerDay,
             'Verses a day',
@@ -1260,61 +1391,51 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   static const _verseStep = 5;
   static const _maxVersesPerDay = 200;
 
-  Widget _buildFirstDayPaceOption(BuildContext context) {
+  /// "Day one reads": the chapters on day one, set apart from the pace.
+  Widget _buildFirstDayRow(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final max = _customChaptersPerDay ?? 1;
     final current = (_firstDayChapters ?? max).clamp(1, max);
 
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 18.0 + AppSpacing.gap12,
-        top: AppSpacing.gap4,
-        bottom: AppSpacing.gap4,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.cardPadding,
+        vertical: AppSpacing.gap12,
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'First day',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Day one reads', style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.gap2),
+                Text(
+                  'Then $max a day',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(height: AppSpacing.gap2),
-                  Text(
-                    current == 1
-                        ? '1 chapter on day one'
-                        : '$current chapters on day one',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            _RoundStepper(
-              value: '$current',
-              decrementLabel: 'One chapter fewer on first day',
-              incrementLabel: 'One chapter more on first day',
-              decrementKey: const Key('create_plan_first_day_dec'),
-              incrementKey: const Key('create_plan_first_day_inc'),
-              onDecrement: current > 1
-                  ? () => setState(() => _firstDayChapters = current - 1)
-                  : null,
-              onIncrement: current < max
-                  ? () => setState(() => _firstDayChapters = current + 1)
-                  : null,
-              vibrationService: widget.vibrationService,
-            ),
-          ],
-        ),
+          ),
+          _RoundStepper(
+            value: '$current',
+            valueKey: const Key('create_plan_first_day'),
+            decrementLabel: 'One chapter fewer on day one',
+            incrementLabel: 'One chapter more on day one',
+            decrementKey: const Key('create_plan_first_day_dec'),
+            incrementKey: const Key('create_plan_first_day_inc'),
+            onDecrement: current > 1
+                ? () => setState(() => _firstDayChapters = current - 1)
+                : null,
+            onIncrement: current < max
+                ? () => setState(() => _firstDayChapters = current + 1)
+                : null,
+            vibrationService: widget.vibrationService,
+          ),
+        ],
       ),
     );
   }
@@ -1322,6 +1443,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   Widget _buildGoalOption(
     _PlanGoalMethod method,
     String label, {
+    String? subtitle,
     Widget? stepper,
   }) {
     final isSelected = _goalMethod == method;
@@ -1354,13 +1476,28 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               _radio(context, isSelected, size: 18),
               const SizedBox(width: AppSpacing.gap12),
               Expanded(
-                child: Text(
-                  label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isSelected
-                        ? colorScheme.onSurface
-                        : colorScheme.onSurfaceVariant,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isSelected
+                            ? colorScheme.onSurface
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: AppSpacing.gap2),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (isSelected && stepper != null) stepper,
@@ -1387,41 +1524,50 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
 
     return _card(context, [
-      Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.cardPadding,
-          vertical: AppSpacing.gap12,
+      if (_isCustomPlanExpanded) ...[
+        _buildPaceBy(context),
+        const Divider(height: 1),
+      ],
+      // A daily amount sets the pace itself, so the Length row only belongs
+      // to the length-paced plans.
+      if (!_isCustomPlanExpanded || _goalMethod == _PlanGoalMethod.endDate) ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.cardPadding,
+            vertical: AppSpacing.gap12,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                  child: Text('Length', style: theme.textTheme.titleMedium)),
+              _RoundStepper(
+                value: '$length days',
+                decrementLabel: 'Shorter',
+                incrementLabel: 'Longer',
+                decrementKey: const Key('create_plan_length_dec'),
+                incrementKey: const Key('create_plan_length_inc'),
+                valueKey: const Key('create_plan_length'),
+                onDecrement:
+                    fixed || shorter == 0 ? null : () => _setLength(shorter),
+                onIncrement:
+                    fixed || longer == 0 ? null : () => _setLength(longer),
+                // Any other length: pick the end date directly.
+                onTapValue: fixed
+                    ? null
+                    : () async {
+                        final before = _endDate;
+                        await _selectDate(context, false);
+                        if (mounted && _endDate != before) {
+                          setState(() => _goalMethod = _PlanGoalMethod.endDate);
+                        }
+                      },
+                vibrationService: widget.vibrationService,
+              ),
+            ],
+          ),
         ),
-        child: Row(
-          children: [
-            Expanded(child: Text('Length', style: theme.textTheme.titleMedium)),
-            _RoundStepper(
-              value: '$length days',
-              decrementLabel: 'Shorter',
-              incrementLabel: 'Longer',
-              decrementKey: const Key('create_plan_length_dec'),
-              incrementKey: const Key('create_plan_length_inc'),
-              valueKey: const Key('create_plan_length'),
-              onDecrement:
-                  fixed || shorter == 0 ? null : () => _setLength(shorter),
-              onIncrement:
-                  fixed || longer == 0 ? null : () => _setLength(longer),
-              // Any other length: pick the end date directly.
-              onTapValue: fixed
-                  ? null
-                  : () async {
-                      final before = _endDate;
-                      await _selectDate(context, false);
-                      if (mounted && _endDate != before) {
-                        setState(() => _goalMethod = _PlanGoalMethod.endDate);
-                      }
-                    },
-              vibrationService: widget.vibrationService,
-            ),
-          ],
-        ),
-      ),
-      const Divider(height: 1),
+        const Divider(height: 1),
+      ],
       Padding(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
         child: fixed
@@ -1536,10 +1682,14 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
-  /// Start date and Starting point. Both are fixed while editing: the
+  /// Start date, where day one begins, how much it reads, and a look at the
+  /// first few days. The date and the beginning are fixed while editing: the
   /// schedule is anchored to the plan's existing progress, so it must not
   /// drift out from under recorded readings.
-  Widget _buildStartCard(BuildContext context) {
+  Widget _buildDayOneCard(BuildContext context) {
+    final plan = _previewPlan();
+    final books = _plannedChapters();
+
     return _card(context, [
       _valueRow(
         context,
@@ -1548,18 +1698,108 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         value: _startDateLabel,
         onTap: _isEditing ? null : () => _selectDate(context, true),
       ),
-      const Divider(height: 1),
-      // Starting point (ADR-0005): "I've already read up to this chapter"
-      // when migrating an existing plan from elsewhere. Shifts the start date
-      // so the position lands on today and marks the days up to it.
-      _valueRow(
-        context,
-        key: const Key('create_plan_starting_point'),
-        label: 'Starting point',
-        value: _startingPointRef ?? 'Start fresh',
-        onTap: _isEditing ? null : _pickStartingPoint,
-      ),
+      if (_supportsBeginAt && books.isNotEmpty) ...[
+        const Divider(height: 1),
+        _valueRow(
+          context,
+          key: const Key('create_plan_begins_at'),
+          label: 'Begins at',
+          value: _beginAt ?? '${books.first} 1',
+          subtitle: _beginAtSubtitle(books),
+          onTap: _isEditing ? null : _pickBeginAt,
+        ),
+      ],
+      if (_showsFirstDay) ...[
+        const Divider(height: 1),
+        _buildFirstDayRow(context),
+      ],
+      if (plan != null) _buildFirstDays(context, plan),
     ]);
+  }
+
+  /// What [_beginAt] leaves out — "Isaiah 1–39 left out" — or with a
+  /// Starting point, what counts as read. Null at the very beginning.
+  String? _beginAtSubtitle(List<String> books) {
+    final ref = _beginAt;
+    final parsed = ref == null ? null : ReferenceParser.parseChapterRef(ref);
+    if (parsed == null) return null;
+    // The last chapter before day one: earlier in its book, or the end of the
+    // book before it.
+    final lastBook = parsed.chapter > 1
+        ? parsed.book
+        : books[books.indexOf(parsed.book) - 1];
+    final lastChapter = parsed.chapter > 1
+        ? parsed.chapter - 1
+        : ReferenceParser.chapterCount(lastBook) ?? 1;
+    final first = books.first;
+    final range = first != lastBook
+        ? '$first 1–$lastBook $lastChapter'
+        : lastChapter == 1
+            ? '$first 1'
+            : '$first 1–$lastChapter';
+    return _marksEarlierRead ? '$range count as read' : '$range left out';
+  }
+
+  /// The first three days the reader will read, inset in the Day one card.
+  Widget _buildFirstDays(BuildContext context, ReadingPlan plan) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final readDays = _readDaysBefore(plan);
+    final days = plan.schedule.skip(readDays).take(3).toList();
+    final dates = _scheduleDates(days.length, from: _pickUpDate(readDays));
+
+    return Container(
+      key: const Key('create_plan_first_days'),
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.cardPadding,
+        0,
+        AppSpacing.cardPadding,
+        AppSpacing.cardPadding,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.gap12,
+        vertical: AppSpacing.gap4,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSpacing.rInset),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < days.length; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.gap8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'DAY ${days[i].day}',
+                          style: AppTextStyles.eyebrow(context).copyWith(
+                            color: colorScheme.outline,
+                          ),
+                        ),
+                        TextSpan(text: ' · ${formatPlanDate(dates[i])}'),
+                      ],
+                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.gap2),
+                  Text(
+                    formatChapterRun(days[i].readings),
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _valueRow(
@@ -1568,6 +1808,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     required String label,
     required String value,
     required VoidCallback? onTap,
+    String? subtitle,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -1583,7 +1824,23 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         ),
         child: Row(
           children: [
-            Expanded(child: Text(label, style: theme.textTheme.titleMedium)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: theme.textTheme.titleMedium),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: AppSpacing.gap2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
             Text(
               value,
               style: theme.textTheme.labelLarge?.copyWith(
@@ -1614,19 +1871,9 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final dates = _scheduleDates(plan.schedule.length);
-    final end = dates.isNotEmpty
-        ? dates.last
-        : DateTime(
-            _startDate.year,
-            _startDate.month,
-            _startDate.day + plan.schedule.last.day - 1,
-          );
-    final chapters = plan.schedule.fold<int>(
-      0,
-      (total, day) => total + day.readings.length,
-    );
-    final perDay = (chapters / plan.schedule.length).round().clamp(1, chapters);
+    final readDays = _readDaysBefore(plan);
+    final days = plan.schedule.length - readDays;
+    final dates = _scheduleDates(days, from: _pickUpDate(readDays));
 
     return Semantics(
       button: true,
@@ -1644,8 +1891,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             children: [
               Expanded(
                 child: Text(
-                  'Ends ${_formatDate(end)} · about $perDay '
-                  '${perDay == 1 ? 'chapter' : 'chapters'} a day',
+                  '$days reading ${days == 1 ? 'day' : 'days'} · '
+                  'ends ${_formatDate(dates.last)}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -1661,189 +1908,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildBookCategory(
-    String name,
-    Map<String, List<String>> subcategories,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final allBooksInCategory = subcategories.values.expand((e) => e).toList();
-    final isFullySelected = allBooksInCategory.every(
-      (book) => _selectedBooks.contains(book),
-    );
-    final isPartiallySelected =
-        allBooksInCategory.any((book) => _selectedBooks.contains(book)) &&
-            !isFullySelected;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.gap8),
-      child: Material(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppSpacing.rInset),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            ListTile(
-              key: Key('create_plan_category_$name'),
-              dense: true,
-              visualDensity: VisualDensity.compact,
-              onTap: () {
-                setState(() {
-                  if (_expandedCategories.contains(name)) {
-                    _expandedCategories.remove(name);
-                  } else {
-                    _expandedCategories.add(name);
-                  }
-                });
-              },
-              leading: Checkbox(
-                visualDensity: VisualDensity.compact,
-                value: isFullySelected
-                    ? true
-                    : (isPartiallySelected ? null : false),
-                tristate: true,
-                onChanged: (val) {
-                  setState(() {
-                    if (val == true) {
-                      _selectedBooks.addAll(allBooksInCategory);
-                    } else {
-                      _selectedBooks.removeWhere(
-                        (book) => allBooksInCategory.contains(book),
-                      );
-                    }
-                  });
-                },
-              ),
-              title: Text(
-                name,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              trailing: Icon(
-                _expandedCategories.contains(name)
-                    ? Icons.expand_less
-                    : Icons.expand_more,
-                size: AppSpacing.iconMd,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            if (_expandedCategories.contains(name))
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: AppSpacing.gap16,
-                  bottom: AppSpacing.gap8,
-                ),
-                child: Column(
-                  children: subcategories.entries
-                      .map((e) => _buildBookSubcategory(e.key, e.value))
-                      .toList(),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBookSubcategory(String name, List<String> books) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isFullySelected = books.every(
-      (book) => _selectedBooks.contains(book),
-    );
-    final isPartiallySelected =
-        books.any((book) => _selectedBooks.contains(book)) && !isFullySelected;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListTile(
-          dense: true,
-          visualDensity: VisualDensity.compact,
-          leading: Checkbox(
-            visualDensity: VisualDensity.compact,
-            value:
-                isFullySelected ? true : (isPartiallySelected ? null : false),
-            tristate: true,
-            onChanged: (val) {
-              setState(() {
-                if (val == true) {
-                  _selectedBooks.addAll(books);
-                } else {
-                  _selectedBooks.removeWhere((book) => books.contains(book));
-                }
-              });
-            },
-          ),
-          title: Text(
-            name,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: colorScheme.onSurface),
-          ),
-          trailing: Icon(
-            _expandedCategories.contains(name)
-                ? Icons.expand_less
-                : Icons.expand_more,
-            size: AppSpacing.iconMd,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          onTap: () {
-            setState(() {
-              if (_expandedCategories.contains(name)) {
-                _expandedCategories.remove(name);
-              } else {
-                _expandedCategories.add(name);
-              }
-            });
-          },
-        ),
-        if (_expandedCategories.contains(name))
-          Padding(
-            padding: const EdgeInsets.only(left: AppSpacing.gap32),
-            child: Column(
-              children: books.map((book) {
-                final isSelected = _selectedBooks.contains(book);
-                return ListTile(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        _selectedBooks.remove(book);
-                      } else {
-                        _selectedBooks.add(book);
-                      }
-                    });
-                  },
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  contentPadding: EdgeInsets.zero,
-                  leading: Checkbox(
-                    visualDensity: VisualDensity.compact,
-                    value: isSelected,
-                    onChanged: (val) {
-                      setState(() {
-                        if (val == true) {
-                          _selectedBooks.add(book);
-                        } else {
-                          _selectedBooks.remove(book);
-                        }
-                      });
-                    },
-                  ),
-                  title: Text(
-                    book,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isSelected
-                              ? colorScheme.onSurface
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-      ],
     );
   }
 }

@@ -78,3 +78,21 @@ complete is silent, like a Backfilled Read-Through — never a Milestone.
   it is, contextual to that section.
 - All marking toasts become floating with a bottom margin, so no marking toast
   can cover bottom-anchored controls on any screen.
+
+## Amendment (2026-10-21): Starting point vs Begin at
+
+Readers read "Starting point" as "day one begins here" and saw the plan still
+open at Genesis with days marked. The chapter picker now asks one question
+about the chapters before the pick:
+
+- **Leave them out** (default, the new **Begin at**): the schedule starts at
+  the chapter; nothing before it is scheduled or marked. Works for solo and
+  shared plans.
+- **I've read them** (the Starting point, solo only): the day holding the
+  chapter lands on today and stays **unmarked**; only the days wholly before
+  it are marked and silently credited. This replaces "days 1..N are marked",
+  which marked the very day the reader said they were picking up. A pick in
+  the middle of a day leaves that day's earlier chapters to be read again.
+
+Shared plans never get "I've read them": group schedules are fixed (ADR-0007)
+and marked day by day.

@@ -730,6 +730,133 @@ void main() {
     expect(find.text('Finish plan'), findsNothing);
   });
 
+  /// A running Shared plan owned by u1. Returns the group id.
+  Future<String> seedOwnedSharedPlan() async {
+    final groupId = await groupService.createGroup(
+      ownerUid: 'u1',
+      name: 'Jeremiah Plan',
+    );
+    final today = DateTime.now();
+    await groupService.updateSchedule(
+      groupId: groupId,
+      schedule: GroupSchedule(
+        date: DateTime(today.year, today.month, today.day + 1),
+        chapters: const ['Jer 1'],
+      ),
+    );
+    // Leave only the Shared plan on screen.
+    await planService.leavePlan('u1', 'p1');
+    return groupId;
+  }
+
+  testWidgets(
+      "a member's Shared plan menu offers Archive and Leave plan, not Delete",
+      (tester) async {
+    await seedOnTrackSharedPlan(ownPace: false);
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    expect(find.text('Members and invites'), findsOneWidget);
+    expect(find.text('Manage members'), findsNothing);
+    expect(find.text('Archive'), findsOneWidget);
+    expect(find.text('Leave plan'), findsOneWidget);
+    expect(find.text('Delete plan'), findsNothing);
+    expect(find.byType(PopupMenuDivider), findsOneWidget);
+  });
+
+  testWidgets('Leave plan confirms on a sheet, then leaves the plan', (
+    tester,
+  ) async {
+    await seedOnTrackSharedPlan(ownPace: false);
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    await tester.tap(find.text('Leave plan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Leave “Jeremiah Plan”?'), findsOneWidget);
+    expect(find.text('The plan carries on for everyone else.'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Leave plan'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    expect(find.text('Together'), findsNothing);
+    expect(find.text('You left “Jeremiah Plan”'), findsOneWidget);
+    expect(await groupService.groupsForUser('u1').first, isEmpty);
+  });
+
+  testWidgets(
+      "an owner's Delete plan soft-deletes it from a sheet, and Undo "
+      'restores it', (tester) async {
+    final groupId = await seedOwnedSharedPlan();
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    expect(find.text('Delete plan'), findsOneWidget);
+    expect(find.text('Leave plan'), findsNothing);
+    await tester.tap(find.text('Delete plan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete “Jeremiah Plan”?'), findsOneWidget);
+    expect(
+      find.text('The plan ends for all 1 reader, and it leaves their Path.'),
+      findsOneWidget,
+    );
+    expect(find.text('Archive instead'), findsOneWidget);
+
+    await tester.tap(find.text('Delete for everyone'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    final doc = firestore.collection('groups').doc(groupId);
+    expect((await doc.get()).data()?['deletedAt'], isNotNull);
+    expect(find.text('Together'), findsNothing);
+    expect(find.text('Moved to Recently Deleted'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    expect((await doc.get()).data()?['deletedAt'], isNull);
+    expect(find.text('Together'), findsOneWidget);
+  });
+
+  testWidgets('Archive instead on the delete sheet archives the plan', (
+    tester,
+  ) async {
+    final groupId = await seedOwnedSharedPlan();
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    await tester.tap(find.text('Delete plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Archive instead'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    final data =
+        (await firestore.collection('groups').doc(groupId).get()).data();
+    expect(data?['isArchived'], isTrue);
+    expect(data?['deletedAt'], isNull);
+    expect(find.text('Archived "Jeremiah Plan"'), findsOneWidget);
+  });
+
+  testWidgets('a failed delete puts the card back and says so', (
+    tester,
+  ) async {
+    groupService = _FailingDeleteGroupService(firestore: firestore);
+    await seedOwnedSharedPlan();
+    await pumpPage(tester);
+
+    await openMenu(tester);
+    await tester.tap(find.text('Delete plan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete for everyone'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
+
+    expect(find.text('Together'), findsOneWidget);
+    expect(
+      find.text('Couldn’t delete “Jeremiah Plan”. Please try again.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('renders PlansHubSkeleton while loading', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -769,6 +896,19 @@ class _FailingReadingPlanService extends ReadingPlanService {
 
   @override
   Future<void> finishPlan(String userId, String planId) async {
+    throw Exception('Simulated network failure');
+  }
+}
+
+class _FailingDeleteGroupService extends GroupService {
+  _FailingDeleteGroupService({required super.firestore});
+
+  @override
+  Future<void> softDeleteGroup({
+    required String groupId,
+    required String ownerUid,
+    DateTime? now,
+  }) async {
     throw Exception('Simulated network failure');
   }
 }

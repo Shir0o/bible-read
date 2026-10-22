@@ -5,6 +5,11 @@ enum PlanType { sequential, portions, threeOldOneNew, otOnly, ntOnly }
 
 class PlanGenerator {
   /// Generates a reading plan based on the specified type and parameters.
+  ///
+  /// [startRef] is the chapter day one begins with (e.g. `'Isaiah 40'`):
+  /// chapters of the pool ahead of it are left out of the schedule. Ignored
+  /// when it is not in the pool, and by the interleaved [PlanType.portions]
+  /// and [PlanType.threeOldOneNew] schedules, which build their own pools.
   static ReadingPlan generatePlan({
     required String id,
     required String title,
@@ -18,6 +23,7 @@ class PlanGenerator {
     int? customChaptersPerDay,
     int? customVersesPerDay,
     int? firstDayChapters,
+    String? startRef,
   }) {
     startDate ??= DateTime.now();
     final List<String> allChapters = [];
@@ -54,6 +60,11 @@ class PlanGenerator {
           allChapters.add('$book $i');
         }
       }
+    }
+
+    if (startRef != null) {
+      final start = allChapters.indexOf(ReferenceParser.normalizeOne(startRef));
+      if (start > 0) allChapters.removeRange(0, start);
     }
 
     if (allChapters.isEmpty) {

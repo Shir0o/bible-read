@@ -245,12 +245,21 @@ the app as it is. See `docs/community_journey_ia.md`,
   Nothing the reader sees still says "Community" or "Journey".
 - **Starting point**: The position a Plan begins from when the reader has
   already read ahead of the plan's start — entered once at creation when
-  migrating an existing plan from elsewhere. It marks the plan's days up to
-  that position as Shown up without touching the habit or streak, and any
+  migrating an existing plan from elsewhere. Chosen as "I've read them" in the
+  Begin-at sheet, solo plans only. The day holding that chapter lands on
+  today, unmarked; every earlier day is marked as Shown up without touching
+  the habit or streak, and any
   Read-Through it completes is silent, like a Backfilled Read-Through. The
   relation to Catch-up is the same as Backfilled Read-Through to Detected:
   a claim about reading done before the app, entered by hand, never announced.
   _Avoid_: Head start, "read up to", backfill (reserved for Read-Throughs)
+- **Begin at**: The chapter a Plan's day one starts with ("Leave them out" in
+  the Begin-at sheet, the default). Chapters before it are never scheduled
+  and nothing is marked. Solo plans store it as `startRef` in the plan
+  config; shared plans as the group draft's `startRef`. Not offered for
+  Balanced or 3 in Old, 1 in New solo plans, which have no single reading
+  order.
+  _Avoid_: Starting point (that claims reading already done)
 - **First-day pace**: An intentional custom chapter count allocated to day one
   of a Plan (e.g. 1 chapter on day one when reading 2 chapters a day). Unlike
   a Starting point, day one's reading remains unread and presence-driven; only
