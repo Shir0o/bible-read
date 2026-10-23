@@ -81,6 +81,7 @@ class CircleService {
       ]);
       final members = results[0] as QuerySnapshot<Map<String, dynamic>>;
       final groupDoc = results[1] as DocumentSnapshot<Map<String, dynamic>>;
+      if (groupDoc.data()?['deletedAt'] != null) continue;
       for (final member in members.docs) {
         final id = (member.data()['uid'] as String?) ?? member.id;
         if (id != uid && id.isNotEmpty) circle.add(id);
@@ -253,6 +254,7 @@ class CircleService {
           StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>>{};
       final perGroup = <String, List<CircleMember>>{};
       final perGroupOwner = <String, String?>{};
+      final perGroupDeleted = <String, bool>{};
       var activeGroupIds = <String>{};
       var membershipsReported = false;
       var closed = false;
@@ -286,6 +288,7 @@ class CircleService {
 
         final byUid = <String, CircleMember>{};
         for (final groupId in activeGroupIds) {
+          if (perGroupDeleted[groupId] == true) continue;
           final members = List<CircleMember>.from(
             perGroup[groupId] ?? const <CircleMember>[],
           );
@@ -323,6 +326,7 @@ class CircleService {
         groupDocSubs.remove(groupId)?.cancel();
         perGroup.remove(groupId);
         perGroupOwner.remove(groupId);
+        perGroupDeleted.remove(groupId);
       }
 
       final membershipSub = groupIdsStream.listen(
@@ -364,12 +368,14 @@ class CircleService {
                 .snapshots()
                 .listen(
               (groupSnap) {
-                perGroupOwner[groupId] =
-                    (groupSnap.data()?['ownerUid'] as String?)?.trim();
+                final data = groupSnap.data();
+                perGroupDeleted[groupId] = data?['deletedAt'] != null;
+                perGroupOwner[groupId] = (data?['ownerUid'] as String?)?.trim();
                 emit();
               },
               onError: (Object e, StackTrace st) {
                 unawaited(_safeLog(e, st));
+                perGroupDeleted[groupId] = false;
                 perGroupOwner[groupId] = null;
                 emit();
               },
@@ -425,95 +431,23 @@ class CircleService {
     return '?';
   }
 
+  static String? _nonEmptyTrimmed(Object? value) {
+    final trimmed = (value as String?)?.trim();
+    return (trimmed != null && trimmed.isNotEmpty) ? trimmed : null;
+  }
+
   /// One-shot fetch of today's Circle presence for [uid] on [dateKey] (`YYYY-MM-DD`).
   Future<CirclePresenceSnapshot> fetchDailyPresence(
     String uid, {
     required String dateKey,
-  }) async {
-    final circleMembers = await watchCircleMembers(uid).first.timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => const <CircleMember>[],
-        );
-    final circleByUid = <String, CircleMember>{
-      for (final m in circleMembers) m.uid: m,
-    };
-    final allUids = <String>{uid, ...circleByUid.keys};
-    final groupIds = await fetchGroupIds(uid).timeout(
-      const Duration(seconds: 5),
-      onTimeout: () => const <String>{},
-    );
-    final friendTargetUids = <String>{
-      uid,
-      for (final m in circleMembers)
-        if (m.isFriend) m.uid,
-    };
-
-    final entryNames = <String, String?>{};
-    final groupSnaps = await Future.wait([
-      for (final groupId in groupIds)
-        firestore
-            .collection(GroupCollections.groups)
-            .doc(groupId)
-            .collection('read_log')
-            .doc(dateKey)
-            .collection('entries')
-            .get(),
-    ]).timeout(
-      const Duration(seconds: 5),
-      onTimeout: () => const <QuerySnapshot<Map<String, dynamic>>>[],
-    );
-    for (final snap in groupSnaps) {
-      for (final doc in snap.docs) {
-        final authorUid = (doc.data()['uid'] as String?) ?? doc.id;
-        if (allUids.contains(authorUid)) {
-          entryNames[authorUid] ??= doc.data()['name'] as String?;
-        }
-      }
-    }
-
-    final friendSnaps = await Future.wait([
-      for (final targetUid in friendTargetUids)
-        FriendService.feedEntry(firestore, targetUid, dateKey).get(),
-    ]).timeout(
-      const Duration(seconds: 5),
-      onTimeout: () => const <DocumentSnapshot<Map<String, dynamic>>>[],
-    );
-    for (final doc in friendSnaps) {
-      if (!doc.exists) continue;
-      final data = doc.data();
-      final authorUid = (data?['uid'] as String?) ?? doc.id;
-      if (allUids.contains(authorUid)) {
-        entryNames[authorUid] ??= data?['name'] as String?;
-      }
-    }
-
-    final readers = <CirclePresencePerson>[];
-    for (final readerUid in entryNames.keys) {
-      final circleMember = circleByUid[readerUid];
-      final name = await _resolveDisplayName(
-        readerUid,
-        circleName: circleMember?.name,
-        entryName: entryNames[readerUid],
-      );
-      readers.add(
-        CirclePresencePerson(
-          uid: readerUid,
-          name: name,
-          photoUrl: circleMember?.photoUrl,
-        ),
-      );
-    }
-    readers.sort((a, b) {
-      if (a.uid == uid) return 1;
-      if (b.uid == uid) return -1;
-      return a.name.compareTo(b.name);
-    });
-
-    return CirclePresenceSnapshot(
-      readers: readers,
-      totalCount: allUids.length,
-    );
-  }
+  }) =>
+      watchDailyPresence(uid, dateKey: dateKey).first.timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => const CirclePresenceSnapshot(
+              readers: <CirclePresencePerson>[],
+              totalCount: 1,
+            ),
+          );
 
   /// Reactive stream of today's Circle presence for [uid] on [dateKey] (`YYYY-MM-DD`).
   Stream<CirclePresenceSnapshot> watchDailyPresence(
@@ -571,22 +505,22 @@ class CircleService {
           }
         }
 
-        final readers = <CirclePresencePerson>[];
-        for (final readerUid in entryNames.keys) {
-          final circleMember = currentCircle[readerUid];
-          final name = await _resolveDisplayName(
-            readerUid,
-            circleName: circleMember?.name,
-            entryName: entryNames[readerUid],
-          );
-          readers.add(
-            CirclePresencePerson(
-              uid: readerUid,
-              name: name,
-              photoUrl: circleMember?.photoUrl,
-            ),
-          );
-        }
+        final readers = await Future.wait([
+          for (final readerUid in entryNames.keys)
+            () async {
+              final circleMember = currentCircle[readerUid];
+              final name = await _resolveDisplayName(
+                readerUid,
+                circleName: circleMember?.name,
+                entryName: entryNames[readerUid],
+              );
+              return CirclePresencePerson(
+                uid: readerUid,
+                name: name,
+                photoUrl: circleMember?.photoUrl,
+              );
+            }(),
+        ]);
         if (closed || controller.isClosed || myGen != emitGeneration) return;
 
         readers.sort((a, b) {
@@ -625,7 +559,7 @@ class CircleService {
               groupEntries[groupId] = {
                 for (final doc in snap.docs)
                   ((doc.data()['uid'] as String?) ?? doc.id):
-                      doc.data()['name'] as String?,
+                      _nonEmptyTrimmed(doc.data()['name']),
               };
               unawaited(emit());
             },
@@ -661,7 +595,8 @@ class CircleService {
                   .listen(
             (doc) {
               if (doc.exists) {
-                friendEntries[targetUid] = doc.data()?['name'] as String?;
+                friendEntries[targetUid] =
+                    _nonEmptyTrimmed(doc.data()?['name']);
               } else {
                 friendEntries.remove(targetUid);
               }

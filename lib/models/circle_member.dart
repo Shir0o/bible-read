@@ -36,14 +36,12 @@ class CircleMember {
 /// One person who has shown up today in the reader's Circle (or the reader
 /// themselves), resolved with display metadata for the Home "Your circle" card.
 class CirclePresencePerson {
-  /// UID of the reader.
   final String uid;
 
   /// Display name resolved from Circle member record, feed entry, or profile.
   /// Falls back to `'?'` when unknown so [MemberPresenceStack] renders a placeholder.
   final String name;
 
-  /// Optional profile photo URL.
   final String? photoUrl;
 
   const CirclePresencePerson({

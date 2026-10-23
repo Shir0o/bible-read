@@ -1,6 +1,5 @@
 // The Home "Your circle" glimpse is sourced from the reader's Circle —
-// the co-members of their Groups, derived at read time (ADR-0003, #795).
-// There is no friend graph to consult.
+// the co-members of their Groups plus their Friends, derived at read time (ADR-0012).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -173,13 +172,11 @@ void main() {
     await _pumpHome(tester, firestore, auth);
     expect(find.text('0 of 1 read today'), findsOneWidget);
 
-    // u1 creates/joins a group with u2 while HomePage is already mounted.
     await _seedGroup(firestore, id: 'g1', ownerUid: 'u1', members: ['u2']);
     await tester.pumpAndSettle();
 
     expect(find.text('0 of 2 read today'), findsOneWidget);
 
-    // u2 marks today read in g1.
     await _seedReadToday(
       firestore,
       uid: 'u2',
@@ -204,7 +201,6 @@ void main() {
     final dateKey =
         '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
 
-    // u1 has no groups, only 1 friend (f1).
     await firestore
         .collection('users')
         .doc('u1')
@@ -212,7 +208,6 @@ void main() {
         .doc('f1')
         .set({'uid': 'f1', 'name': 'Clara'});
 
-    // Both u1 and f1 have friend_feed entries for today.
     await firestore
         .collection('users')
         .doc('f1')
@@ -250,7 +245,6 @@ void main() {
       'ownerUid': 'u1',
       'memberCount': 2,
     });
-    // Legacy owner member doc without 'uid' field in map.
     await firestore
         .collection('groups')
         .doc('g1')
