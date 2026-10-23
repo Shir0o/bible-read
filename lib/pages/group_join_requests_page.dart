@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/skeleton_loader.dart';
-import '../widgets/skeletons/list_rows_skeleton.dart';
+import '../widgets/skeleton.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
 import '../services/vibration_service.dart';
@@ -89,7 +89,7 @@ class GroupJoinRequestsPage extends StatelessWidget {
                           return SnapshotSkeleton<
                               QuerySnapshot<Map<String, dynamic>>>(
                             snapshot: snapshot,
-                            skeleton: const ListRowsSkeleton(),
+                            skeleton: const _JoinRequestsSkeleton(),
                             builder: (context, snap) {
                               final requests = snap.docs;
                               if (requests.isEmpty) {
@@ -219,6 +219,38 @@ class GroupJoinRequestsPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Placeholder shaped like the request cards: a name and two action icons.
+class _JoinRequestsSkeleton extends StatelessWidget {
+  const _JoinRequestsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        for (final nameWidth in const [140.0, 110.0, 160.0])
+          CommonStyles.buildCard(
+            context: context,
+            margin: const EdgeInsets.symmetric(vertical: AppSpacing.gap4),
+            child: SizedBox(
+              height: 56,
+              child: Row(
+                children: [
+                  Skeleton(width: nameWidth, height: 14),
+                  const Spacer(),
+                  const Skeleton(width: 28, height: 28, shape: CircleBorder()),
+                  const SizedBox(width: AppSpacing.gap20),
+                  const Skeleton(width: 28, height: 28, shape: CircleBorder()),
+                  const SizedBox(width: AppSpacing.gap12),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

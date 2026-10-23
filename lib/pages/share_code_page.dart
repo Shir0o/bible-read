@@ -255,24 +255,21 @@ class _ShareCodePageState extends State<ShareCodePage> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.gap24),
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        key: JoinCodeKeys.copyButton,
-                        onPressed: _copyCode,
-                        icon: const Icon(Icons.copy, size: 18),
-                        label: const Text('Copy'),
-                      ),
+                    FilledButton.icon(
+                      key: JoinCodeKeys.shareButton,
+                      onPressed: _shareCode,
+                      icon: const Icon(Icons.ios_share_rounded, size: 18),
+                      label: const Text('Share invite link'),
                     ),
-                    const SizedBox(width: AppSpacing.gap8),
-                    Expanded(
-                      child: FilledButton.icon(
-                        key: JoinCodeKeys.shareButton,
-                        onPressed: _shareCode,
-                        icon: const Icon(Icons.ios_share_rounded, size: 18),
-                        label: const Text('Share link'),
-                      ),
+                    const SizedBox(height: AppSpacing.gap8),
+                    OutlinedButton.icon(
+                      key: JoinCodeKeys.copyButton,
+                      onPressed: _copyCode,
+                      icon: const Icon(Icons.copy, size: 18),
+                      label: const Text('Copy code'),
                     ),
                   ],
                 ),

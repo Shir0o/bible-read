@@ -17,7 +17,7 @@ import '../services/vibration_service.dart';
 import '../widgets/app_bottom_sheet.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/skeleton_loader.dart';
-import '../widgets/skeletons/list_rows_skeleton.dart';
+import '../widgets/skeleton.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/nudge_sheet.dart';
 import 'edit_group_page.dart';
@@ -101,7 +101,7 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
                     final roster = rolesSnap.data;
                     return SkeletonLoader(
                       loading: roster == null,
-                      skeleton: const ListRowsSkeleton(),
+                      skeleton: _buildSkeleton(),
                       child: roster == null
                           ? const SizedBox.shrink()
                           : _buildLoaded(roster),
@@ -139,6 +139,77 @@ class _GroupMembersPageState extends State<GroupMembersPage> {
           ],
         );
       },
+    );
+  }
+
+  /// Placeholder shaped like the loaded roster: header, a card of member
+  /// rows, then the static invite and settings rows, which need no data.
+  Widget _buildSkeleton() {
+    final divider = AppColors.of(context).border;
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(AppSpacing.gap16),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Members',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(width: AppSpacing.gap8),
+                const Skeleton(width: 22, height: 14),
+              ],
+            ),
+            const Skeleton(width: 100, height: 14),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.gap12),
+        _card(
+          child: Column(
+            children: [
+              for (final (i, nameWidth)
+                  in const [96.0, 128.0, 80.0].indexed) ...[
+                if (i > 0) Divider(height: 1, color: divider),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: AppSpacing.gap12),
+                  child: Row(
+                    children: [
+                      const Skeleton(
+                        width: 38,
+                        height: 38,
+                        shape: CircleBorder(),
+                      ),
+                      const SizedBox(width: AppSpacing.gap12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Skeleton(width: nameWidth, height: 14),
+                              const SizedBox(width: AppSpacing.gap8),
+                              const Skeleton(width: 56, height: 18),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.gap8),
+                          const Skeleton(width: 84, height: 10),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.gap12),
+        _buildInviteRow(),
+        const SizedBox(height: AppSpacing.gap20),
+        _buildGroupSettingsLink(),
+      ],
     );
   }
 

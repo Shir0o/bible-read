@@ -144,10 +144,28 @@ class _GroupInvitePageState extends State<GroupInvitePage> {
                 child: SkeletonLoader(
                   loading: _loading,
                   skeleton: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Skeleton(width: double.infinity, height: 48),
+                      Skeleton(
+                        height: AppSpacing.buttonHeight,
+                        radius: AppSpacing.rButton,
+                      ),
                       SizedBox(height: AppSpacing.gap16),
-                      Skeleton(width: double.infinity, height: 40),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Skeleton(width: 110, height: 12),
+                                SizedBox(height: AppSpacing.gap8),
+                                Skeleton(width: 140, height: 28),
+                              ],
+                            ),
+                          ),
+                          Skeleton(width: 72, height: 20),
+                        ],
+                      ),
                     ],
                   ),
                   child: _loading
