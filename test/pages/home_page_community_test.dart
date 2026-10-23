@@ -1,6 +1,5 @@
 // The Home "Your circle" glimpse is sourced from the reader's Circle —
-// the co-members of their Groups, derived at read time (ADR-0003, #795).
-// There is no friend graph to consult.
+// the co-members of their Groups plus their Friends, derived at read time (ADR-0012).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -158,5 +157,109 @@ void main() {
     expect(find.text('Your circle'), findsOneWidget);
     expect(find.text('0 of 1 read today'), findsOneWidget);
     expect(find.text('Be the first to show up today'), findsOneWidget);
+  });
+
+  testWidgets(
+      'updates live when a second member joins or a group is created after Home mounts',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1', displayName: 'Alice'),
+      signedIn: true,
+    );
+    final today = DateTime.now();
+
+    await _pumpHome(tester, firestore, auth);
+    expect(find.text('0 of 1 read today'), findsOneWidget);
+
+    await _seedGroup(firestore, id: 'g1', ownerUid: 'u1', members: ['u2']);
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 of 2 read today'), findsOneWidget);
+
+    await _seedReadToday(
+      firestore,
+      uid: 'u2',
+      name: 'Bob',
+      day: today,
+      groupIds: ['g1'],
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 of 2 read today'), findsOneWidget);
+    expect(find.text('Bob showed up — join them'), findsOneWidget);
+  });
+
+  testWidgets('counts 1-to-1 Friends and self friend_feed entries in numerator',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1', displayName: 'Alice'),
+      signedIn: true,
+    );
+    final today = DateTime.now();
+    final dateKey =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friendships')
+        .doc('f1')
+        .set({'uid': 'f1', 'name': 'Clara'});
+
+    await firestore
+        .collection('users')
+        .doc('f1')
+        .collection('friend_feed')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('f1')
+        .set({'uid': 'f1', 'name': 'Clara', 'dateId': dateKey});
+    await firestore
+        .collection('users')
+        .doc('u1')
+        .collection('friend_feed')
+        .doc(dateKey)
+        .collection('entries')
+        .doc('u1')
+        .set({'uid': 'u1', 'name': 'Alice', 'dateId': dateKey});
+
+    await _pumpHome(tester, firestore, auth);
+
+    expect(find.text('2 of 2 read today'), findsOneWidget);
+    expect(find.text('Clara & Alice showed up'), findsOneWidget);
+  });
+
+  testWidgets(
+      'counts group co-members even when owner member doc lacks uid field',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1', displayName: 'Alice'),
+      signedIn: true,
+    );
+
+    await firestore.collection('groups').doc('g1').set({
+      'name': 'Group g1',
+      'ownerUid': 'u1',
+      'memberCount': 2,
+    });
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u1')
+        .set({'role': 'owner', 'name': 'Alice'});
+    await firestore
+        .collection('groups')
+        .doc('g1')
+        .collection('members')
+        .doc('u2')
+        .set({'uid': 'u2', 'role': 'member', 'name': 'Bob'});
+
+    await _pumpHome(tester, firestore, auth);
+
+    expect(find.text('0 of 2 read today'), findsOneWidget);
   });
 }
