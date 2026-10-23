@@ -96,7 +96,8 @@ void main() {
     expect(find.text('On your own'), findsOneWidget);
 
     expect(find.text('Continue'), findsOneWidget);
-    expect(find.text('Enroll in a new plan'), findsOneWidget);
+    // With plans listed, enrolling lives in the Path header ("New plan").
+    expect(find.text('Enroll in a new plan'), findsNothing);
   });
 
   testWidgets(
@@ -141,6 +142,11 @@ void main() {
   testWidgets('enrolling opens the creation flow with no modal fork', (
     tester,
   ) async {
+    // Only the empty state carries the enroll button.
+    firestore = FakeFirebaseFirestore();
+    planService = ReadingPlanService(firestore: firestore);
+    groupService = GroupService(firestore: firestore);
+    prefsService = UserPreferencesService(firestore: firestore);
     await pumpPage(tester);
 
     await tester.tap(find.text('Enroll in a new plan'));
@@ -877,9 +883,6 @@ void main() {
     // Pump immediately before load completes / before skeleton minTime passes
     await tester.pump();
     expect(find.byType(PlansHubSkeleton), findsOneWidget);
-
-    // Header and enroll button remain visible during skeleton loading
-    expect(find.text('Enroll in a new plan'), findsOneWidget);
 
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
     expect(find.byType(PlansHubSkeleton), findsNothing);

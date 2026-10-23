@@ -26,6 +26,7 @@ import '../models/reflection.dart';
 import '../services/vibration_service.dart';
 import '../widgets/burst_undo_controller.dart';
 import '../widgets/catch_up_status_row.dart';
+import '../widgets/journey/seasonal_challenge_card.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
@@ -1266,6 +1267,14 @@ class _HomePageState extends State<HomePage>
                 ] else ...[
                   _buildStartPlanInvitationCard(context),
                 ],
+                // Carries its own gap12 top spacing; renders nothing unless a
+                // season is active.
+                TodayChallengeCard(
+                  firestore: widget.firestore,
+                  auth: widget.auth,
+                  vibrationService: widget.vibrationService,
+                  dateProvider: widget.dateProvider,
+                ),
                 if (_readToday) ...[
                   const SizedBox(height: AppSpacing.gap24),
                   _buildReflectionSection(context),

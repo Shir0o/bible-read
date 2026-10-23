@@ -8,15 +8,15 @@ import '../../services/seasonal_challenge_service.dart';
 import '../../services/vibration_service.dart';
 import '../../theme/app_theme.dart';
 
-/// The active Seasonal Challenge as a gold card in the Plans list. With no
-/// season active it is a quiet row, so Challenges stays reachable.
-class PathChallengeCard extends StatefulWidget {
+/// The active Seasonal Challenge as a slim gold card on Today, beneath the
+/// reading section. Renders nothing while loading or with no season active.
+class TodayChallengeCard extends StatefulWidget {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final VibrationService vibrationService;
   final DateTime Function() dateProvider;
 
-  const PathChallengeCard({
+  const TodayChallengeCard({
     super.key,
     required this.firestore,
     required this.auth,
@@ -25,10 +25,10 @@ class PathChallengeCard extends StatefulWidget {
   });
 
   @override
-  State<PathChallengeCard> createState() => _PathChallengeCardState();
+  State<TodayChallengeCard> createState() => _TodayChallengeCardState();
 }
 
-class _PathChallengeCardState extends State<PathChallengeCard> {
+class _TodayChallengeCardState extends State<TodayChallengeCard> {
   late final Future<Season?> _season;
 
   @override
@@ -71,136 +71,85 @@ class _PathChallengeCardState extends State<PathChallengeCard> {
     return FutureBuilder<Season?>(
       future: _season,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        final season = snapshot.data;
+        if (snapshot.connectionState != ConnectionState.done ||
+            season == null) {
           return const SizedBox.shrink();
         }
-        final season = snapshot.data;
-        if (season == null) return _NoSeasonRow(onTap: _openChallenges);
         final onGold = colorScheme.onTertiaryContainer;
+        final border = colorScheme.tertiary.withValues(alpha: 0.28);
+        final daysLeft = _daysLeft(season);
         return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.hPadding,
-            AppSpacing.gap8,
-            AppSpacing.hPadding,
-            0,
-          ),
-          child: Material(
-            color: colorScheme.tertiaryContainer,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.rCard),
-              side: BorderSide(
-                color: colorScheme.tertiary.withValues(alpha: 0.28),
+          padding: const EdgeInsets.only(top: AppSpacing.gap12),
+          child: Semantics(
+            button: true,
+            label: 'Seasonal challenge: ${season.title}, $daysLeft',
+            excludeSemantics: true,
+            child: Material(
+              color: colorScheme.tertiaryContainer,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.rButton),
+                side: BorderSide(color: border),
               ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: _openChallenges,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.cardPadding),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'SEASONAL CHALLENGE',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: onGold,
-                              letterSpacing: 1,
-                            ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                key: const Key('today-challenge-card'),
+                onTap: _openChallenges,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 56),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerLowest,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: border),
                           ),
-                          const SizedBox(height: AppSpacing.gap4),
-                          Text(
-                            season.title,
-                            style: textTheme.titleLarge?.copyWith(
-                              color: onGold,
-                            ),
+                          child: Icon(
+                            Icons.emoji_events_outlined,
+                            size: 18,
+                            color: colorScheme.tertiary,
                           ),
-                          const SizedBox(height: AppSpacing.gap2),
-                          Text(
-                            _daysLeft(season),
-                            style: textTheme.bodySmall?.copyWith(
-                              color: onGold,
-                            ),
+                        ),
+                        const SizedBox(width: AppSpacing.gap12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                season.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.titleSmall?.copyWith(
+                                  color: onGold,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.gap2),
+                              Text(
+                                'Seasonal challenge · $daysLeft',
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: onGold,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: AppSpacing.gap8),
+                        Icon(Icons.chevron_right_rounded, color: onGold),
+                      ],
                     ),
-                    Icon(Icons.chevron_right_rounded, color: onGold),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
         );
       },
-    );
-  }
-}
-
-class _NoSeasonRow extends StatelessWidget {
-  const _NoSeasonRow({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.hPadding,
-        AppSpacing.gap8,
-        AppSpacing.hPadding,
-        0,
-      ),
-      child: Material(
-        color: colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.rCard),
-          side: BorderSide(color: AppColors.of(context).border),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          key: const Key('path-challenges-link'),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.cardPadding,
-              vertical: AppSpacing.gap12,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.emoji_events_outlined,
-                  size: 22,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.gap12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Seasonal challenges', style: textTheme.titleSmall),
-                      const SizedBox(height: AppSpacing.gap2),
-                      Text(
-                        'None running right now',
-                        style: textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

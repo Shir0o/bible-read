@@ -851,11 +851,6 @@ class PlansHubState extends State<PlansHub> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // The enroll CTA sits at the top of the list, right under the
-          // header, so it is never below the fold and no bottom-anchored
-          // toast can cover it (ADR-0005).
-          const SizedBox(height: AppSpacing.gap8),
-          _enrollButton(context),
           SkeletonLoader(
             loading: _loading,
             minTime: const Duration(milliseconds: 1000),
@@ -865,21 +860,13 @@ class PlansHubState extends State<PlansHub> {
               children: [
                 const SizedBox(height: AppSpacing.gap16),
                 if (personalActive.isNotEmpty) ...[
-                  _sectionHeading(
-                    context,
-                    icon: Icons.explore_outlined,
-                    title: 'On your own',
-                  ),
+                  _sectionHeading(context, title: 'On your own'),
                   for (final row in personalActive) _personalCard(context, row),
                 ],
                 if (groupActive.isNotEmpty) ...[
                   SizedBox(
                       height: personalActive.isNotEmpty ? AppSpacing.gap16 : 0),
-                  _sectionHeading(
-                    context,
-                    icon: Icons.group_outlined,
-                    title: 'Together',
-                  ),
+                  _sectionHeading(context, title: 'Together'),
                   for (final row in groupActive) _groupCard(context, row),
                 ],
                 if (hasFinished)
@@ -895,29 +882,23 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  Widget _sectionHeading(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-  }) {
+  /// Matches Today's "Today’s reading" label: a quiet titleSmall in a
+  /// 44px row.
+  Widget _sectionHeading(BuildContext context, {required String title}) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.gap4, AppSpacing.gap16, AppSpacing.gap4, AppSpacing.gap8),
-      child: Row(
-        children: [
-          Icon(icon,
-              size: AppSpacing.iconSm, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: AppSpacing.gap8),
-          Text(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap4),
+      child: SizedBox(
+        height: 44,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
             title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.3,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1212,17 +1193,17 @@ class PlansHubState extends State<PlansHub> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.gap4, AppSpacing.gap32,
-              AppSpacing.gap4, AppSpacing.gap8),
+        Container(
+          height: 44,
+          margin: const EdgeInsets.only(top: AppSpacing.gap16),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Finished',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               Text(
