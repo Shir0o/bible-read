@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/skeleton_loader.dart';
-import '../widgets/skeletons/list_rows_skeleton.dart';
+import '../widgets/skeleton.dart';
 import '../models/group.dart';
 import '../models/group_schedule.dart';
 import '../services/catch_up_engine.dart';
@@ -367,7 +367,7 @@ class _EditGroupPageState extends State<EditGroupPage> {
             Expanded(
               child: SkeletonLoader(
                 loading: _isLoading,
-                skeleton: const ListRowsSkeleton(count: 4, showAvatar: false),
+                skeleton: _buildSkeleton(context),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(
                       AppSpacing.gap16, AppSpacing.gap8, AppSpacing.gap16, 120),
@@ -436,6 +436,39 @@ class _EditGroupPageState extends State<EditGroupPage> {
         ),
       ),
       bottomNavigationBar: _isOwner ? _saveBar(context) : null,
+    );
+  }
+
+  /// Placeholder shaped like the settings form; section titles stay visible.
+  Widget _buildSkeleton(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gap16, AppSpacing.gap8, AppSpacing.gap16, 120),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _sectionTitle(context, 'Group Settings'),
+          const SizedBox(height: AppSpacing.gap8),
+          const Skeleton(height: 56, radius: AppSpacing.rField),
+          const SizedBox(height: AppSpacing.gap16),
+          const Skeleton(height: 84, radius: AppSpacing.rInset),
+          if (_isOwner) ...[
+            const SizedBox(height: AppSpacing.gap24),
+            _sectionTitle(context, 'Schedule'),
+            const SizedBox(height: AppSpacing.gap8),
+            const Skeleton(height: 64, radius: AppSpacing.rInset),
+          ],
+          const SizedBox(height: AppSpacing.gap32),
+          _sectionTitle(context, 'Manage group'),
+          const SizedBox(height: AppSpacing.gap8),
+          const Skeleton(
+              height: AppSpacing.buttonHeight, radius: AppSpacing.rButton),
+          const SizedBox(height: AppSpacing.gap12),
+          const Skeleton(
+              height: AppSpacing.buttonHeight, radius: AppSpacing.rButton),
+        ],
+      ),
     );
   }
 
