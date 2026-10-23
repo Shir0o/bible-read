@@ -97,6 +97,13 @@ void main() {
           groupCode);
     });
 
+    test('reads a pasted share message containing an invite link', () {
+      const shared =
+          'Join my group "Evening Readers" on Bible Reading Challenge: '
+          'https://shir0o.github.io/bible-read/f?code=ABC234';
+      expect(FriendInvite.codeFromText(shared), groupCode);
+    });
+
     test('returns null for prose that is not a code', () {
       expect(FriendInvite.codeFromText('hello there'), isNull);
     });
