@@ -36,6 +36,24 @@ class _RecordingGroupService extends GroupService {
   }
 }
 
+/// Holds every write open until [gate] completes, then fails if [fail].
+class _GatedGroupService extends GroupService {
+  _GatedGroupService({required super.firestore, this.fail = false});
+
+  final bool fail;
+  final Completer<void> gate = Completer<void>();
+
+  @override
+  Future<void> approveJoinRequest({
+    required String groupId,
+    required String uid,
+  }) async {
+    await gate.future;
+    if (fail) throw Exception('boom');
+    return super.approveJoinRequest(groupId: groupId, uid: uid);
+  }
+}
+
 class _StubVibrationService extends VibrationService {
   int lightImpactCount = 0;
 
@@ -109,7 +127,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('No pending requests'), findsOneWidget);
+    expect(find.text('All caught up'), findsOneWidget);
+    expect(find.text('Join requests'), findsOneWidget);
   });
 
   testWidgets('states what approving grants, in the body of the screen', (
@@ -138,12 +157,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.textContaining(
-        'see what everyone in the group has read',
-      ),
+      find.textContaining('see what the group has read'),
       findsOneWidget,
     );
-    expect(find.textContaining('send them encouragement'), findsOneWidget);
+    expect(find.textContaining('can send encouragement'), findsOneWidget);
+    expect(find.text('1 waiting'), findsOneWidget);
+    expect(find.textContaining('They aren\'t told.'), findsOneWidget);
   });
 
   testWidgets('shows error UI when stream emits error', (tester) async {
@@ -265,5 +284,63 @@ void main() {
         .doc(uid)
         .get();
     expect(requestSnap.exists, isFalse);
+  });
+
+  Future<void> seedRequest(String groupId, String uid, String name) async {
+    await firestore.collection(GroupCollections.groups).doc(groupId).set({
+      'name': 'Group',
+      'ownerUid': 'owner',
+      'memberCount': 1,
+    });
+    await firestore
+        .collection(GroupCollections.groups)
+        .doc(groupId)
+        .collection(GroupCollections.joinRequests)
+        .doc(uid)
+        .set({'uid': uid, 'name': name});
+  }
+
+  Finder approveFor(String name) => find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'Approve join request from $name',
+      );
+
+  testWidgets('approving hides the request before the write completes', (
+    tester,
+  ) async {
+    await seedRequest('g-opt', 'ann', 'Ann');
+    final service = _GatedGroupService(firestore: firestore);
+    await pumpPage(tester, groupId: 'g-opt', groupService: service);
+    await tester.pumpAndSettle();
+
+    await tester.tap(approveFor('Ann'));
+    await tester.pump();
+
+    expect(find.text('Ann'), findsNothing);
+    expect(find.text('All caught up'), findsOneWidget);
+
+    service.gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Request approved'), findsOneWidget);
+    expect(find.text('Ann'), findsNothing);
+  });
+
+  testWidgets('a failed approval restores the request and says so', (
+    tester,
+  ) async {
+    await seedRequest('g-fail', 'bo', 'Bo');
+    final service = _GatedGroupService(firestore: firestore, fail: true);
+    await pumpPage(tester, groupId: 'g-fail', groupService: service);
+    await tester.pumpAndSettle();
+
+    await tester.tap(approveFor('Bo'));
+    await tester.pump();
+    expect(find.text('Bo'), findsNothing);
+
+    service.gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Bo'), findsOneWidget);
+    expect(find.text('Failed to approve request'), findsOneWidget);
   });
 }

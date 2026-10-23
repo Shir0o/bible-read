@@ -96,3 +96,11 @@ about the chapters before the pick:
 
 Shared plans never get "I've read them": group schedules are fixed (ADR-0007)
 and marked day by day.
+
+## Amendment (2026-10-23): New plan lives in the Path header
+
+The top-of-list "Enroll in a new plan" button is gone. The Path header's
+"New plan" action opens the same creation flow and is always visible, so the
+button only duplicated it. The button stays in Path's empty state, where it is
+the only thing to tap. The toast-covering problem in Context stays solved: the
+header action is never below the fold.

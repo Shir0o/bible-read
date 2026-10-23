@@ -12,7 +12,6 @@ import '../theme/app_theme.dart';
 import '../widgets/journey/consistency_card.dart';
 import '../widgets/journey/plans_hub.dart';
 import '../widgets/journey/read_through_card.dart';
-import '../widgets/journey/seasonal_challenge_card.dart';
 import '../services/vibration_service.dart';
 import '../services/reading_status_service.dart';
 import '../widgets/app_header.dart';
@@ -173,15 +172,24 @@ class _JourneyPageState extends State<JourneyPage>
     super.dispose();
   }
 
+  /// Matches Today's "Today’s reading" label: a quiet titleSmall in a
+  /// 44px row.
   Widget _sectionTitle(BuildContext context, String title) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.hPadding,
-        0,
-        AppSpacing.hPadding,
-        AppSpacing.gap12,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.hPadding),
+      child: SizedBox(
+        height: 44,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
       ),
-      child: Text(title, style: Theme.of(context).textTheme.titleLarge),
     );
   }
 
@@ -223,13 +231,6 @@ class _JourneyPageState extends State<JourneyPage>
                         key: const Key('path-plans'),
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _sectionTitle(context, 'Plans'),
-                          PathChallengeCard(
-                            firestore: widget.firestore,
-                            auth: widget.auth,
-                            vibrationService: widget.vibrationService,
-                            dateProvider: widget.dateProvider,
-                          ),
                           PlansHub(
                             key: _hubKey,
                             firestore: widget.firestore,

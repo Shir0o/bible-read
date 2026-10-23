@@ -79,7 +79,7 @@ void main() {
 
     // Verify navigation to GroupJoinRequestsPage
     expect(find.byType(GroupJoinRequestsPage), findsOneWidget);
-    expect(find.text('Join Requests'), findsOneWidget);
+    expect(find.text('Join requests'), findsOneWidget);
   });
 }
 

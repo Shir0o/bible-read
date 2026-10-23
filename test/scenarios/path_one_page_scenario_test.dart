@@ -1,7 +1,7 @@
 // Slice 1 of the third-pass navigation (#981): Path is one page with three
-// sections, Plans, Consistency and Read-throughs, each skeleton-first.
+// sections, Plans, Consistency and Read-throughs, each skeleton-first. The
+// plan list sits under the header with no title of its own.
 import 'package:bible_read/pages/bible_progress_page.dart';
-import 'package:bible_read/pages/challenges_page.dart';
 import 'package:bible_read/pages/journey_page.dart';
 import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/widgets/skeleton.dart';
@@ -55,7 +55,7 @@ void main() {
   ) async {
     await pumpPath(tester);
 
-    expect(find.text('Plans'), findsOneWidget);
+    expect(find.byKey(const Key('path-plans')), findsOneWidget);
     expect(find.text('Consistency'), findsOneWidget);
     expect(find.text('Read-throughs'), findsOneWidget);
     expect(find.text('Day streak'), findsNothing);
@@ -88,37 +88,19 @@ void main() {
       );
     }
     // Titles stay visible while content loads.
-    expect(find.text('Plans'), findsOneWidget);
     expect(find.text('Consistency'), findsOneWidget);
     expect(find.text('Read-throughs'), findsOneWidget);
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
   });
 
-  testWidgets('an active Seasonal Challenge is a card that opens challenges', (
+  testWidgets('the Seasonal Challenge card lives on Today, not Path', (
     tester,
   ) async {
     await seedSeason();
     await pumpPath(tester);
 
-    expect(find.text('SEASONAL CHALLENGE'), findsOneWidget);
-    expect(find.text('Advent Journey'), findsOneWidget);
-    expect(find.text('4 days left'), findsOneWidget);
-
-    await tester.tap(find.text('Advent Journey'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-    expect(find.byType(ChallengesPage), findsOneWidget);
-  });
-
-  testWidgets('without an active season a quiet row still opens challenges', (
-    tester,
-  ) async {
-    await pumpPath(tester);
-    expect(find.text('SEASONAL CHALLENGE'), findsNothing);
-    expect(find.text('None running right now'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('path-challenges-link')));
-    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-    expect(find.byType(ChallengesPage), findsOneWidget);
+    expect(find.text('Advent Journey'), findsNothing);
+    expect(find.byKey(const Key('today-challenge-card')), findsNothing);
   });
 
   testWidgets(
