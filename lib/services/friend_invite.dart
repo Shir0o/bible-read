@@ -50,14 +50,23 @@ abstract final class FriendInvite {
     return (isFriend || isGroup) ? code : null;
   }
 
-  /// Extracts an invite code from pasted [raw] text: an invite link (any form)
-  /// or a bare code. Returns null when [raw] is neither.
+  /// Extracts an invite code from pasted [raw] text: an invite link (any form,
+  /// bare or inside a shared message) or a bare code. Returns null when [raw]
+  /// is neither.
   static String? codeFromText(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return null;
 
     final uri = Uri.tryParse(trimmed);
     if (uri != null && uri.hasScheme) return codeFrom(uri);
+
+    for (final token in trimmed.split(RegExp(r'\s+'))) {
+      final candidateUri = Uri.tryParse(token);
+      if (candidateUri != null && candidateUri.hasScheme) {
+        final extracted = codeFrom(candidateUri);
+        if (extracted != null) return extracted;
+      }
+    }
 
     final code = FriendService.normalize(trimmed);
     final isFriend = code.length == FriendService.codeLength &&

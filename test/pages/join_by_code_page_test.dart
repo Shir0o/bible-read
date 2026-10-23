@@ -395,6 +395,33 @@ void main() {
       expect(find.text('Evening Readers'), findsOneWidget);
     });
 
+    testWidgets('a pasted group share message reaches the group preview',
+        (tester) async {
+      final groupId = await seedCodedGroup(isPublic: true);
+      final code = await groupService.joinCodeService.ensureGroupCode(groupId);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: JoinByCodePage(
+            groupService: groupService,
+            auth: auth,
+            vibrationService: vibration,
+            friendService: friendService,
+          ),
+        ),
+      );
+      await tester.enterText(
+        find.byKey(JoinCodeKeys.codeField),
+        'Join my group "Evening Readers" on Bible Reading Challenge: '
+        '${FriendInvite.linkFor(code)}',
+      );
+      await tester.tap(find.byKey(JoinCodeKeys.findButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(JoinCodeKeys.previewCard), findsOneWidget);
+      expect(find.text('Evening Readers'), findsOneWidget);
+    });
+
     testWidgets('initialCode resolves immediately on open', (tester) async {
       final groupId = await seedCodedGroup(isPublic: true);
       final code = await groupService.joinCodeService.ensureGroupCode(groupId);
