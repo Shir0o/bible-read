@@ -31,15 +31,25 @@ class ReadLogService {
 
   /// Ids of the Groups [uid] belongs to (member or owner).
   Future<List<String>> groupIdsFor(String uid) async {
-    final memberships = await firestore
-        .collectionGroup(GroupCollections.members)
-        .where('uid', isEqualTo: uid)
-        .get();
-    return memberships.docs
-        .map((doc) => doc.reference.parent.parent?.id)
-        .whereType<String>()
-        .toSet()
-        .toList();
+    final results = await Future.wait([
+      firestore
+          .collectionGroup(GroupCollections.members)
+          .where('uid', isEqualTo: uid)
+          .get(),
+      firestore
+          .collection(GroupCollections.groups)
+          .where('ownerUid', isEqualTo: uid)
+          .where('deletedAt', isNull: true)
+          .get(),
+    ]);
+    final ids = <String>{
+      ...results[0]
+          .docs
+          .map((doc) => doc.reference.parent.parent?.id)
+          .whereType<String>(),
+      ...results[1].docs.map((doc) => doc.id),
+    };
+    return ids.toList();
   }
 
   /// Marks [user] as having read on [date] in every Group they belong to.

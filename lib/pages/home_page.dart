@@ -18,6 +18,7 @@ import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/reflection_service.dart';
 import '../services/user_preferences_service.dart';
+import '../models/circle_member.dart';
 import '../models/group_member_progress.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
@@ -29,7 +30,6 @@ import '../widgets/catch_up_status_row.dart';
 import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
 import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
-import '../services/read_log_service.dart';
 
 import '../widgets/app_header.dart';
 import '../widgets/sun_mark.dart';
@@ -195,10 +195,8 @@ class _HomePageState extends State<HomePage>
   /// Streams today's reflection document.
   StreamSubscription<dynamic>? _reflectionSub;
 
-  /// Streaming change trigger for today's Circle feed.
-  StreamSubscription<dynamic>? _communityFeedSub;
-
-  Timer? _communityRefreshTimer;
+  /// Streams today's Circle presence.
+  StreamSubscription<CirclePresenceSnapshot>? _communityFeedSub;
 
   /// Subscription to the active readings aggregator stream.
   StreamSubscription<ActiveReadingsSnapshot>? _readingsSub;
@@ -215,10 +213,7 @@ class _HomePageState extends State<HomePage>
   /// Whether the primary plan card's mark is mid-write.
   bool _planToggleLoading = false;
 
-  // Community presence. The bottom "Your community" glimpse — who among the
-  // reader's Circle (the co-members of their Groups) has read today.
-  List<_CommunityReader> _communityReaders = [];
-  int _communityTotal = 0;
+  CirclePresenceSnapshot _circlePresence = CirclePresenceSnapshot.empty;
 
   /// The reading the user pinned as "Primary on Home" (typed key
   /// `plan:<id>` / `group:<id>`), or `null` to let ranking auto-pick the hero.
@@ -329,22 +324,15 @@ class _HomePageState extends State<HomePage>
   void _watchCommunity(String uid) {
     _communityFeedSub?.cancel();
     final dateKey = _dateKeyFor(widget.dateProvider());
-    _communityFeedSub = ReadLogService(firestore: widget.firestore)
-        .entryDocsForGroupsForUser(uid, dateKey: dateKey)
-        .listen(
-          (_) => _scheduleCommunityReload(),
-          onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-        );
-  }
-
-  void _scheduleCommunityReload() {
-    _communityRefreshTimer?.cancel();
-    _communityRefreshTimer = Timer(
-      const Duration(milliseconds: 250),
-      () {
+    _communityFeedSub =
+        widget.circleService.watchDailyPresence(uid, dateKey: dateKey).listen(
+      (presence) {
         if (_disposed || mounted == false) return;
-        unawaited(_loadCommunity());
+        setState(() {
+          _circlePresence = presence;
+        });
       },
+      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
     );
   }
 
@@ -444,88 +432,27 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// Loads today's community presence — the reader plus the co-members of
-  /// their Groups (their Circle, derived per ADR-0003) who have read today —
-  /// for the bottom "Your community" glimpse. Best-effort.
+  /// Loads today's community presence — the reader plus their Circle
+  /// (Group co-members and Friends) who have read today — for the bottom
+  /// "Your circle" glimpse. Best-effort.
   Future<void> _loadCommunity() async {
     final user = widget.auth.currentUser;
     if (user == null) return;
 
     try {
-      final coMemberIds =
-          await widget.circleService.circleMemberIds(user.uid).timeout(
-                const Duration(seconds: 5),
-                onTimeout: () => const <String>{},
-              );
-      final allUids = {user.uid, ...coMemberIds};
-
-      final today = widget.dateProvider();
-      final dateKey =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
-      // The feed is per Group (ADR-0004): read the reader's Groups' entries
-      // for today and intersect with the Circle, so a stranger's entry can
-      // never surface.
-      final readLogService = ReadLogService(firestore: widget.firestore);
-      final groupIds = await readLogService.groupIdsFor(user.uid).timeout(
-            const Duration(seconds: 5),
-            onTimeout: () => const <String>[],
-          );
-      final entriesSnap = await readLogService
-          .entriesForGroups(groupIds, dateKey: dateKey)
-          .first
-          .timeout(
-            const Duration(seconds: 5),
-            onTimeout: () => const <String>[],
-          );
-
-      // Resolve display names for the uids that showed up. Member docs and
-      // profiles both carry them; the entry itself no longer needs a name —
-      // the uid is the identity.
-      final nameFutures = <String, Future<String>>{
-        for (final uid in entriesSnap)
-          if (allUids.contains(uid)) uid: _displayNameFor(uid),
-      };
-      final names = {
-        for (final e in nameFutures.entries) e.key: await e.value,
-      };
-
-      final readers = <_CommunityReader>[
-        for (final uid in entriesSnap)
-          if (allUids.contains(uid))
-            _CommunityReader(uid: uid, name: names[uid] ?? ''),
-      ];
-      readers.sort((a, b) {
-        if (a.uid == user.uid) return 1;
-        if (b.uid == user.uid) return -1;
-        return a.name.compareTo(b.name);
-      });
-
+      final dateKey = _dateKeyFor(widget.dateProvider());
+      final presence = await widget.circleService.fetchDailyPresence(
+        user.uid,
+        dateKey: dateKey,
+      );
       if (!_disposed && mounted) {
         setState(() {
-          _communityReaders = readers;
-          _communityTotal = allUids.length;
+          _circlePresence = presence;
         });
       }
     } catch (e, st) {
       ErrorLogger.log(e, st);
     }
-  }
-
-  /// Best-effort display name for a uid: member doc first, then profile.
-  /// Falls back to '?' so the avatar stack renders a placeholder.
-  Future<String> _displayNameFor(String uid) async {
-    try {
-      final profile = await widget.firestore.collection('users').doc(uid).get();
-      final data = profile.data();
-      final name = (data?['name'] as String?) ??
-          (data?['displayName'] as String?) ??
-          (data?['username'] as String?);
-      if (name != null && name.isNotEmpty) return name;
-    } catch (_) {
-      // Best-effort; the glimpse renders a placeholder instead.
-    }
-    return '?';
   }
 
   String _dateKeyFor(DateTime d) =>
@@ -1274,11 +1201,7 @@ class _HomePageState extends State<HomePage>
                   const SizedBox(height: AppSpacing.gap24),
                   _buildConsistencyGlimpse(context),
                 ],
-                // The community glimpse is always present once the user's circle has
-                // loaded (matching the prototype), with an empty state when nobody
-                // has read yet. `_communityTotal` counts the user, so it is >0 once
-                // `_loadCommunity` completes.
-                if (_communityTotal > 0) ...[
+                if (_circlePresence.isLoaded) ...[
                   const SizedBox(height: AppSpacing.gap20),
                   _buildCommunitySection(context),
                 ],
@@ -2414,29 +2337,24 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// The bottom "Your community" glimpse: who among the reader's Circle —
-  /// the co-members of their Groups — has read today. Tapping opens the
+  /// The bottom "Your circle" glimpse: who among the reader's Circle
+  /// (Group co-members and Friends) has read today. Tapping opens the
   /// Community tab.
   Widget _buildCommunitySection(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final readers = _communityReaders;
-
-    String firstName(_CommunityReader r) {
-      final first = r.name.split(' ').first;
-      return first.isEmpty ? 'Someone' : first;
-    }
+    final readers = _circlePresence.readers;
 
     final String subtitle;
     if (readers.isEmpty) {
       subtitle = 'Be the first to show up today';
     } else if (readers.length == 1) {
-      subtitle = '${firstName(readers.first)} showed up — join them';
+      subtitle = '${readers.first.firstName} showed up — join them';
     } else if (readers.length == 2) {
-      subtitle = '${firstName(readers[0])} & ${firstName(readers[1])} '
+      subtitle = '${readers[0].firstName} & ${readers[1].firstName} '
           'showed up';
     } else {
-      subtitle = '${firstName(readers[0])}, ${firstName(readers[1])} '
+      subtitle = '${readers[0].firstName}, ${readers[1].firstName} '
           '& ${readers.length - 2} more';
     }
 
@@ -2481,6 +2399,7 @@ class _HomePageState extends State<HomePage>
                           (r) => GroupMemberProgressData(
                             uid: r.uid,
                             name: r.name,
+                            photoUrl: r.photoUrl,
                             completion: 1.0,
                           ),
                         )
@@ -2496,7 +2415,7 @@ class _HomePageState extends State<HomePage>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '${readers.length} of $_communityTotal read today',
+                          '${_circlePresence.readCount} of ${_circlePresence.totalCount} read today',
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: colorScheme.onSurface,
                           ),
@@ -2538,19 +2457,9 @@ class _HomePageState extends State<HomePage>
     _statusSub?.cancel();
     _reflectionSub?.cancel();
     _communityFeedSub?.cancel();
-    _communityRefreshTimer?.cancel();
     super.dispose();
   }
 
   @override
   bool get wantKeepAlive => true;
-}
-
-/// Lightweight record of a person who has read today, for the Home community
-/// glimpse. Only the fields the glimpse needs (uid + name) are loaded.
-class _CommunityReader {
-  final String uid;
-  final String name;
-
-  const _CommunityReader({required this.uid, required this.name});
 }
