@@ -844,12 +844,14 @@ exports.remapGroupProgress = onCall({ region: 'us-central1' }, async (req) => {
   }));
 
   // Read every member's ticked indices across every progress date.
-  const progressSnap = await groupRef.collection('progress').get();
+  // listDocuments(), not get(): the progress/{dateId} parents are never
+  // written, and only listDocuments() returns such missing docs.
+  const progressDayRefs = await groupRef.collection('progress').listDocuments();
   const completedByUid = {};
   const progressDays = []; // [{ dateId, entries: [{ uid, indices, count }] }]
-  for (const dayDoc of progressSnap.docs) {
-    const dateId = dayDoc.id;
-    const entriesSnap = await dayDoc.ref.collection('entries').get();
+  for (const dayRef of progressDayRefs) {
+    const dateId = dayRef.id;
+    const entriesSnap = await dayRef.collection('entries').get();
     const entries = [];
     for (const entryDoc of entriesSnap.docs) {
       const entryUid = entryDoc.id;

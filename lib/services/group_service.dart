@@ -2096,6 +2096,17 @@ class GroupService {
           }
         }
 
+        // The progress/{dateId} parents are never written, so the listing above
+        // misses every entry; sweep them up by their groupId field.
+        final entriesByGroup = await firestore
+            .collectionGroup('entries')
+            .where('groupId', isEqualTo: groupId)
+            .get();
+        final seen = refsToDelete.map((r) => r.path).toSet();
+        for (final doc in entriesByGroup.docs) {
+          if (seen.add(doc.reference.path)) refsToDelete.add(doc.reference);
+        }
+
         if (refsToDelete.isNotEmpty) {
           await _deleteInBatches(refsToDelete);
         }

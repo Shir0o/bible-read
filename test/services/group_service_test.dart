@@ -981,6 +981,34 @@ void main() {
       );
     });
 
+    test('deleteGroup removes progress entries that have no parent day doc',
+        () async {
+      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
+      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
+      await groupRef.collection(GroupCollections.members).doc('u1').set({});
+
+      // Production writes only the entries doc, never progress/{dateId}.
+      final entry = groupRef
+          .collection('progress')
+          .doc('2026-10-14')
+          .collection('entries')
+          .doc('u1');
+      await entry.set({'uid': 'u1', 'groupId': 'g1', 'dateId': '2026-10-14'});
+      final other = firestore
+          .collection(GroupCollections.groups)
+          .doc('g2')
+          .collection('progress')
+          .doc('2026-10-14')
+          .collection('entries')
+          .doc('u1');
+      await other.set({'uid': 'u1', 'groupId': 'g2', 'dateId': '2026-10-14'});
+
+      await service.deleteGroup(groupId: 'g1', ownerUid: 'u1');
+
+      expect((await entry.get()).exists, isFalse);
+      expect((await other.get()).exists, isTrue);
+    });
+
     test('deleteGroup throws if caller is not owner', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
       await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
