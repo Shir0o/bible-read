@@ -230,6 +230,9 @@ describe('collection-group rules', () => {
     await seed('groups/g1/members/bob', { uid: 'bob', role: 'member' });
     await seed('groups/g1/joinRequests/carol', { uid: 'carol' });
     await seed('read_logs/cg-day/entries/alice', { uid: 'alice', chapters: 1 });
+    await seed('groups/g1/progress/2026-10-14/entries/alice', {
+      uid: 'alice', groupId: 'g1', dateId: '2026-10-14', count: 1,
+    });
   });
 
   it('lets a user query their own membership records across groups', async () => {
@@ -261,5 +264,25 @@ describe('collection-group rules', () => {
   it('denies a query for other users’ progress entries', async () => {
     const bob = await asUser('bob');
     await assertFails(bob.collectionGroup('entries').where('uid', '==', 'alice').get());
+  });
+
+  it('lets a group member query a co-member’s entries filtered by groupId', async () => {
+    const bob = await asUser('bob');
+    await assertSucceeds(
+      bob.collectionGroup('entries')
+        .where('groupId', '==', 'g1')
+        .where('uid', '==', 'alice')
+        .get(),
+    );
+  });
+
+  it('denies a non-member the same groupId-filtered query', async () => {
+    const dave = await asUser('dave');
+    await assertFails(
+      dave.collectionGroup('entries')
+        .where('groupId', '==', 'g1')
+        .where('uid', '==', 'alice')
+        .get(),
+    );
   });
 });

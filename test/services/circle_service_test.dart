@@ -257,61 +257,37 @@ void main() {
   });
 
   group('CircleService.memberCompletedDates', () {
+    // Production only ever writes progress/{dateId}/entries/{uid}; the
+    // progress/{dateId} parent doc is never created, so seed entries only.
+    Future<void> seedEntry(
+      String groupId,
+      String dateId,
+      String uid,
+      Map<String, dynamic> data,
+    ) {
+      return firestore
+          .collection('groups')
+          .doc(groupId)
+          .collection('progress')
+          .doc(dateId)
+          .collection('entries')
+          .doc(uid)
+          .set({'uid': uid, 'groupId': groupId, 'dateId': dateId, ...data});
+    }
+
     test('emits completed date keys where count > 0 or done == true', () async {
-      await firestore
-          .collection('groups')
-          .doc('g1')
-          .collection('progress')
-          .doc('2026-10-14')
-          .set({'dummy': true});
-      await firestore
-          .collection('groups')
-          .doc('g1')
-          .collection('progress')
-          .doc('2026-10-14')
-          .collection('entries')
-          .doc('u1')
-          .set({'count': 1, 'done': true});
+      await seedEntry('g1', '2026-10-14', 'u1', {'count': 1, 'done': true});
+      await seedEntry('g1', '2026-10-15', 'u1', {'count': 0, 'done': true});
+      await seedEntry('g1', '2026-10-16', 'u1', {'count': 0, 'done': false});
+      // Other member and other group must not leak in.
+      await seedEntry('g1', '2026-10-17', 'u2', {'count': 1});
+      await seedEntry('g2', '2026-10-18', 'u1', {'count': 1});
 
-      await firestore
-          .collection('groups')
-          .doc('g1')
-          .collection('progress')
-          .doc('2026-10-15')
-          .set({'dummy': true});
-      await firestore
-          .collection('groups')
-          .doc('g1')
-          .collection('progress')
-          .doc('2026-10-15')
-          .collection('entries')
-          .doc('u1')
-          .set({'count': 0, 'done': true});
-
-      await firestore
-          .collection('groups')
-          .doc('g1')
-          .collection('progress')
-          .doc('2026-10-16')
-          .set({'dummy': true});
-      await firestore
-          .collection('groups')
-          .doc('g1')
-          .collection('progress')
-          .doc('2026-10-16')
-          .collection('entries')
-          .doc('u1')
-          .set({'count': 0, 'done': false});
-
-      final future = nextWhere<Set<String>>(
+      final completed = await nextWhere<Set<String>>(
         circleService.memberCompletedDates('g1', 'u1'),
-        (dates) => dates.contains('2026-10-14') && dates.contains('2026-10-15'),
-      );
-
-      final completed = await future.timeout(const Duration(seconds: 3));
-      expect(completed, contains('2026-10-14'));
-      expect(completed, contains('2026-10-15'));
-      expect(completed.contains('2026-10-16'), isFalse);
+        (dates) => dates.isNotEmpty,
+      ).timeout(const Duration(seconds: 3));
+      expect(completed, {'2026-10-14', '2026-10-15'});
     });
   });
 
