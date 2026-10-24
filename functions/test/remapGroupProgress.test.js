@@ -80,6 +80,16 @@ class FakeCollectionRef {
     const fullPath = this.path ? `${this.path}/${docId}` : docId;
     return new FakeDocumentRef(this.db, fullPath, docId);
   }
+  // Like the admin SDK: also returns "missing" docs that exist only because
+  // they have subcollection documents beneath them.
+  async listDocuments() {
+    const prefix = this.path ? `${this.path}/` : '';
+    const ids = new Set();
+    for (const key of this.db._docs.keys()) {
+      if (key.startsWith(prefix)) ids.add(key.substring(prefix.length).split('/')[0]);
+    }
+    return [...ids].map((id) => new FakeDocumentRef(this.db, `${prefix}${id}`, id));
+  }
   async get() {
     const prefix = this.path ? `${this.path}/` : '';
     const docs = [];
@@ -201,11 +211,8 @@ describe('remapGroupProgress', () => {
       chapters: ['Jeremiah 3', 'Jeremiah 4'],
     });
 
-    // Alice ticked day 2 = 0 ("Jeremiah 3"). FakeFirestore needs the parent
-    // progress/{dateId} doc to exist for the collection listing to surface
-    // it; the real Firestore auto-creates on subcollection writes, but the
-    // fake does not.
-    await setDoc(db, 'groups/g1/progress/2026-09-02', { dateId: '2026-09-02' });
+    // Alice ticked day 2 = 0 ("Jeremiah 3"). Production never writes the
+    // progress/{dateId} parent doc, so only entries are seeded.
     await setDoc(db, 'groups/g1/progress/2026-09-02/entries/alice', {
       count: 1,
       uid: 'alice',
@@ -299,7 +306,6 @@ describe('remapGroupProgress', () => {
     await setDoc(db, 'groups/g1', { ownerUid: 'owner', planConfig: { revision: 1 } });
     await setDoc(db, 'groups/g1/members/owner', { role: 'owner' });
     // 26 members, each with a tick — over the synthetic 500x25 cap.
-    await setDoc(db, 'groups/g1/progress/2026-09-01', { dateId: '2026-09-01' });
     for (var i = 0; i < 26; i++) {
       await setDoc(db, `groups/g1/members/m${i}`, { role: 'member' });
       await setDoc(
