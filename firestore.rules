@@ -47,8 +47,17 @@ service cloud.firestore {
   }
 
   // 🔐 Collection Group Rules
+  // Own entries, or any entry of a group the caller belongs to (the Circle
+  // reads a co-member's completed dates via uid + groupId). Queries must
+  // filter on groupId for the member branch to be provable.
   match /{path=**}/entries/{docId} {
-    allow read: if request.auth != null && (resource.data.uid == request.auth.uid);
+    allow read: if request.auth != null && (
+      resource.data.uid == request.auth.uid ||
+      (
+        resource.data.keys().hasAny(['groupId']) &&
+        exists(/databases/$(database)/documents/groups/$(resource.data.groupId)/members/$(request.auth.uid))
+      )
+    );
   }
 
   match /{path=**}/members/{docId} {

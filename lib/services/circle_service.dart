@@ -659,25 +659,25 @@ class CircleService {
   /// Stream of the `YYYY-MM-DD` ids [uid] has completed in [groupId]'s
   /// schedule, read from `progress/{dateId}/entries/{uid}` (count > 0 or
   /// done). This is how a Circle row learns a co-member's Plan reading.
+  ///
+  /// Queried as a collection group on the entries' `uid` + `groupId` fields:
+  /// production never writes the `progress/{dateId}` parent docs, so listing
+  /// `progress` would always come back empty.
   Stream<Set<String>> memberCompletedDates(String groupId, String uid) {
     return firestore
-        .collection(GroupCollections.groups)
-        .doc(groupId)
-        .collection('progress')
+        .collectionGroup('entries')
+        .where('groupId', isEqualTo: groupId)
+        .where('uid', isEqualTo: uid)
         .snapshots()
-        .asyncMap((snap) async {
+        .map((snap) {
       final done = <String>{};
-      for (final day in snap.docs) {
-        try {
-          final entry =
-              await day.reference.collection('entries').doc(uid).get();
-          final data = entry.data();
-          if (data == null) continue;
-          final count = (data['count'] as num?)?.toInt() ?? 0;
-          final complete = data['done'] == true;
-          if (count > 0 || complete) done.add(day.id);
-        } catch (e, st) {
-          await _safeLog(e, st);
+      for (final entry in snap.docs) {
+        final data = entry.data();
+        final count = (data['count'] as num?)?.toInt() ?? 0;
+        final complete = data['done'] == true;
+        if (count > 0 || complete) {
+          final dateId = entry.reference.parent.parent?.id;
+          if (dateId != null) done.add(dateId);
         }
       }
       return done;
