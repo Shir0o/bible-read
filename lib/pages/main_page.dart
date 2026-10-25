@@ -30,7 +30,6 @@ import '../services/vibration_service.dart';
 import '../services/connectivity_service.dart';
 import '../services/error_logger.dart';
 import '../widgets/guest_account_sheet.dart';
-import '../widgets/offline_banner.dart';
 import '../widgets/read_through_host.dart';
 import 'app_check_error_page.dart';
 
@@ -167,6 +166,7 @@ class MainPageState extends State<MainPage> {
         dateProvider: () => DateTime.now(),
         onOpenJourney: () => _onItemTapped(2),
         onOpenCommunity: () => _onItemTapped(1),
+        connectivityService: _connectivityService,
       ),
       CommunityPage(
         auth: widget.auth,
@@ -446,9 +446,6 @@ class MainPageState extends State<MainPage> {
                 onDestinationSelected: _onItemTapped,
                 pages: _pages,
                 destinations: destinations,
-                offlineBanner: OfflineBanner(
-                  connectivityService: _connectivityService,
-                ),
               ),
             ),
           ),

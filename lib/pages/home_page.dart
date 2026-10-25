@@ -12,6 +12,7 @@ import '../services/active_reading_aggregator.dart';
 import '../services/bible_progress_service.dart';
 import '../services/catch_up_engine.dart' hide ReadingStatus;
 import '../services/circle_service.dart';
+import '../services/connectivity_service.dart';
 import '../services/group_service.dart';
 import '../services/habit_lifecycle_service.dart';
 import '../services/reading_plan_service.dart';
@@ -32,6 +33,7 @@ import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or ve
 import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
 
+import '../widgets/ambient_sync_indicator.dart';
 import '../widgets/app_header.dart';
 import '../widgets/sun_mark.dart';
 import '../widgets/reflect_sheet.dart';
@@ -67,6 +69,7 @@ class HomePage extends StatefulWidget {
     ActiveReadingAggregator? activeReadingAggregator,
     this.habitLifecycleService,
     this.enableDriftAnimation = true,
+    this.connectivityService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
         auth = auth ?? FirebaseAuth.instance,
         readingStatusService = readingStatusService ??
@@ -156,6 +159,8 @@ class HomePage extends StatefulWidget {
   final DateTime Function() dateProvider;
 
   final bool enableDriftAnimation;
+
+  final ConnectivityService? connectivityService;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -1176,6 +1181,10 @@ class _HomePageState extends State<HomePage>
               size: 34,
               done: _readToday,
               onTap: _openCheckInPage,
+            ),
+            syncIndicator: AmbientSyncIndicator(
+              connectivityService: widget.connectivityService,
+              hasPendingWrites: _isSyncing,
             ),
           ),
           Padding(
