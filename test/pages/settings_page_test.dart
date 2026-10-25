@@ -372,6 +372,31 @@ void main() {
       expect(vibration.lightCount, 1);
     });
   });
+
+  testWidgets('displays prominent back up your reading card when anonymous',
+      (tester) async {
+    await mockNetworkImagesFor(() async {
+      final firestore = FakeFirebaseFirestore();
+      final auth = MockFirebaseAuth(
+        mockUser: MockUser(isAnonymous: true, uid: 'guest-1'),
+        signedIn: true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SettingsPage(
+            auth: auth,
+            firestore: firestore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Back up your reading'), findsOneWidget);
+      expect(find.text('Sign in / Link account'), findsOneWidget);
+      expect(find.text('Guest Reader'), findsOneWidget);
+    });
+  });
 }
 
 class FakeFirebaseMessaging extends Fake implements FirebaseMessaging {

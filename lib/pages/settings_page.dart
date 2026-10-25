@@ -24,6 +24,7 @@ import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/auth/apple_sign_in_button.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/guest_account_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/vibration_button.dart';
 import 'feedback_page.dart';
@@ -497,8 +498,11 @@ class SettingsPageState extends State<SettingsPage> {
         ),
       );
     } else {
-      final displayName =
-          googleUser?.displayName ?? firebaseUser?.displayName ?? 'No Name';
+      final isAnonymous = firebaseUser?.isAnonymous == true;
+      final displayName = googleUser?.displayName ??
+          (isAnonymous
+              ? 'Guest Reader'
+              : (firebaseUser?.displayName ?? 'No Name'));
       final email = googleUser?.email ?? firebaseUser?.email ?? '';
       final photoUrl = googleUser?.photoUrl;
 
@@ -510,6 +514,103 @@ class SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Sanctuary guest account callout
+            if (isAnonymous) ...[
+              CommonStyles.buildBorderedCard(
+                context: context,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.25),
+                      width: 1,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(AppSpacing.gap20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.gap8),
+                            decoration: BoxDecoration(
+                              color:
+                                  colorScheme.primary.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.cloud_upload_outlined,
+                              color: colorScheme.primary,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.gap12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Back up your reading',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontFamily: AppTheme.fontSerif,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                ),
+                                const SizedBox(height: AppSpacing.gap2),
+                                Text(
+                                  'Guest session',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                        letterSpacing: 0.5,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.gap12),
+                      Text(
+                        'Connect an account to preserve your reading streak across devices and read alongside friends.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              height: 1.45,
+                            ),
+                      ),
+                      const SizedBox(height: AppSpacing.gap16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: () {
+                            unawaited(widget.vibrationService.lightImpact());
+                            showGuestAccountSheet(
+                              context,
+                              auth: widget.auth,
+                              firestore: widget.firestore,
+                              googleSignInProvider: widget.googleSignInProvider,
+                              appleSignInService: widget.appleSignInService,
+                              vibrationService: widget.vibrationService,
+                            );
+                          },
+                          child: const Text('Sign in / Link account'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.gap24),
+            ],
+
             // Profile / account card
             CommonStyles.buildBorderedCard(
               context: context,

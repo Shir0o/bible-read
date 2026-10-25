@@ -5,6 +5,7 @@ import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
+import 'package:bible_read/widgets/guest_account_sheet.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -68,7 +69,7 @@ void main() {
     expect(find.byType(WelcomePage), findsOneWidget);
 
     // 2. Navigate to AuthSelectionPage
-    await tester.tap(find.text('Get started'));
+    await tester.tap(find.text('Create an account'));
     await tester.pumpAndSettle();
     expect(find.text('Join the Circle'), findsOneWidget);
 
@@ -179,5 +180,70 @@ void main() {
     expect(find.byType(HomePage), findsOneWidget);
     expect(auth.currentUser, isNotNull);
     expect(auth.currentUser!.email, 'test@example.com');
+  });
+
+  testWidgets(
+      'Tapping Start Reading on WelcomePage enters Guest mode and renders Home',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth();
+
+    await tester.pumpWidget(
+      MyApp(appCheckFailed: false, firestore: firestore, auth: auth),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WelcomePage), findsOneWidget);
+    expect(find.text('Start Reading'), findsOneWidget);
+
+    await tester.tap(find.text('Start Reading'));
+    await tester.pumpAndSettle();
+
+    // Dismiss auto-opened CheckInPage if present
+    if (find.byType(CheckInPage).evaluate().isNotEmpty) {
+      tester.widget<CheckInPage>(find.byType(CheckInPage)).onClose();
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.byType(HomePage), findsOneWidget);
+    expect(auth.currentUser, isNotNull);
+    expect(auth.currentUser!.isAnonymous, isTrue);
+  });
+
+  testWidgets('Tapping Circle tab as a guest displays GuestAccountSheet',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final guestUser = MockUser(isAnonymous: true, uid: 'guest-reader-1');
+    final auth = MockFirebaseAuth(mockUser: guestUser, signedIn: true);
+
+    await tester.pumpWidget(
+      MyApp(appCheckFailed: false, firestore: firestore, auth: auth),
+    );
+    await tester.pumpAndSettle();
+
+    // Dismiss auto-opened CheckInPage if present
+    if (find.byType(CheckInPage).evaluate().isNotEmpty) {
+      tester.widget<CheckInPage>(find.byType(CheckInPage)).onClose();
+      await tester.pumpAndSettle();
+    }
+
+    expect(find.byType(HomePage), findsOneWidget);
+
+    // Tap Circle tab (index 1)
+    await tester.tap(find.text('Circle'));
+    await tester.pumpAndSettle();
+
+    // Verify GuestAccountSheet is displayed with title, subtitle, and reassurance caption
+    expect(find.byType(GuestAccountSheet), findsOneWidget);
+    expect(find.text('Read alongside others'), findsOneWidget);
+    expect(
+      find.text(
+          'Sign in to connect with friends, join groups, and share your daily reflections.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Your reading history and streak will be preserved.'),
+      findsOneWidget,
+    );
   });
 }

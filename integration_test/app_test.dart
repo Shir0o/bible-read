@@ -19,7 +19,7 @@ void main() {
 
     // Verify we are either on Welcome Page or Home Page
     // This basic smoke test ensures the app launches without crashing.
-    final welcomeFinder = find.text('Get started');
+    final welcomeFinder = find.text('Start Reading');
     final homeFinder = find.text('Home');
 
     // Wait for async initialization
