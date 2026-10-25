@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.42.0](https://github.com/Shir0o/bible-read/compare/v1.41.0...v1.42.0) (2026-10-25)
+
+
+### Features
+
+* offline-first habit tracking & guest reading ([#1056](https://github.com/Shir0o/bible-read/issues/1056)) ([09987dd](https://github.com/Shir0o/bible-read/commit/09987ddf56b58db5339b09ce37b8d1b11d50b406))
+* **ui:** polish join requests, tidy Path, move seasonal card to Today ([#1046](https://github.com/Shir0o/bible-read/issues/1046)) ([2aaa602](https://github.com/Shir0o/bible-read/commit/2aaa602f5da6f09aa4e82f7f657b5af15f48f902))
+
+
+### Bug Fixes
+
+* **circle:** read member completed dates from entries docs ([#1048](https://github.com/Shir0o/bible-read/issues/1048)) ([692e471](https://github.com/Shir0o/bible-read/commit/692e4714d66bcaf0b3ea9f9965f96f2b264b94bf))
+* **groups:** handle missing progress day docs in remap and delete ([#1049](https://github.com/Shir0o/bible-read/issues/1049)) ([00cb526](https://github.com/Shir0o/bible-read/commit/00cb526b88f63d99e7816819a0e519338fe1e548))
+* **groups:** share button wrap and page-shaped skeletons ([#1045](https://github.com/Shir0o/bible-read/issues/1045)) ([0a230f5](https://github.com/Shir0o/bible-read/commit/0a230f54a06fd99c65388d5465ac1f6745a63b39))
+* **home:** stream live circle daily presence and include friend feed ([#1047](https://github.com/Shir0o/bible-read/issues/1047)) ([12e8080](https://github.com/Shir0o/bible-read/commit/12e80801d99b3c43950291bae7ff397f7909f542))
+* **invites:** extract invite code from pasted share messages ([#1043](https://github.com/Shir0o/bible-read/issues/1043)) ([fb43e96](https://github.com/Shir0o/bible-read/commit/fb43e963c88e9f5bbbf5a59e965fc106ec7d3b49))
+
 ## [1.41.0](https://github.com/Shir0o/bible-read/compare/v1.40.0...v1.41.0) (2026-10-22)
 
 
