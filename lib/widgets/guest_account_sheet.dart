@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../pages/login_page.dart';
 import '../pages/signup_page.dart';
+import '../services/account_linking_service.dart';
 import '../services/apple_sign_in_service.dart';
 import '../services/error_logger.dart';
 import '../services/google_sign_in_factory.dart';
@@ -16,6 +17,7 @@ import '../theme/app_theme.dart';
 import 'animated_page_route.dart';
 import 'app_bottom_sheet.dart';
 import 'auth/apple_sign_in_button.dart';
+import 'merge_dry_run_sheet.dart';
 
 /// Displays the Sanctuary Liturgy modal sheet prompting guest readers to sign in
 /// or link an account when accessing social surfaces.
@@ -23,20 +25,40 @@ Future<T?> showGuestAccountSheet<T>(
   BuildContext context, {
   FirebaseAuth? auth,
   FirebaseFirestore? firestore,
+  AccountLinkingService? accountLinkingService,
   GoogleSignIn Function()? googleSignInProvider,
   AppleSignInService? appleSignInService,
   VibrationService? vibrationService,
-}) {
-  return showAppSheet<T>(
+}) async {
+  final linkingService = accountLinkingService ??
+      AccountLinkingService(
+        auth: auth ?? FirebaseAuth.instance,
+        firestore: firestore ?? FirebaseFirestore.instance,
+      );
+
+  final result = await showAppSheet<dynamic>(
     context: context,
     builder: (sheetContext) => GuestAccountSheet(
       auth: auth,
       firestore: firestore,
+      accountLinkingService: linkingService,
       googleSignInProvider: googleSignInProvider,
       appleSignInService: appleSignInService,
       vibrationService: vibrationService,
     ),
   );
+
+  if (result is AccountCollisionException && context.mounted) {
+    await showMergeDryRunSheet(
+      context: context,
+      dryRunData: result.dryRunData,
+      accountLinkingService: linkingService,
+      vibrationService: vibrationService,
+    );
+    return null;
+  }
+
+  return result as T?;
 }
 
 /// Sanctuary Liturgy bottom sheet explaining the benefits of creating or linking
@@ -44,19 +66,28 @@ Future<T?> showGuestAccountSheet<T>(
 class GuestAccountSheet extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
+  final AccountLinkingService accountLinkingService;
   final GoogleSignIn Function() googleSignInProvider;
   final AppleSignInService appleSignInService;
   final VibrationService vibrationService;
+  final void Function(AccountCollisionException collision)? onCollision;
 
   GuestAccountSheet({
     super.key,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
+    AccountLinkingService? accountLinkingService,
     GoogleSignIn Function()? googleSignInProvider,
     AppleSignInService? appleSignInService,
     VibrationService? vibrationService,
+    this.onCollision,
   })  : auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance,
+        accountLinkingService = accountLinkingService ??
+            AccountLinkingService(
+              auth: auth ?? FirebaseAuth.instance,
+              firestore: firestore ?? FirebaseFirestore.instance,
+            ),
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
         appleSignInService = appleSignInService ??
             DefaultAppleSignInService(
@@ -86,12 +117,15 @@ class _GuestAccountSheetState extends State<GuestAccountSheet> {
       final currentUser = widget.auth.currentUser;
       if (currentUser != null && currentUser.isAnonymous) {
         try {
-          await currentUser.linkWithCredential(credential);
-        } on FirebaseAuthException catch (e) {
-          if (e.code == 'credential-already-in-use') {
-            await widget.auth.signInWithCredential(credential);
-          } else {
-            rethrow;
+          await widget.accountLinkingService.linkCredential(credential);
+        } on AccountCollisionException catch (e) {
+          if (mounted) {
+            if (widget.onCollision != null) {
+              widget.onCollision!(e);
+            } else {
+              Navigator.of(context).pop(e);
+            }
+            return;
           }
         }
       } else {
@@ -126,9 +160,38 @@ class _GuestAccountSheetState extends State<GuestAccountSheet> {
     unawaited(widget.vibrationService.lightImpact());
 
     try {
-      final credential = await widget.appleSignInService.signIn();
-      if (credential != null && mounted) {
-        Navigator.of(context).pop();
+      final appleCred = await widget.appleSignInService.getCredential();
+      if (appleCred != null) {
+        final currentUser = widget.auth.currentUser;
+        if (currentUser != null && currentUser.isAnonymous) {
+          try {
+            await widget.accountLinkingService.linkCredential(appleCred);
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+            return;
+          } on AccountCollisionException catch (e) {
+            if (mounted) {
+              if (widget.onCollision != null) {
+                widget.onCollision!(e);
+              } else {
+                Navigator.of(context).pop(e);
+              }
+              return;
+            }
+          }
+        } else {
+          await widget.auth.signInWithCredential(appleCred);
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+          return;
+        }
+      } else {
+        final credential = await widget.appleSignInService.signIn();
+        if (credential != null && mounted) {
+          Navigator.of(context).pop();
+        }
       }
     } catch (e, st) {
       ErrorLogger.log(e, st);

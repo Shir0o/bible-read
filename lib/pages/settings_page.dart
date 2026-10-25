@@ -27,6 +27,8 @@ import '../widgets/common_styles.dart';
 import '../widgets/guest_account_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/vibration_button.dart';
+import '../services/account_linking_service.dart';
+import '../widgets/merge_dry_run_sheet.dart';
 import 'feedback_page.dart';
 import 'login_page.dart';
 import 'main_page.dart';
@@ -37,6 +39,7 @@ class SettingsPage extends StatefulWidget {
   final GoogleSignInAccount? user;
   final GoogleSignIn Function() googleSignInProvider;
   final AppleSignInService appleSignInService;
+  final AccountLinkingService accountLinkingService;
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final UserPreferencesService? userPreferencesService;
@@ -50,6 +53,7 @@ class SettingsPage extends StatefulWidget {
     GoogleSignInAccount? user,
     GoogleSignIn Function()? googleSignInProvider,
     AppleSignInService? appleSignInService,
+    AccountLinkingService? accountLinkingService,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     UserPreferencesService? userPreferencesService,
@@ -69,6 +73,11 @@ class SettingsPage extends StatefulWidget {
             auth: authInstance,
             firestore: fs,
           ),
+      accountLinkingService: accountLinkingService ??
+          AccountLinkingService(
+            auth: authInstance,
+            firestore: fs,
+          ),
       auth: authInstance,
       firestore: fs,
       userPreferencesService: userPreferencesService,
@@ -85,6 +94,7 @@ class SettingsPage extends StatefulWidget {
     this.user,
     required this.googleSignInProvider,
     required this.appleSignInService,
+    required this.accountLinkingService,
     required this.auth,
     required this.firestore,
     this.userPreferencesService,
@@ -198,7 +208,23 @@ class SettingsPageState extends State<SettingsPage> {
       final GoogleSignInAuthentication auth = account.authentication;
       final credential = GoogleAuthProvider.credential(idToken: auth.idToken);
 
-      await widget.auth.signInWithCredential(credential);
+      final currentUser = widget.auth.currentUser;
+      if (currentUser != null && currentUser.isAnonymous) {
+        try {
+          await widget.accountLinkingService.linkCredential(credential);
+        } on AccountCollisionException catch (e) {
+          if (mounted) {
+            await showMergeDryRunSheet(
+              context: context,
+              dryRunData: e.dryRunData,
+              accountLinkingService: widget.accountLinkingService,
+              vibrationService: widget.vibrationService,
+            );
+          }
+        }
+      } else {
+        await widget.auth.signInWithCredential(credential);
+      }
 
       if (mounted) {
         final page = widget.mainPageBuilder?.call(context) ?? MainPage();
@@ -240,10 +266,31 @@ class SettingsPageState extends State<SettingsPage> {
     });
 
     try {
-      final credential = await widget.appleSignInService.signIn();
-      if (credential == null) {
-        // Cancelled by user
-        return;
+      final appleCred = await widget.appleSignInService.getCredential();
+      if (appleCred != null) {
+        final currentUser = widget.auth.currentUser;
+        if (currentUser != null && currentUser.isAnonymous) {
+          try {
+            await widget.accountLinkingService.linkCredential(appleCred);
+          } on AccountCollisionException catch (e) {
+            if (mounted) {
+              await showMergeDryRunSheet(
+                context: context,
+                dryRunData: e.dryRunData,
+                accountLinkingService: widget.accountLinkingService,
+                vibrationService: widget.vibrationService,
+              );
+            }
+          }
+        } else {
+          await widget.auth.signInWithCredential(appleCred);
+        }
+      } else {
+        final credential = await widget.appleSignInService.signIn();
+        if (credential == null) {
+          // Cancelled by user
+          return;
+        }
       }
       if (mounted) {
         final page = widget.mainPageBuilder?.call(context) ?? MainPage();
@@ -596,6 +643,8 @@ class SettingsPageState extends State<SettingsPage> {
                               context,
                               auth: widget.auth,
                               firestore: widget.firestore,
+                              accountLinkingService:
+                                  widget.accountLinkingService,
                               googleSignInProvider: widget.googleSignInProvider,
                               appleSignInService: widget.appleSignInService,
                               vibrationService: widget.vibrationService,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
+import 'package:bible_read/services/account_linking_service.dart';
 import 'package:bible_read/services/apple_sign_in_service.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
@@ -10,6 +11,7 @@ import 'package:bible_read/theme/app_theme.dart';
 import 'package:bible_read/widgets/animated_page_route.dart';
 import 'package:bible_read/widgets/auth/apple_sign_in_button.dart';
 import 'package:bible_read/widgets/auth/auth_background.dart';
+import 'package:bible_read/widgets/merge_dry_run_sheet.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -104,10 +106,34 @@ class _LoginPageState extends State<LoginPage> {
     unawaited(widget.vibrationService.mediumImpact());
 
     try {
-      await widget.auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final currentUser = widget.auth.currentUser;
+      if (currentUser != null && currentUser.isAnonymous) {
+        final credential = EmailAuthProvider.credential(
+          email: email,
+          password: password,
+        );
+        final linkingService = AccountLinkingService(
+          auth: widget.auth,
+          firestore: widget.firestore,
+        );
+        try {
+          await linkingService.linkCredential(credential);
+        } on AccountCollisionException catch (e) {
+          if (mounted) {
+            await showMergeDryRunSheet(
+              context: context,
+              dryRunData: e.dryRunData,
+              accountLinkingService: linkingService,
+              vibrationService: widget.vibrationService,
+            );
+          }
+        }
+      } else {
+        await widget.auth.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      }
       if (mounted) {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).popUntil((route) => route.isFirst);
@@ -164,7 +190,27 @@ class _LoginPageState extends State<LoginPage> {
       final GoogleSignInAuthentication auth = account.authentication;
       final credential = GoogleAuthProvider.credential(idToken: auth.idToken);
 
-      await widget.auth.signInWithCredential(credential);
+      final currentUser = widget.auth.currentUser;
+      if (currentUser != null && currentUser.isAnonymous) {
+        final linkingService = AccountLinkingService(
+          auth: widget.auth,
+          firestore: widget.firestore,
+        );
+        try {
+          await linkingService.linkCredential(credential);
+        } on AccountCollisionException catch (e) {
+          if (mounted) {
+            await showMergeDryRunSheet(
+              context: context,
+              dryRunData: e.dryRunData,
+              accountLinkingService: linkingService,
+              vibrationService: widget.vibrationService,
+            );
+          }
+        }
+      } else {
+        await widget.auth.signInWithCredential(credential);
+      }
 
       if (mounted) {
         if (Navigator.of(context).canPop()) {
@@ -224,10 +270,35 @@ class _LoginPageState extends State<LoginPage> {
     unawaited(widget.vibrationService.lightImpact());
 
     try {
-      final credential = await widget.appleSignInService.signIn();
-      if (credential == null) {
-        // Cancelled by user
-        return;
+      final appleCred = await widget.appleSignInService.getCredential();
+      if (appleCred != null) {
+        final currentUser = widget.auth.currentUser;
+        if (currentUser != null && currentUser.isAnonymous) {
+          final linkingService = AccountLinkingService(
+            auth: widget.auth,
+            firestore: widget.firestore,
+          );
+          try {
+            await linkingService.linkCredential(appleCred);
+          } on AccountCollisionException catch (e) {
+            if (mounted) {
+              await showMergeDryRunSheet(
+                context: context,
+                dryRunData: e.dryRunData,
+                accountLinkingService: linkingService,
+                vibrationService: widget.vibrationService,
+              );
+            }
+          }
+        } else {
+          await widget.auth.signInWithCredential(appleCred);
+        }
+      } else {
+        final credential = await widget.appleSignInService.signIn();
+        if (credential == null) {
+          // Cancelled by user
+          return;
+        }
       }
 
       if (mounted) {
