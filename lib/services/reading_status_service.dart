@@ -34,6 +34,9 @@ class ReadingStatus {
   /// Identifier of the month associated with [graceCreditsAvailable].
   final String graceCreditsMonth;
 
+  /// Highest streak count recorded for the user, if available.
+  final int longestStreak;
+
   /// Creates a [ReadingStatus].
   const ReadingStatus({
     required this.readToday,
@@ -44,6 +47,7 @@ class ReadingStatus {
     required this.totalReadDays,
     required this.graceCreditsAvailable,
     required this.graceCreditsMonth,
+    this.longestStreak = 0,
   });
 }
 
@@ -242,6 +246,111 @@ class ReadingStatusService {
     });
   }
 
+  /// Computes reading status deterministically from a set of [readDates]
+  /// and the reference date [today].
+  ///
+  /// This derivation is offline-safe and independent of remote summary documents.
+  static ReadingStatus deriveStatusFromDates({
+    required Set<DateTime> readDates,
+    required DateTime today,
+    int? longestStreak,
+  }) {
+    final normalizedToday = _dateOnly(today);
+    final normalizedDates = <DateTime>{};
+    for (final d in readDates) {
+      normalizedDates.add(_dateOnly(d));
+    }
+
+    final readToday = normalizedDates.contains(normalizedToday);
+
+    // Compute this week's Sunday (calendar week: Sunday to Saturday)
+    final currentWeekday = normalizedToday.weekday; // 1 = Mon, ..., 7 = Sun
+    final sunday = _shiftDate(normalizedToday, -(currentWeekday % 7));
+    final pastWeek = List<bool>.generate(7, (i) {
+      final date = _shiftDate(sunday, i);
+      return normalizedDates.contains(date);
+    });
+
+    final daysInMonth =
+        DateTime(normalizedToday.year, normalizedToday.month + 1, 0).day;
+    final pastMonth = List<bool>.generate(daysInMonth, (i) {
+      final date = DateTime(normalizedToday.year, normalizedToday.month, i + 1);
+      return normalizedDates.contains(date);
+    });
+
+    final totalReadDays = normalizedDates.length;
+    final currentMonthKey =
+        '${normalizedToday.year}-${normalizedToday.month.toString().padLeft(2, '0')}';
+
+    if (normalizedDates.isEmpty) {
+      return ReadingStatus(
+        readToday: false,
+        pastWeek: pastWeek,
+        pastMonth: pastMonth,
+        readDates: normalizedDates,
+        streak: 0,
+        totalReadDays: 0,
+        graceCreditsAvailable: 0,
+        graceCreditsMonth: currentMonthKey,
+        longestStreak: longestStreak ?? 0,
+      );
+    }
+
+    final sortedDates = normalizedDates.toList()..sort();
+    final readDateSet = normalizedDates.map(_formatDateKey).toSet();
+
+    final computation = _computeStreakAndCredits(
+      today: normalizedToday,
+      sortedDates: sortedDates,
+      readDateSet: readDateSet,
+      formatDate: _formatDateKey,
+      formatMonth: (d) => '${d.year}-${d.month.toString().padLeft(2, '0')}',
+    );
+
+    final currentMonthCredits = computation.monthLedgers[currentMonthKey] ??
+        _MonthlyCreditLedger(
+          monthKey: currentMonthKey,
+          monthStart: DateTime(normalizedToday.year, normalizedToday.month, 1),
+        );
+    final graceCreditsAvailable =
+        currentMonthCredits.available(normalizedToday);
+
+    int maxStreak = longestStreak ?? 0;
+    if (sortedDates.isNotEmpty) {
+      int current = 1;
+      int historicalLongest = 1;
+      for (int i = 1; i < sortedDates.length; i++) {
+        final diff = sortedDates[i].difference(sortedDates[i - 1]).inDays;
+        if (diff == 1) {
+          current += 1;
+        } else if (diff > 1) {
+          current = 1;
+        }
+        if (current > historicalLongest) {
+          historicalLongest = current;
+        }
+      }
+      if (historicalLongest > maxStreak) {
+        maxStreak = historicalLongest;
+      }
+    }
+    if (computation.streak > maxStreak) {
+      maxStreak = computation.streak;
+    }
+
+    return ReadingStatus(
+      readToday: readToday,
+      pastWeek: pastWeek,
+      pastMonth: pastMonth,
+      readDates: normalizedDates,
+      streak: computation.streak,
+      totalReadDays: totalReadDays,
+      graceCreditsAvailable: graceCreditsAvailable,
+      graceCreditsMonth: currentMonthKey,
+      longestStreak: maxStreak,
+    );
+  }
+
   ReadingStatus _emptyStatus() {
     final today = _dateOnly(nowProvider());
     final defaultMonthKey =
@@ -315,6 +424,28 @@ class ReadingStatusService {
       if (todayDoc.exists && todayDoc.data() != null) {
         final data = todayDoc.data()!;
         readToday = data.containsKey('read') ? data['read'] : false;
+      }
+
+      if (!summaryDoc.exists || summaryDoc.data() == null) {
+        final readingSnapshot = await userDocRef.collection('reading').get();
+        final readDates = <DateTime>{};
+        for (final doc in readingSnapshot.docs) {
+          if (doc.data()['read'] == true) {
+            final parsed = DateTime.tryParse(doc.id);
+            if (parsed != null) {
+              readDates.add(DateTime(parsed.year, parsed.month, parsed.day));
+            }
+          }
+        }
+        if (readToday) {
+          readDates.add(today);
+        } else if (todayDoc.exists && todayDoc.data()?['read'] == false) {
+          readDates.remove(today);
+        }
+        return deriveStatusFromDates(
+          readDates: readDates,
+          today: today,
+        );
       }
 
       // Load calendar data from summary doc.
@@ -425,6 +556,7 @@ class ReadingStatusService {
         totalReadDays: totalReadDays,
         graceCreditsAvailable: graceCreditsAvailable,
         graceCreditsMonth: graceCreditsMonth,
+        longestStreak: (data['longestStreak'] as int?) ?? streak,
       );
     } catch (e, st) {
       if (kDebugMode) {
@@ -758,7 +890,7 @@ class ReadingStatusService {
     return status;
   }
 
-  _SummaryComputation _computeStreakAndCredits({
+  static _SummaryComputation _computeStreakAndCredits({
     required DateTime today,
     required List<DateTime> sortedDates,
     required Set<String> readDateSet,
