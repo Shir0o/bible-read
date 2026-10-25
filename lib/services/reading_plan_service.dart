@@ -348,21 +348,9 @@ class ReadingPlanService {
         .collection('plan_progress')
         .doc(planId);
 
-    await firestore.runTransaction((transaction) async {
-      final snapshot = await transaction.get(docRef);
-      if (!snapshot.exists) return;
-
-      final progress = UserPlanProgress.fromFirestore(snapshot);
-      if (!progress.completedDays.contains(day)) {
-        final updatedCompletedDays = List<int>.from(progress.completedDays)
-          ..add(day)
-          ..sort(); // Keep sorted
-
-        transaction.update(docRef, {
-          'completedDays': updatedCompletedDays,
-          'lastReadDate': Timestamp.now(),
-        });
-      }
+    await docRef.update({
+      'completedDays': FieldValue.arrayUnion([day]),
+      'lastReadDate': Timestamp.now(),
     });
   }
 
@@ -374,22 +362,8 @@ class ReadingPlanService {
         .collection('plan_progress')
         .doc(planId);
 
-    await firestore.runTransaction((transaction) async {
-      final snapshot = await transaction.get(docRef);
-      if (!snapshot.exists) return;
-
-      final progress = UserPlanProgress.fromFirestore(snapshot);
-      if (progress.completedDays.contains(day)) {
-        final updatedCompletedDays = List<int>.from(progress.completedDays)
-          ..remove(day);
-
-        transaction.update(docRef, {
-          'completedDays': updatedCompletedDays,
-          // We don't necessarily revert lastReadDate easily without history,
-          // so we leave it or typically you'd check if it was today.
-          // For simplicity, we leave it.
-        });
-      }
+    await docRef.update({
+      'completedDays': FieldValue.arrayRemove([day]),
     });
   }
 

@@ -298,7 +298,11 @@ class ReadingStatusService {
       final summaryDoc = snapshots[2];
 
       if (!userDoc.exists) {
-        await user.reload();
+        try {
+          await user.reload();
+        } catch (_) {
+          // Best effort; ignore network errors when offline.
+        }
         final refreshedUser = auth.currentUser;
 
         await userDocRef.set({

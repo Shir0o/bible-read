@@ -31,25 +31,39 @@ class ReadLogService {
 
   /// Ids of the Groups [uid] belongs to (member or owner).
   Future<List<String>> groupIdsFor(String uid) async {
-    final results = await Future.wait([
-      firestore
-          .collectionGroup(GroupCollections.members)
-          .where('uid', isEqualTo: uid)
-          .get(),
-      firestore
-          .collection(GroupCollections.groups)
-          .where('ownerUid', isEqualTo: uid)
-          .where('deletedAt', isNull: true)
-          .get(),
-    ]);
-    final ids = <String>{
-      ...results[0]
-          .docs
-          .map((doc) => doc.reference.parent.parent?.id)
-          .whereType<String>(),
-      ...results[1].docs.map((doc) => doc.id),
-    };
-    return ids.toList();
+    try {
+      QuerySnapshot<Map<String, dynamic>>? memberSnap;
+      try {
+        memberSnap = await firestore
+            .collectionGroup(GroupCollections.members)
+            .where('uid', isEqualTo: uid)
+            .get();
+      } catch (_) {
+        // Offline or missing collection group index.
+      }
+
+      QuerySnapshot<Map<String, dynamic>>? ownerSnap;
+      try {
+        ownerSnap = await firestore
+            .collection(GroupCollections.groups)
+            .where('ownerUid', isEqualTo: uid)
+            .where('deletedAt', isNull: true)
+            .get();
+      } catch (_) {
+        // Offline or missing index.
+      }
+
+      final ids = <String>{
+        if (memberSnap != null)
+          ...memberSnap.docs
+              .map((doc) => doc.reference.parent.parent?.id)
+              .whereType<String>(),
+        if (ownerSnap != null) ...ownerSnap.docs.map((doc) => doc.id),
+      };
+      return ids.toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   /// Marks [user] as having read on [date] in every Group they belong to.
