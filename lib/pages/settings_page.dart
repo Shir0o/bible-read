@@ -24,8 +24,11 @@ import '../widgets/animated_action_button.dart';
 import '../widgets/animated_page_route.dart';
 import '../widgets/auth/apple_sign_in_button.dart';
 import '../widgets/common_styles.dart';
+import '../widgets/guest_account_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/vibration_button.dart';
+import '../services/account_linking_service.dart';
+import '../widgets/merge_dry_run_sheet.dart';
 import 'feedback_page.dart';
 import 'login_page.dart';
 import 'main_page.dart';
@@ -36,6 +39,7 @@ class SettingsPage extends StatefulWidget {
   final GoogleSignInAccount? user;
   final GoogleSignIn Function() googleSignInProvider;
   final AppleSignInService appleSignInService;
+  final AccountLinkingService accountLinkingService;
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final UserPreferencesService? userPreferencesService;
@@ -49,6 +53,7 @@ class SettingsPage extends StatefulWidget {
     GoogleSignInAccount? user,
     GoogleSignIn Function()? googleSignInProvider,
     AppleSignInService? appleSignInService,
+    AccountLinkingService? accountLinkingService,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     UserPreferencesService? userPreferencesService,
@@ -68,6 +73,11 @@ class SettingsPage extends StatefulWidget {
             auth: authInstance,
             firestore: fs,
           ),
+      accountLinkingService: accountLinkingService ??
+          AccountLinkingService(
+            auth: authInstance,
+            firestore: fs,
+          ),
       auth: authInstance,
       firestore: fs,
       userPreferencesService: userPreferencesService,
@@ -84,6 +94,7 @@ class SettingsPage extends StatefulWidget {
     this.user,
     required this.googleSignInProvider,
     required this.appleSignInService,
+    required this.accountLinkingService,
     required this.auth,
     required this.firestore,
     this.userPreferencesService,
@@ -197,7 +208,23 @@ class SettingsPageState extends State<SettingsPage> {
       final GoogleSignInAuthentication auth = account.authentication;
       final credential = GoogleAuthProvider.credential(idToken: auth.idToken);
 
-      await widget.auth.signInWithCredential(credential);
+      final currentUser = widget.auth.currentUser;
+      if (currentUser != null && currentUser.isAnonymous) {
+        try {
+          await widget.accountLinkingService.linkCredential(credential);
+        } on AccountCollisionException catch (e) {
+          if (mounted) {
+            await showMergeDryRunSheet(
+              context: context,
+              dryRunData: e.dryRunData,
+              accountLinkingService: widget.accountLinkingService,
+              vibrationService: widget.vibrationService,
+            );
+          }
+        }
+      } else {
+        await widget.auth.signInWithCredential(credential);
+      }
 
       if (mounted) {
         final page = widget.mainPageBuilder?.call(context) ?? MainPage();
@@ -239,10 +266,31 @@ class SettingsPageState extends State<SettingsPage> {
     });
 
     try {
-      final credential = await widget.appleSignInService.signIn();
-      if (credential == null) {
-        // Cancelled by user
-        return;
+      final appleCred = await widget.appleSignInService.getCredential();
+      if (appleCred != null) {
+        final currentUser = widget.auth.currentUser;
+        if (currentUser != null && currentUser.isAnonymous) {
+          try {
+            await widget.accountLinkingService.linkCredential(appleCred);
+          } on AccountCollisionException catch (e) {
+            if (mounted) {
+              await showMergeDryRunSheet(
+                context: context,
+                dryRunData: e.dryRunData,
+                accountLinkingService: widget.accountLinkingService,
+                vibrationService: widget.vibrationService,
+              );
+            }
+          }
+        } else {
+          await widget.auth.signInWithCredential(appleCred);
+        }
+      } else {
+        final credential = await widget.appleSignInService.signIn();
+        if (credential == null) {
+          // Cancelled by user
+          return;
+        }
       }
       if (mounted) {
         final page = widget.mainPageBuilder?.call(context) ?? MainPage();
@@ -497,8 +545,11 @@ class SettingsPageState extends State<SettingsPage> {
         ),
       );
     } else {
-      final displayName =
-          googleUser?.displayName ?? firebaseUser?.displayName ?? 'No Name';
+      final isAnonymous = firebaseUser?.isAnonymous == true;
+      final displayName = googleUser?.displayName ??
+          (isAnonymous
+              ? 'Guest Reader'
+              : (firebaseUser?.displayName ?? 'No Name'));
       final email = googleUser?.email ?? firebaseUser?.email ?? '';
       final photoUrl = googleUser?.photoUrl;
 
@@ -510,6 +561,105 @@ class SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Sanctuary guest account callout
+            if (isAnonymous) ...[
+              CommonStyles.buildBorderedCard(
+                context: context,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(AppSpacing.rCard),
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.25),
+                      width: 1,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(AppSpacing.gap20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.gap8),
+                            decoration: BoxDecoration(
+                              color:
+                                  colorScheme.primary.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.cloud_upload_outlined,
+                              color: colorScheme.primary,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.gap12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Back up your reading',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        fontFamily: AppTheme.fontSerif,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                ),
+                                const SizedBox(height: AppSpacing.gap2),
+                                Text(
+                                  'Guest session',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                        letterSpacing: 0.5,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.gap12),
+                      Text(
+                        'Connect an account to preserve your reading streak across devices and read alongside friends.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              height: 1.45,
+                            ),
+                      ),
+                      const SizedBox(height: AppSpacing.gap16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: FilledButton(
+                          onPressed: () {
+                            unawaited(widget.vibrationService.lightImpact());
+                            showGuestAccountSheet(
+                              context,
+                              auth: widget.auth,
+                              firestore: widget.firestore,
+                              accountLinkingService:
+                                  widget.accountLinkingService,
+                              googleSignInProvider: widget.googleSignInProvider,
+                              appleSignInService: widget.appleSignInService,
+                              vibrationService: widget.vibrationService,
+                            );
+                          },
+                          child: const Text('Sign in / Link account'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.gap24),
+            ],
+
             // Profile / account card
             CommonStyles.buildBorderedCard(
               context: context,

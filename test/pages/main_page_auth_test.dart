@@ -250,8 +250,8 @@ void main() {
     expect(find.byType(WelcomePage), findsOneWidget);
     expect(find.byType(AuthSelectionPage), findsNothing);
 
-    // 2. Tap Get Started
-    await tester.tap(find.text('Get started'));
+    // 2. Tap Create an account
+    await tester.tap(find.text('Create an account'));
     await tester.pumpAndSettle();
 
     // 3. UserProfilePage

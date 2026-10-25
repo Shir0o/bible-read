@@ -144,7 +144,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Signed out: welcome/auth flow, no destinations to tap.
-    expect(find.text('Get started'), findsOneWidget);
+    expect(find.text('Start Reading'), findsOneWidget);
     expect(find.text('Today'), findsNothing);
     expect(find.text('Circle'), findsNothing);
     expect(find.text('Path'), findsNothing);

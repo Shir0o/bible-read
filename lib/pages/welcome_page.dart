@@ -4,11 +4,13 @@ import '../widgets/auth/auth_background.dart';
 import '../theme/app_theme.dart';
 
 class WelcomePage extends StatelessWidget {
+  final VoidCallback? onStartReading;
   final VoidCallback onGetStarted;
   final VoidCallback onLogin;
 
   const WelcomePage({
     super.key,
+    this.onStartReading,
     required this.onGetStarted,
     required this.onLogin,
   });
@@ -68,24 +70,24 @@ class WelcomePage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.gap40),
 
-              // Get Started Button
+              // Start Reading Button (primary)
               SizedBox(
-                height: 56,
+                height: 52,
                 child: FilledButton(
-                  onPressed: onGetStarted,
+                  onPressed: onStartReading ?? onGetStarted,
                   child: Text(
-                    'Get started',
+                    'Start Reading',
                     style: textTheme.titleMedium?.copyWith(
                       color: colorScheme.onPrimary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.gap16),
+              const SizedBox(height: AppSpacing.gap12),
 
-              // I already have an account Button
+              // I already have an account Button (secondary)
               SizedBox(
                 height: 48,
                 child: OutlinedButton(
@@ -93,13 +95,28 @@ class WelcomePage extends StatelessWidget {
                   child: Text(
                     'I already have an account',
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.gap24),
+              const SizedBox(height: AppSpacing.gap8),
+
+              // Create an account (smaller option)
+              Center(
+                child: TextButton(
+                  onPressed: onGetStarted,
+                  child: Text(
+                    'Create an account',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.gap16),
             ],
           ),
         );

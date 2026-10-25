@@ -28,7 +28,8 @@ import '../services/data_cache_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/vibration_service.dart';
 import '../services/connectivity_service.dart';
-import '../widgets/offline_banner.dart';
+import '../services/error_logger.dart';
+import '../widgets/guest_account_sheet.dart';
 import '../widgets/read_through_host.dart';
 import 'app_check_error_page.dart';
 
@@ -107,6 +108,8 @@ class MainPageState extends State<MainPage> {
 
   List<int> _navigationHistory = [_homeIndex];
   bool _showAuthSelection = false;
+  bool _isOfflineGuest = false;
+  StreamSubscription<ConnectionStatus>? _connectivitySub;
 
   @override
   void initState() {
@@ -124,6 +127,13 @@ class MainPageState extends State<MainPage> {
     _authStream = widget.auth.authStateChanges();
     _cacheService = DataCacheService();
     _connectivityService = ConnectivityService();
+    _connectivitySub = _connectivityService.status.listen((status) {
+      if (status == ConnectionStatus.online &&
+          _isOfflineGuest &&
+          widget.auth.currentUser == null) {
+        _promoteOfflineGuest();
+      }
+    });
     // ... rest of init ...
     _readingStatusService = widget.readingStatusService ??
         ReadingStatusService(
@@ -156,6 +166,7 @@ class MainPageState extends State<MainPage> {
         dateProvider: () => DateTime.now(),
         onOpenJourney: () => _onItemTapped(2),
         onOpenCommunity: () => _onItemTapped(1),
+        connectivityService: _connectivityService,
       ),
       CommunityPage(
         auth: widget.auth,
@@ -187,8 +198,22 @@ class MainPageState extends State<MainPage> {
   @override
   void dispose() {
     MainPage.requestedTab.removeListener(_handleRequestedTab);
+    _connectivitySub?.cancel();
     _connectivityService.dispose();
     super.dispose();
+  }
+
+  Future<void> _promoteOfflineGuest() async {
+    try {
+      await widget.auth.signInAnonymously();
+      if (mounted) {
+        setState(() {
+          _isOfflineGuest = false;
+        });
+      }
+    } catch (_) {
+      // Retain offline guest session until network succeeds.
+    }
   }
 
   void _handleRequestedTab() {
@@ -203,7 +228,7 @@ class MainPageState extends State<MainPage> {
 
   Future<void> _saveFcmToken() async {
     final user = widget.auth.currentUser;
-    if (user == null) return;
+    if (user == null || user.isAnonymous) return;
     try {
       final token = await widget.messaging.getToken();
       if (token != null) {
@@ -226,8 +251,16 @@ class MainPageState extends State<MainPage> {
 
   void _onItemTapped(int index) {
     if (widget.appCheckFailed) return;
-    if (widget.auth.currentUser == null) return;
+    final user = widget.auth.currentUser;
+    if (user == null && !_isOfflineGuest) return;
     if (widget.onNavigate != null && !widget.onNavigate!(index)) return;
+
+    final isAnonymous = _isOfflineGuest || (user?.isAnonymous == true);
+    if (index == 1 && isAnonymous) {
+      unawaited(vibrationService.lightImpact());
+      _showGuestAccountSheet(context);
+      return;
+    }
 
     unawaited(vibrationService.lightImpact());
     if (_selectedIndex == index) return;
@@ -247,8 +280,16 @@ class MainPageState extends State<MainPage> {
 
   void _navigateFromMenu(int index) {
     if (widget.appCheckFailed) return;
-    if (widget.auth.currentUser == null) return;
+    final user = widget.auth.currentUser;
+    if (user == null && !_isOfflineGuest) return;
     if (widget.onNavigate != null && !widget.onNavigate!(index)) return;
+
+    final isAnonymous = _isOfflineGuest || (user?.isAnonymous == true);
+    if (index == 1 && isAnonymous) {
+      unawaited(vibrationService.lightImpact());
+      _showGuestAccountSheet(context);
+      return;
+    }
 
     unawaited(vibrationService.lightImpact());
 
@@ -258,6 +299,16 @@ class MainPageState extends State<MainPage> {
         _navigationHistory.add(index);
       });
     }
+  }
+
+  void _showGuestAccountSheet(BuildContext context) {
+    showGuestAccountSheet(
+      context,
+      auth: widget.auth,
+      firestore: widget.firestore,
+      googleSignInProvider: widget.googleSignInProvider,
+      vibrationService: widget.vibrationService,
+    );
   }
 
   @override
@@ -285,7 +336,7 @@ class MainPageState extends State<MainPage> {
         // This avoids the stuck-on-loading-screen feeling.
         final user = snapshot.data;
 
-        if (user == null) {
+        if (user == null && !_isOfflineGuest) {
           // If the stream is still waiting and we don't have a currentUser yet, show loader.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
@@ -315,6 +366,19 @@ class MainPageState extends State<MainPage> {
             );
           }
           return WelcomePage(
+            onStartReading: () async {
+              unawaited(widget.vibrationService.lightImpact());
+              try {
+                await widget.auth.signInAnonymously();
+              } catch (e, st) {
+                ErrorLogger.log(e, st);
+                if (mounted) {
+                  setState(() {
+                    _isOfflineGuest = true;
+                  });
+                }
+              }
+            },
             onGetStarted: () {
               setState(() {
                 _showAuthSelection = true;
@@ -382,9 +446,6 @@ class MainPageState extends State<MainPage> {
                 onDestinationSelected: _onItemTapped,
                 pages: _pages,
                 destinations: destinations,
-                offlineBanner: OfflineBanner(
-                  connectivityService: _connectivityService,
-                ),
               ),
             ),
           ),

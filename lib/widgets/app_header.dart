@@ -38,6 +38,9 @@ class AppHeader extends StatelessWidget {
   /// Optional status indicator shown before the avatar (Today's sun mark).
   final Widget? status;
 
+  /// Optional ambient sync status indicator shown beside the date eyebrow.
+  final Widget? syncIndicator;
+
   const AppHeader({
     super.key,
     required this.auth,
@@ -48,6 +51,7 @@ class AppHeader extends StatelessWidget {
     required this.title,
     this.action,
     this.status,
+    this.syncIndicator,
   });
 
   static const double _maxTitleScale = 1.5;
@@ -72,11 +76,18 @@ class AppHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  eyebrow.toUpperCase(),
-                  style: AppTextStyles.caption(context).copyWith(
-                    color: colorScheme.outline,
-                  ),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: AppSpacing.gap8,
+                  children: [
+                    Text(
+                      eyebrow.toUpperCase(),
+                      style: AppTextStyles.caption(context).copyWith(
+                        color: colorScheme.outline,
+                      ),
+                    ),
+                    if (syncIndicator != null) syncIndicator!,
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.gap4),
                 // The title is already display-sized; past 1.5x it would

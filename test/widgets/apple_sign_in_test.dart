@@ -39,6 +39,9 @@ class MockAppleSignInService implements AppleSignInService {
     }
     return returnCredential;
   }
+
+  @override
+  Future<AuthCredential?> getCredential() async => null;
 }
 
 class MockVibrationService extends VibrationService {

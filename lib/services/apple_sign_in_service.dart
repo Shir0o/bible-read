@@ -21,6 +21,10 @@ abstract class AppleSignInService {
   ///
   /// Returns `null` if the user cancels authorization.
   Future<UserCredential?> signIn();
+
+  /// Obtains the [AuthCredential] from Apple without directly signing in,
+  /// or returns `null` if cancelled.
+  Future<AuthCredential?> getCredential() async => null;
 }
 
 /// Default production implementation of [AppleSignInService].
@@ -56,6 +60,35 @@ class DefaultAppleSignInService implements AppleSignInService {
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
     return digest.toString();
+  }
+
+  @override
+  Future<AuthCredential?> getCredential() async {
+    final rawNonce = _generateNonce();
+    final nonce = _sha256ofString(rawNonce);
+
+    try {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
+      );
+
+      final oauthProvider = OAuthProvider('apple.com');
+      return oauthProvider.credential(
+        idToken: appleCredential.identityToken,
+        rawNonce: rawNonce,
+      );
+    } catch (error) {
+      if (error is SignInWithAppleAuthorizationException) {
+        if (error.code == AuthorizationErrorCode.canceled) {
+          return null;
+        }
+      }
+      rethrow;
+    }
   }
 
   @override

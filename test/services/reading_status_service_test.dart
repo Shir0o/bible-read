@@ -538,5 +538,188 @@ void main() {
         ).called(1);
       },
     );
+
+    test(
+      'fetchStatus derives status from reading collection when summaryDoc is missing',
+      () async {
+        final userDoc = firestore.collection('users').doc(user.uid);
+        await userDoc.set({'name': 'User One', 'email': user.email});
+
+        // Summary document is intentionally NOT created.
+        final today = fixedNow; // DateTime(2024, 7, 30)
+        String formatDate(DateTime d) =>
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+        // Seed 3 consecutive reading documents ending today.
+        for (int i = 0; i < 3; i++) {
+          final date = today.subtract(Duration(days: i));
+          await userDoc.collection('reading').doc(formatDate(date)).set({
+            'read': true,
+          });
+        }
+
+        final status = await service.fetchStatus();
+        expect(status.streak, 3);
+        expect(status.readToday, isTrue);
+        expect(status.totalReadDays, 3);
+        expect(status.pastWeek.length, 7);
+        expect(status.pastMonth.length, 31);
+      },
+    );
+
+    group('deriveStatusFromDates', () {
+      test(
+        'computes streak for consecutive days ending today',
+        () {
+          final today = DateTime(2026, 10, 25);
+          final readDates = {
+            DateTime(2026, 10, 23),
+            DateTime(2026, 10, 24),
+            DateTime(2026, 10, 25),
+          };
+
+          final status = ReadingStatusService.deriveStatusFromDates(
+            readDates: readDates,
+            today: today,
+          );
+
+          expect(status.streak, 3);
+          expect(status.readToday, isTrue);
+          expect(status.totalReadDays, 3);
+          expect(status.longestStreak, 3);
+          expect(status.graceCreditsAvailable, 2);
+        },
+      );
+
+      test(
+        'computes streak for consecutive days ending yesterday',
+        () {
+          final today = DateTime(2026, 10, 25);
+          final readDates = {
+            DateTime(2026, 10, 23),
+            DateTime(2026, 10, 24),
+          };
+
+          final status = ReadingStatusService.deriveStatusFromDates(
+            readDates: readDates,
+            today: today,
+          );
+
+          // Yesterday was read; today covered by grace credit preserving the streak
+          expect(status.streak, 3);
+          expect(status.readToday, isFalse);
+          expect(status.totalReadDays, 2);
+          expect(status.graceCreditsAvailable, 1);
+        },
+      );
+
+      test('resets streak when broken by missed days', () {
+        final today = DateTime(2026, 10, 25);
+        // Read Oct 10 and 11, then missed days until Oct 24 and 25
+        final readDates = {
+          DateTime(2026, 10, 10),
+          DateTime(2026, 10, 11),
+          DateTime(2026, 10, 24),
+          DateTime(2026, 10, 25),
+        };
+
+        final status = ReadingStatusService.deriveStatusFromDates(
+          readDates: readDates,
+          today: today,
+          longestStreak: 5,
+        );
+
+        // Missed days after Oct 13 broke the earlier streak.
+        expect(status.streak, 2);
+        expect(status.readToday, isTrue);
+        expect(status.totalReadDays, 4);
+        expect(status.longestStreak, 5);
+        expect(status.graceCreditsAvailable, 0);
+      });
+
+      test('uses grace credits to cover single missed day', () {
+        final today = DateTime(2026, 10, 25);
+        // Read Oct 21, 22, missed Oct 23, read Oct 24, 25
+        final readDates = {
+          DateTime(2026, 10, 21),
+          DateTime(2026, 10, 22),
+          DateTime(2026, 10, 24),
+          DateTime(2026, 10, 25),
+        };
+
+        final status = ReadingStatusService.deriveStatusFromDates(
+          readDates: readDates,
+          today: today,
+        );
+
+        expect(status.streak, 5);
+        expect(status.totalReadDays, 4);
+        expect(status.graceCreditsAvailable, 1);
+      });
+
+      test(
+        'computes 7-day pastWeek booleans (Sunday to Saturday)',
+        () {
+          // 2026-10-28 is a Wednesday (weekday = 3).
+          // Current calendar week spans Sunday Oct 25 to Saturday Oct 31.
+          final today = DateTime(2026, 10, 28);
+          final readDates = {
+            DateTime(2026, 10, 25), // Sunday -> index 0
+            DateTime(2026, 10, 27), // Tuesday -> index 2
+            DateTime(2026, 10, 28), // Wednesday -> index 3
+          };
+
+          final status = ReadingStatusService.deriveStatusFromDates(
+            readDates: readDates,
+            today: today,
+          );
+
+          expect(status.pastWeek.length, 7);
+          expect(
+            status.pastWeek,
+            [true, false, true, true, false, false, false],
+          );
+        },
+      );
+
+      test('computes month status booleans', () {
+        final today = DateTime(2026, 10, 28); // October has 31 days
+        final readDates = {
+          DateTime(2026, 10, 1), // Day 1 -> index 0
+          DateTime(2026, 10, 15), // Day 15 -> index 14
+          DateTime(2026, 10, 28), // Day 28 -> index 27
+          DateTime(2026, 9,
+              30), // September date should be excluded from October's pastMonth
+        };
+
+        final status = ReadingStatusService.deriveStatusFromDates(
+          readDates: readDates,
+          today: today,
+        );
+
+        expect(status.pastMonth.length, 31);
+        expect(status.pastMonth[0], isTrue);
+        expect(status.pastMonth[14], isTrue);
+        expect(status.pastMonth[27], isTrue);
+        expect(status.pastMonth.where((v) => v).length, 3);
+      });
+
+      test('handles empty read dates deterministically', () {
+        final today = DateTime(2026, 10, 25);
+        final status = ReadingStatusService.deriveStatusFromDates(
+          readDates: const {},
+          today: today,
+        );
+
+        expect(status.streak, 0);
+        expect(status.readToday, isFalse);
+        expect(status.totalReadDays, 0);
+        expect(status.graceCreditsAvailable, 0);
+        expect(status.graceCreditsMonth, '2026-10');
+        expect(status.pastWeek, List.filled(7, false));
+        expect(status.pastMonth, List.filled(31, false));
+        expect(status.longestStreak, 0);
+      });
+    });
   });
 }

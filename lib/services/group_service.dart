@@ -2392,76 +2392,74 @@ class GroupService {
         return true;
       }
 
-      await db.runTransaction((tx) async {
-        final snapshots =
-            await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
-          tx.get(entryRef),
-          tx.get(summaryRef),
-        ]);
-        final entrySnap = snapshots[0];
-        final summarySnap = snapshots[1];
-        final nowTs = FieldValue.serverTimestamp();
-        final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
-            (currentlyChecked?.length ?? 0);
-        final desiredCount = read ? schedule.chapters.length : 0;
-        final delta = desiredCount - currentCount;
-        final itemsCollection = entryRef.collection('items');
-        final prevCompleted =
-            (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
+      final snapshots =
+          await Future.wait<DocumentSnapshot<Map<String, dynamic>>>([
+        entryRef.get(),
+        summaryRef.get(),
+      ]);
+      final entrySnap = snapshots[0];
+      final summarySnap = snapshots[1];
+      final nowTs = FieldValue.serverTimestamp();
+      final currentCount = (entrySnap.data()?['count'] as num?)?.toInt() ??
+          (currentlyChecked?.length ?? 0);
+      final desiredCount = read ? schedule.chapters.length : 0;
+      final delta = desiredCount - currentCount;
+      final itemsCollection = entryRef.collection('items');
+      final prevCompleted =
+          (summarySnap.data()?['completed'] as num?)?.toInt() ?? 0;
 
-        if (read) {
-          for (var i = 0; i < schedule.chapters.length; i++) {
-            if (currentlyChecked?.contains(i) ?? false) continue;
-            tx.set(itemsCollection.doc(i.toString()), {
+      final batch = db.batch();
+      if (read) {
+        for (var i = 0; i < schedule.chapters.length; i++) {
+          if (currentlyChecked?.contains(i) ?? false) continue;
+          batch.set(itemsCollection.doc(i.toString()), {
+            'done': true,
+            'ts': nowTs,
+          });
+        }
+        batch.set(
+            entryRef,
+            {
               'done': true,
               'ts': nowTs,
-            });
+              'uid': uid,
+              'groupId': groupId,
+              'dateId': dateKey,
+              'count': desiredCount,
+            },
+            SetOptions(merge: true));
+      } else {
+        if (currentlyChecked != null && currentlyChecked.isNotEmpty) {
+          for (final idx in currentlyChecked) {
+            batch.delete(itemsCollection.doc(idx.toString()));
           }
-          tx.set(
-              entryRef,
-              {
-                'done': true,
-                'ts': nowTs,
-                'uid': uid,
-                'groupId': groupId,
-                'dateId': dateKey,
-                'count': desiredCount,
-              },
-              SetOptions(merge: true));
         } else {
-          if (currentlyChecked != null && currentlyChecked.isNotEmpty) {
-            for (final idx in currentlyChecked) {
-              tx.delete(itemsCollection.doc(idx.toString()));
-            }
+          // If we don't know what's checked, delete all possible indexes
+          for (var i = 0; i < schedule.chapters.length; i++) {
+            batch.delete(itemsCollection.doc(i.toString()));
+          }
+        }
+
+        if (entrySnap.exists) {
+          if (desiredCount == 0) {
+            batch.delete(entryRef);
           } else {
-            // If we don't know what's checked, we have to fetch them or assume all
-            // But we are in a transaction, so we can't easily fetch a collection.
-            // However, we can probably just delete all possible indexes if small
-            for (var i = 0; i < schedule.chapters.length; i++) {
-              tx.delete(itemsCollection.doc(i.toString()));
-            }
-          }
-
-          if (entrySnap.exists) {
-            if (desiredCount == 0) {
-              tx.delete(entryRef);
-            } else {
-              tx.update(entryRef, {'count': desiredCount, 'ts': nowTs});
-            }
+            batch.update(entryRef, {'count': desiredCount, 'ts': nowTs});
           }
         }
+      }
 
-        if (delta != 0) {
-          final updatedCompleted = prevCompleted + delta;
-          tx.set(
-              summaryRef,
-              {
-                'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
-                'uid': uid,
-              },
-              SetOptions(merge: true));
-        }
-      });
+      if (delta != 0) {
+        final updatedCompleted = prevCompleted + delta;
+        batch.set(
+            summaryRef,
+            {
+              'completed': updatedCompleted < 0 ? 0 : updatedCompleted,
+              'uid': uid,
+            },
+            SetOptions(merge: true));
+      }
+      await batch.commit();
 
       if (read) {
         // Marking read credits the whole day; un-marking never takes a lap
@@ -2480,6 +2478,22 @@ class GroupService {
       return false;
     }
   }
+
+  /// Offline-safe alias for [toggleReadStatus].
+  Future<bool> updateDailyReading({
+    required String groupId,
+    required String uid,
+    required GroupSchedule schedule,
+    required bool read,
+    Set<int>? currentlyChecked,
+  }) =>
+      toggleReadStatus(
+        groupId: groupId,
+        uid: uid,
+        schedule: schedule,
+        read: read,
+        currentlyChecked: currentlyChecked,
+      );
 
   /// Stream of completion counts/status for each day in the schedule for a specific user.
   ///

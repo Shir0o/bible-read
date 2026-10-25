@@ -21,6 +21,9 @@ class _SupportedAppleSignInService implements AppleSignInService {
 
   @override
   Future<UserCredential?> signIn() async => null;
+
+  @override
+  Future<AuthCredential?> getCredential() async => null;
 }
 
 void main() {

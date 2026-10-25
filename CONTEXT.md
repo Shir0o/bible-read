@@ -98,6 +98,24 @@ from Adjust pace, which is always personal, and owner-only because it changes
 dates for people who are not in the room.
 _Avoid_: Edit plan, adjust pace, edit group plan
 
+**Guest reader**:
+A reader who uses the app without signing in. Has full access to personal plans,
+daily check-in, streaks, reflections, and Bible progress. Upgrades to a full account
+via Account linking when joining a Group or connecting with Friends.
+_Avoid_: Anonymous user, unauthenticated user, temporary account
+
+**Account linking**:
+Connecting a Guest reader's progress to a permanent Google, Apple, or email account.
+Preserves their existing reading history, streaks, and personal plans. If the account
+already exists, presents a Merge dry-run before completing.
+_Avoid_: Conversion, account upgrade, account migration
+
+**Merge dry-run**:
+A transparent side-by-side preview shown when a Guest reader links to an account that
+already has prior reading history, displaying the combined reading days, streak, and
+plan choices before committing any changes.
+_Avoid_: Sync preview, collision resolution screen
+
 **Group**:
 A named set of readers reading a shared schedule together, with an owner and members.
 _Avoid_: Team, cohort, and "circle" *as a name for a Group* — a Circle is a different

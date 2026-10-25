@@ -98,7 +98,7 @@ disabled · loading · selected**.
       clipping, and nothing that should wrap is cut off.
 - [ ] Empty states: new user with no reads, Circle with no group, Path with
       no plan, no notifications.
-- [ ] Error states: offline (`OfflineBanner`), App Check failure, sign-in
+- [ ] Error states: offline (`AmbientSyncIndicator`), App Check failure, sign-in
       failure. The copy is human and says what to do next.
 - [ ] Copy matches the agreed wording, for example "Reading counts as showing
       up". The design bundle may have older text.
