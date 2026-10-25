@@ -165,7 +165,7 @@ class _MergeDryRunSheetState extends State<MergeDryRunSheet> {
             value,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontFamily: AppTheme.fontSerif,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
               color: isHighlight ? colorScheme.primary : colorScheme.onSurface,
             ),
           ),
@@ -369,12 +369,13 @@ class _MergeDryRunSheetState extends State<MergeDryRunSheet> {
             child: FilledButton(
               onPressed: _isCommitting ? null : _handleMerge,
               child: _isCommitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
+                        // token-exempt: button submitting
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                       ),
                     )
                   : const Text('Merge & Continue'),

@@ -273,7 +273,10 @@ class _GuestAccountSheetState extends State<GuestAccountSheet> {
                   ? const SizedBox(
                       height: 20,
                       width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        // token-exempt: button submitting
+                        strokeWidth: 2,
+                      ),
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
