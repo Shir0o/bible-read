@@ -166,14 +166,14 @@ class GroupService {
       }
 
       if (public) {
-        return await joinGroupDirectly(
+        return joinGroupDirectly(
           groupId: groupId,
           uid: uid,
           name: name,
           photoUrl: photoUrl,
         );
       } else {
-        return await requestJoin(
+        return requestJoin(
           groupId: groupId,
           uid: uid,
           name: name,
