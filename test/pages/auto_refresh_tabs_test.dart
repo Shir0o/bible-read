@@ -145,12 +145,63 @@ void main() {
           'SunMark should reflect unmarked status for the new day instead of remaining marked from yesterday',
     );
 
-    // Pull to refresh should trigger the full screen big read button (CheckInPage) again when unread
+    // A pull-to-refresh refreshes the reading state but must not re-open the
+    // check-in that was already auto-opened for the day (#1035 regression).
     await tester.fling(
         find.byType(CustomScrollView), const Offset(0, 300), 1000);
     await tester.pumpAndSettle();
 
-    expect(find.byType(CheckInPage), findsOneWidget);
-    expect(find.text('I READ'), findsOneWidget);
+    expect(find.byType(CheckInPage), findsNothing);
+    expect(find.text('I READ'), findsNothing);
+  });
+
+  testWidgets(
+      'resuming on a new day does not stack a second check-in over an open one',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(
+      mockUser: MockUser(uid: 'u1'),
+      signedIn: true,
+    );
+    var currentDate = DateTime(2024, 7, 30);
+
+    await firestore.collection('users').doc('u1').set({'name': 'U'});
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          firestore: firestore,
+          auth: auth,
+          dateProvider: () => currentDate,
+          enableDriftAnimation: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Day 1 is unread, so the check-in auto-opens and stays open.
+    expect(
+      find.byType(CheckInPage, skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(find.text('I READ', skipOffstage: false), findsOneWidget);
+
+    // App is backgrounded overnight and resumed with the check-in still open.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    currentDate = DateTime(2024, 7, 31);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byType(CheckInPage, skipOffstage: false),
+      findsOneWidget,
+      reason: 'The new day must not push a second check-in over the open one',
+    );
+    expect(
+      find.text('I READ', skipOffstage: false),
+      findsOneWidget,
+      reason: 'Only one check-in may be on the stack',
+    );
   });
 }

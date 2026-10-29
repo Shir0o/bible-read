@@ -216,6 +216,11 @@ class _HomePageState extends State<HomePage>
   /// Tracks whether the CheckInPage was auto-opened on app launch.
   bool _hasAutoOpenedCheckIn = false;
 
+  /// Whether a CheckInPage pushed from Home is currently on the navigator
+  /// stack. Guards against stacking a second check-in when a day rollover
+  /// re-opens it over an already-open one.
+  bool _checkInRouteOpen = false;
+
   /// Whether the primary plan card's mark is mid-write.
   bool _planToggleLoading = false;
 
@@ -342,12 +347,8 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Future<void> _loadInitialData({
-    bool forceRefresh = false,
-    bool allowAutoOpenCheckIn = false,
-  }) async {
-    final shouldAutoOpenCheckIn =
-        !_hasAutoOpenedCheckIn || allowAutoOpenCheckIn;
+  Future<void> _loadInitialData({bool forceRefresh = false}) async {
+    final shouldAutoOpenCheckIn = !_hasAutoOpenedCheckIn;
     _hasAutoOpenedCheckIn = true;
 
     // Resolve the pinned-reading preference first so _loadActiveReadings can prefer the
@@ -977,10 +978,7 @@ class _HomePageState extends State<HomePage>
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: RefreshIndicator(
-        onRefresh: () => _loadInitialData(
-          forceRefresh: true,
-          allowAutoOpenCheckIn: true,
-        ),
+        onRefresh: () => _loadInitialData(forceRefresh: true),
         child: SkeletonLoader(
           loading: _initialLoading || _isSyncing,
           minTime: const Duration(milliseconds: 1000),
@@ -999,41 +997,51 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  void _openCheckInPage() {
+  Future<void> _openCheckInPage() async {
+    // Never stack a second check-in. A day rollover can request one while the
+    // previous day's check-in is still on the stack; pushing again would leave
+    // two "I READ" screens behind each other.
+    if (_disposed || !mounted || _checkInRouteOpen) return;
+    _checkInRouteOpen = true;
+
     final isTestEnv = WidgetsBinding.instance.runtimeType
         .toString()
         .toLowerCase()
         .contains('test');
 
-    Navigator.of(context).push(
-      PageRouteBuilder<void>(
-        transitionDuration:
-            isTestEnv ? Duration.zero : const Duration(milliseconds: 300),
-        reverseTransitionDuration:
-            isTestEnv ? Duration.zero : const Duration(milliseconds: 300),
-        pageBuilder: (context, animation, secondaryAnimation) => CheckInPage(
-          readToday: _readToday,
-          seasonDays: _totalReadDays,
-          reflection: _reflection,
-          dateProvider: widget.dateProvider,
-          onConfirmRead: () => _toggleReadStatus(showSnackBar: false),
-          onReflect: () {
-            // The reflection sheet draws up ON TOP of the check-in screen; the
-            // check-in page stays on stage so "Done" (not the reflection) is
-            // what returns to Home.
-            _openReflectSheet(context, initialText: _reflection);
+    try {
+      await Navigator.of(context).push(
+        PageRouteBuilder<void>(
+          transitionDuration:
+              isTestEnv ? Duration.zero : const Duration(milliseconds: 300),
+          reverseTransitionDuration:
+              isTestEnv ? Duration.zero : const Duration(milliseconds: 300),
+          pageBuilder: (context, animation, secondaryAnimation) => CheckInPage(
+            readToday: _readToday,
+            seasonDays: _totalReadDays,
+            reflection: _reflection,
+            dateProvider: widget.dateProvider,
+            onConfirmRead: () => _toggleReadStatus(showSnackBar: false),
+            onReflect: () {
+              // The reflection sheet draws up ON TOP of the check-in screen; the
+              // check-in page stays on stage so "Done" (not the reflection) is
+              // what returns to Home.
+              _openReflectSheet(context, initialText: _reflection);
+            },
+            onClose: () {
+              Navigator.of(context).pop();
+            },
+            vibrationService: widget.vibrationService,
+            enableDriftAnimation: widget.enableDriftAnimation,
+          ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
           },
-          onClose: () {
-            Navigator.of(context).pop();
-          },
-          vibrationService: widget.vibrationService,
-          enableDriftAnimation: widget.enableDriftAnimation,
         ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ),
-    );
+      );
+    } finally {
+      _checkInRouteOpen = false;
+    }
   }
 
   /// Today's header eyebrow, e.g. `MONDAY · JANUARY 5`.
