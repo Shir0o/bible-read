@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.42.1](https://github.com/Shir0o/bible-read/compare/v1.42.0...v1.42.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** bump dependencies for security advisories ([#131](https://github.com/Shir0o/bible-read/issues/131)) ([#1063](https://github.com/Shir0o/bible-read/issues/1063)) ([b92fae4](https://github.com/Shir0o/bible-read/commit/b92fae4a7220e3ea391cd2d890f1c5ad841bd660))
+* **deps:** update qs to patched version in firestore-tests (alert [#139](https://github.com/Shir0o/bible-read/issues/139)) ([#1066](https://github.com/Shir0o/bible-read/issues/1066)) ([dd8114f](https://github.com/Shir0o/bible-read/commit/dd8114f662a8651025d518a0cf61e06cbb8e398b))
+* **home:** stop stacking the check-in on new-day resume ([#1067](https://github.com/Shir0o/bible-read/issues/1067)) ([1432981](https://github.com/Shir0o/bible-read/commit/14329813f2de0e2dbf4204ea7f5950c5f224abf4))
+
 ## [1.42.0](https://github.com/Shir0o/bible-read/compare/v1.41.0...v1.42.0) (2026-10-25)
 
 
