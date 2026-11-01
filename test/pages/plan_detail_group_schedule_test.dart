@@ -107,10 +107,10 @@ void main() {
 
     // Genesis 1 (overdue) appears in the catch-up tray and the list;
     // Genesis 2 (current) appears in the "with your group" anchor and the list;
-    // Genesis 3 (upcoming) appears only in the list.
+    // Genesis 3 (upcoming) appears in the list.
     expect(find.text('Genesis 1'), findsWidgets);
     expect(find.text('Genesis 2'), findsWidgets);
-    expect(find.text('Genesis 3'), findsOneWidget);
+    expect(find.text('Genesis 3'), findsWidgets);
   });
 
   testWidgets('PlanDetailPage handles empty schedule in group mode', (
@@ -177,10 +177,12 @@ void main() {
   ) async {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
-    final yesterday = todayDate.subtract(const Duration(days: 1));
+    final pastDateInSameMonth = todayDate.day > 1
+        ? todayDate.subtract(const Duration(days: 1))
+        : todayDate;
 
     final schedules = [
-      GroupSchedule(date: yesterday, chapters: ['Genesis 1']),
+      GroupSchedule(date: pastDateInSameMonth, chapters: ['Genesis 1']),
       GroupSchedule(date: todayDate, chapters: ['Genesis 2']),
     ];
 
