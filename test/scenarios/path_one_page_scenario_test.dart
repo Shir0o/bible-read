@@ -112,7 +112,14 @@ void main() {
         .collection('summary')
         .doc('data')
         .set({'streak': 6});
-    for (final key in ['2026-10-01', '2026-10-02']) {
+    final now = DateTime.now();
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    final currentMonthHeader = '${months[now.month - 1]} ${now.year}';
+    final monthStr = now.month.toString().padLeft(2, '0');
+    for (final key in ['${now.year}-$monthStr-01', '${now.year}-$monthStr-02']) {
       await firestore
           .collection('users')
           .doc('u1')
@@ -125,7 +132,7 @@ void main() {
     expect(find.text('6 days'), findsOneWidget);
     expect(find.text('2 days'), findsOneWidget);
 
-    await tester.tap(find.text('October 2026'));
+    await tester.tap(find.text(currentMonthHeader));
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
     expect(find.byType(StreakHistoryPage), findsOneWidget);
   });
