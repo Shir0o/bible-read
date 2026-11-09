@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.42.1](https://github.com/Shir0o/bible-read/compare/v1.42.0...v1.42.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **deps:** bump dependencies for security advisories ([#131](https://github.com/Shir0o/bible-read/issues/131)) ([#1063](https://github.com/Shir0o/bible-read/issues/1063)) ([b92fae4](https://github.com/Shir0o/bible-read/commit/b92fae4a7220e3ea391cd2d890f1c5ad841bd660))
+* **deps:** bump minimatch to &gt;=11.0.1 (alerts [#142](https://github.com/Shir0o/bible-read/issues/142), [#144](https://github.com/Shir0o/bible-read/issues/144)) ([#1069](https://github.com/Shir0o/bible-read/issues/1069)) ([9735c45](https://github.com/Shir0o/bible-read/commit/9735c45ed676f96afae108b781dff914262784ac))
+* **deps:** pin deepmerge to 4.1.2 in functions (alert [#140](https://github.com/Shir0o/bible-read/issues/140)) ([#1068](https://github.com/Shir0o/bible-read/issues/1068)) ([b2b78da](https://github.com/Shir0o/bible-read/commit/b2b78daa5bd22d6f34e60ba0ebafc3a9a9162fb7))
+* **deps:** update qs to patched version in firestore-tests (alert [#139](https://github.com/Shir0o/bible-read/issues/139)) ([#1066](https://github.com/Shir0o/bible-read/issues/1066)) ([dd8114f](https://github.com/Shir0o/bible-read/commit/dd8114f662a8651025d518a0cf61e06cbb8e398b))
+* **home:** stop stacking the check-in on new-day resume ([#1067](https://github.com/Shir0o/bible-read/issues/1067)) ([1432981](https://github.com/Shir0o/bible-read/commit/14329813f2de0e2dbf4204ea7f5950c5f224abf4))
+* **security:** update Firestore Apple SDKs for CA remediation ([8ed47be](https://github.com/Shir0o/bible-read/commit/8ed47be6272a7d83f334864af331738ecaf2d0a3))
+
 ## [1.42.0](https://github.com/Shir0o/bible-read/compare/v1.41.0...v1.42.0) (2026-10-25)
 
 
