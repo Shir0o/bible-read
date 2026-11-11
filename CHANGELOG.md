@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.42.2](https://github.com/Shir0o/bible-read/compare/v1.42.1...v1.42.2) (2026-11-11)
+
+
+### Bug Fixes
+
+* **ui:** meet WCAG AA contrast on header and menu eyebrow labels ([#1073](https://github.com/Shir0o/bible-read/issues/1073)) ([c97ac57](https://github.com/Shir0o/bible-read/commit/c97ac579a7875b2b121c8dd7514da2cfddfda21f))
+
 ## [1.42.1](https://github.com/Shir0o/bible-read/compare/v1.42.0...v1.42.1) (2026-11-09)
 
 
