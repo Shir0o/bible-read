@@ -319,7 +319,7 @@ class _NotificationsSection extends StatelessWidget {
                     ? 'NOTIFICATIONS'
                     : 'NOTIFICATIONS · ${unread.length} NEW',
                 style: AppTextStyles.caption(context)
-                    .copyWith(color: colorScheme.outline),
+                    .copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ),
             TextButton(

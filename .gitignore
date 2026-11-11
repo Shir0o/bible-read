@@ -114,3 +114,5 @@ circle-and-path.html
 
 # Golden test failure output (flutter test writes diffs here)
 test/goldens/failures/
+# Ephemeral UI/UX audit screenshots (never tracked)
+test/goldens/bible_read_*.png

@@ -83,7 +83,7 @@ class AppHeader extends StatelessWidget {
                     Text(
                       eyebrow.toUpperCase(),
                       style: AppTextStyles.caption(context).copyWith(
-                        color: colorScheme.outline,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                     if (syncIndicator != null) syncIndicator!,
