@@ -1306,10 +1306,10 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// Section header rows ("Today’s reading", "Your circle") are a fixed 44px
+  /// Section header rows ("Today’s reading", "Your circle") are a fixed 48px
   /// so their trailing link is a full touch target and the gap below the
   /// title is the same with or without a link.
-  static const double _sectionHeaderHeight = 44;
+  static const double _sectionHeaderHeight = 48;
 
   ButtonStyle _sectionLinkStyle(BuildContext context) =>
       AppButtonStyles.sectionLink(context, _sectionHeaderHeight);
