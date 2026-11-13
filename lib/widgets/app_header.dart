@@ -54,7 +54,7 @@ class AppHeader extends StatelessWidget {
     this.syncIndicator,
   });
 
-  static const double _maxTitleScale = 1.5;
+  static const double _maxTitleScale = 1.15;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +90,7 @@ class AppHeader extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.gap4),
-                // The title is already display-sized; past 1.5x it would
+                // The title is already display-sized; past 1.15x it would
                 // squeeze to an ellipsis beside the action pill.
                 MediaQuery.withClampedTextScaling(
                   maxScaleFactor: _maxTitleScale,

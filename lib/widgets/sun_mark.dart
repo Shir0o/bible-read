@@ -68,7 +68,7 @@ class SunMark extends StatelessWidget {
 
     if (onTap == null) return sunWidget;
 
-    final targetSize = size < 44.0 ? 44.0 : size;
+    final targetSize = size < 48.0 ? 48.0 : size;
 
     return Semantics(
       button: true,

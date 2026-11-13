@@ -186,7 +186,7 @@ class AppButtonStyles {
   static ButtonStyle sectionLink(BuildContext context, double height) =>
       TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap8),
-        minimumSize: Size(44, height),
+        minimumSize: Size(48, height),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       );
 
