@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.42.3](https://github.com/Shir0o/bible-read/compare/v1.42.2...v1.42.3) (2026-11-13)
+
+
+### Bug Fixes
+
+* **ui:** fix header text scaling and 48dp touch targets ([#1079](https://github.com/Shir0o/bible-read/issues/1079)) ([255dbaf](https://github.com/Shir0o/bible-read/commit/255dbafaae61b78546028ca09f4e9daa3c3b9624))
+
 ## [1.42.2](https://github.com/Shir0o/bible-read/compare/v1.42.1...v1.42.2) (2026-11-11)
 
 
