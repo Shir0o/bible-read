@@ -328,6 +328,20 @@ class _NotificationsSection extends StatelessWidget {
             ),
           ],
         ),
+        if (unread.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.gap4,
+              vertical: AppSpacing.gap8,
+            ),
+            child: Text(
+              'No new notifications',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         for (final n in unread.take(3))
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.gap8),

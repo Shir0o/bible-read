@@ -182,6 +182,19 @@ void main() {
     expect(find.textContaining('Read message'), findsNothing);
   });
 
+  testWidgets('shows a quiet empty state when nothing is unread', (
+    tester,
+  ) async {
+    final auth = signedInAuth();
+    final firestore = await seed(auth);
+    await openSheet(tester, auth: auth, firestore: firestore);
+
+    expect(find.text('NOTIFICATIONS'), findsOneWidget);
+    expect(find.text('No new notifications'), findsOneWidget);
+    // Read notifications do not count as unread.
+    expect(find.textContaining('NEW'), findsNothing);
+  });
+
   testWidgets('See all opens the notification center', (tester) async {
     final auth = signedInAuth();
     final firestore = await seed(auth, unread: 1);

@@ -1,9 +1,8 @@
 // UI/UX audit of the primary app shell.
 //
 // Pumps the real MainPage / app shell at three device + text-scale variants,
-// asserts there are no RenderFlex overflows, runs the Android tap-target and
-// text-contrast accessibility guidelines (reporting, not failing, when they are
-// not met), and captures reference screenshots.
+// asserts there are no RenderFlex overflows, asserts the Android tap-target and
+// text-contrast accessibility guidelines, and captures reference screenshots.
 //
 // Generate the reference PNGs with:
 //   flutter test --update-goldens test/ui_ux_audit_test.dart
@@ -253,21 +252,18 @@ void _expectNoOverflow(WidgetTester tester, String label) {
   );
 }
 
-/// Runs the accessibility guidelines, reporting failures without failing the
-/// run so drift stays visible in the audit log.
+/// Asserts the accessibility guidelines on the settled screen.
 Future<void> _checkGuidelines(WidgetTester tester, String label) async {
   final guidelines = <String, AccessibilityGuideline>{
     'androidTapTargetGuideline': androidTapTargetGuideline,
     'textContrastGuideline': textContrastGuideline,
   };
   for (final entry in guidelines.entries) {
-    try {
-      await expectLater(tester, meetsGuideline(entry.value));
-    } on TestFailure catch (failure) {
-      debugPrint(
-        'UI/UX audit [$label] ${entry.key} not satisfied:\n$failure',
-      );
-    }
+    await expectLater(
+      tester,
+      meetsGuideline(entry.value),
+      reason: 'UI/UX audit [$label] ${entry.key} not satisfied',
+    );
   }
 }
 
@@ -344,7 +340,7 @@ void main() {
     });
   }
 
-  testWidgets('phone click-through: tabs, menu sheet, settings',
+  testWidgets('phone click-through: tabs, menu sheet, settings, dialog',
       (tester) async {
     final semantics = tester.ensureSemantics();
     try {
@@ -378,6 +374,30 @@ void main() {
         expect(find.byType(SettingsPage), findsOneWidget);
         _expectNoOverflow(tester, 'step5 settings');
         await _capture(tester, 'bible_read_step5_settings');
+
+        // Destructive-flow confirmation dialog: open it, audit it, cancel.
+        final settingsScrollable = find
+            .descendant(
+              of: find.byType(SettingsPage),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        await tester.scrollUntilVisible(
+          find.text('Delete account'),
+          200,
+          scrollable: settingsScrollable,
+        );
+        await tester.pumpAndSettle(const Duration(milliseconds: 100));
+        await tester.tap(find.text('Delete account'));
+        await tester.pumpAndSettle(const Duration(milliseconds: 100));
+        expect(find.text('Delete account?'), findsOneWidget);
+        _expectNoOverflow(tester, 'step6 delete-account dialog');
+        await _checkGuidelines(tester, 'step6 delete-account dialog');
+        await _capture(tester, 'bible_read_step6_delete_account_dialog');
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle(const Duration(milliseconds: 100));
+        expect(find.text('Delete account?'), findsNothing);
       });
     } finally {
       semantics.dispose();
