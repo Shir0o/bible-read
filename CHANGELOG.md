@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.42.4](https://github.com/Shir0o/bible-read/compare/v1.42.3...v1.42.4) (2026-11-14)
+
+
+### Bug Fixes
+
+* **ui:** add quiet empty state for caught-up menu notifications ([#1081](https://github.com/Shir0o/bible-read/issues/1081)) ([7f329e9](https://github.com/Shir0o/bible-read/commit/7f329e9a87f138f57438ef32067f7d2249420b81))
+
 ## [1.42.3](https://github.com/Shir0o/bible-read/compare/v1.42.2...v1.42.3) (2026-11-13)
 
 
