@@ -336,8 +336,10 @@ class _NotificationsSection extends StatelessWidget {
             ),
             child: Text(
               'No new notifications',
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: colorScheme.onSurface),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         for (final n in unread.take(3))
