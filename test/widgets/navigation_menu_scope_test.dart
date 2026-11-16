@@ -4,10 +4,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:bible_read/widgets/navigation_menu_scope.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
-import 'package:bible_read/services/admin_role_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
-
-class _MockAdminRoleService extends Mock implements AdminRoleService {}
 
 class _MockVibrationService extends Mock implements VibrationService {}
 
@@ -67,63 +64,43 @@ void main() {
     void alternateOnNavigate(int _) {}
     final baseVibration = const VibrationService();
     final differentVibration = _MockVibrationService();
-    final baseAdminService = _MockAdminRoleService();
-    final differentAdminService = _MockAdminRoleService();
 
     NavigationMenuScope buildScope({
       ValueChanged<int>? navigate,
       VibrationService? vibrationService,
-      AdminRoleService? adminRoleService,
     }) {
       return NavigationMenuScope(
         onNavigate: navigate ?? onNavigate,
         vibrationService: vibrationService ?? baseVibration,
-        adminRoleService: adminRoleService,
         child: const SizedBox(),
       );
     }
 
-    final baseScope = buildScope(adminRoleService: baseAdminService);
+    final baseScope = buildScope();
 
     expect(
       buildScope(
         navigate: alternateOnNavigate,
-        adminRoleService: baseAdminService,
       ).updateShouldNotify(baseScope),
       isTrue,
     );
     expect(
       buildScope(
         vibrationService: differentVibration,
-        adminRoleService: baseAdminService,
-      ).updateShouldNotify(baseScope),
-      isTrue,
-    );
-    expect(
-      buildScope(
-        adminRoleService: differentAdminService,
       ).updateShouldNotify(baseScope),
       isTrue,
     );
 
     expect(
-      buildScope(
-        adminRoleService: baseAdminService,
-      ).updateShouldNotify(baseScope),
+      buildScope().updateShouldNotify(baseScope),
       isFalse,
     );
   });
 
   testWidgets('showMenu forwards dependencies to AppMenuSheet', (tester) async {
     final vibrationService = _RecordingVibrationService();
-    final adminRoleService = _MockAdminRoleService();
     late NavigationMenuScope scope;
     late BuildContext childContext;
-
-    when(() => adminRoleService.cachedAdminRole).thenReturn(false);
-    when(
-      () => adminRoleService.isAdmin(allowStale: any(named: 'allowStale')),
-    ).thenAnswer((_) async => false);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -131,7 +108,6 @@ void main() {
           body: NavigationMenuScope(
             onNavigate: (_) {},
             vibrationService: vibrationService,
-            adminRoleService: adminRoleService,
             child: Builder(
               builder: (context) {
                 scope = NavigationMenuScope.of(context);
@@ -149,7 +125,6 @@ void main() {
 
     final sheet = tester.widget<AppMenuSheet>(find.byType(AppMenuSheet));
     expect(sheet.vibrationService, same(vibrationService));
-    expect(sheet.adminRoleService, same(adminRoleService));
 
     Navigator.of(childContext).pop();
     await tester.pumpAndSettle();

@@ -56,7 +56,6 @@ void main() {
       'Group join requests',
       'Group schedule changes',
       'Group invites',
-      'Seasonal challenges',
       'Vibration',
     ];
     for (final label in labels) {

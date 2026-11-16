@@ -14,7 +14,6 @@ import '../app_version.dart';
 import '../theme/app_theme.dart';
 import '../services/apple_sign_in_service.dart';
 import '../services/error_logger.dart';
-import '../services/feedback_service.dart';
 import '../services/friend_service.dart';
 import '../services/notification_preferences_service.dart';
 import '../services/user_preferences_service.dart';
@@ -29,7 +28,6 @@ import '../widgets/sub_header.dart';
 import '../widgets/vibration_button.dart';
 import '../services/account_linking_service.dart';
 import '../widgets/merge_dry_run_sheet.dart';
-import 'feedback_page.dart';
 import 'login_page.dart';
 import 'main_page.dart';
 import 'notification_settings_page.dart';
@@ -44,7 +42,6 @@ class SettingsPage extends StatefulWidget {
   final FirebaseFirestore firestore;
   final UserPreferencesService? userPreferencesService;
   final VibrationService vibrationService;
-  final FeedbackService feedbackService;
   final FriendService friendService;
   final Widget Function(BuildContext)? mainPageBuilder;
 
@@ -58,7 +55,6 @@ class SettingsPage extends StatefulWidget {
     FirebaseFirestore? firestore,
     UserPreferencesService? userPreferencesService,
     VibrationService? vibrationService,
-    FeedbackService? feedbackService,
     FriendService? friendService,
     Widget Function(BuildContext)? mainPageBuilder,
   }) {
@@ -82,8 +78,6 @@ class SettingsPage extends StatefulWidget {
       firestore: fs,
       userPreferencesService: userPreferencesService,
       vibrationService: vibrationService ?? const VibrationService(),
-      feedbackService:
-          feedbackService ?? FeedbackService(firestore: fs, auth: authInstance),
       friendService: friendService ?? FriendService(firestore: fs),
       mainPageBuilder: mainPageBuilder,
     );
@@ -99,7 +93,6 @@ class SettingsPage extends StatefulWidget {
     required this.firestore,
     this.userPreferencesService,
     required this.vibrationService,
-    required this.feedbackService,
     required this.friendService,
     this.mainPageBuilder,
   });
@@ -791,68 +784,6 @@ class SettingsPageState extends State<SettingsPage> {
                             service: NotificationPreferencesService(
                               firestore: widget.firestore,
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.gap24),
-
-            // Support
-            _sectionTitle(context, 'Support'),
-            const SizedBox(height: AppSpacing.gap12),
-            CommonStyles.buildBorderedCard(
-              context: context,
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.bug_report_outlined),
-                    title: const Text('Report a bug'),
-                    trailing: const Icon(Icons.chevron_right),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.hPadding,
-                    ),
-                    onTap: () {
-                      unawaited(widget.vibrationService.lightImpact());
-                      final messenger = ScaffoldMessenger.of(context);
-                      Navigator.of(context).push(
-                        animatedPageRoute(
-                          FeedbackPage(
-                            initialTab: FeedbackTab.bug,
-                            feedbackService: widget.feedbackService,
-                            vibrationService: widget.vibrationService,
-                            parentMessenger: messenger,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  Divider(
-                    height: 1,
-                    indent: AppSpacing.hPadding,
-                    endIndent: AppSpacing.hPadding,
-                    color: colorScheme.outlineVariant,
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.lightbulb_outline),
-                    title: const Text('Request a feature'),
-                    trailing: const Icon(Icons.chevron_right),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.hPadding,
-                    ),
-                    onTap: () {
-                      unawaited(widget.vibrationService.lightImpact());
-                      final messenger = ScaffoldMessenger.of(context);
-                      Navigator.of(context).push(
-                        animatedPageRoute(
-                          FeedbackPage(
-                            initialTab: FeedbackTab.feature,
-                            feedbackService: widget.feedbackService,
-                            vibrationService: widget.vibrationService,
-                            parentMessenger: messenger,
                           ),
                         ),
                       );

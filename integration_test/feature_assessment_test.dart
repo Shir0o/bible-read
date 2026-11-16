@@ -24,13 +24,11 @@ import 'package:bible_read/models/reading_plan.dart';
 import 'package:bible_read/models/reading_plan_progress.dart';
 import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/bible_progress_page.dart';
-import 'package:bible_read/pages/challenges_page.dart';
 import 'package:bible_read/pages/check_in_page.dart';
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/notification_settings_page.dart';
 import 'package:bible_read/pages/plan_detail_page.dart';
-import 'package:bible_read/pages/read_throughs_page.dart';
 import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
@@ -38,7 +36,6 @@ import 'package:bible_read/services/google_sign_in_factory.dart';
 import 'package:bible_read/services/notification_preferences_service.dart';
 import 'package:bible_read/theme/app_theme.dart';
 import 'package:bible_read/widgets/reflect_sheet.dart';
-import 'package:bible_read/services/vibration_service.dart';
 import '../test/helpers/fake_google_sign_in_platform.dart';
 import 'helpers/screenshot_helper.dart';
 
@@ -474,31 +471,6 @@ void main() {
     );
     await settle(tester, frames: 20);
     await shot(tester, '50_progress_bible_books');
-
-    await tester.pumpWidget(
-      MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.appTheme(AppTheme.designLightScheme),
-        home: ReadThroughsPage(firestore: firestore, auth: auth),
-      ),
-    );
-    await settle(tester, frames: 20);
-    await shot(tester, '51_progress_read_throughs');
-
-    // ==================== 7. SEASONAL CHALLENGES ====================
-    await tester.pumpWidget(
-      MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.appTheme(AppTheme.designLightScheme),
-        home: ChallengesPage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: const VibrationService(),
-        ),
-      ),
-    );
-    await settle(tester, frames: 20);
-    await shot(tester, '60_seasonal_challenges');
 
     // ==================== 8. SETTINGS & COMPLIANCE ====================
     await tester.pumpWidget(

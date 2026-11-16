@@ -4,7 +4,6 @@ import 'package:bible_read/widgets/skeleton.dart';
 import 'package:bible_read/widgets/skeletons/group_list_skeleton.dart';
 import 'package:bible_read/widgets/skeletons/read_log_skeleton.dart';
 import 'package:bible_read/widgets/skeletons/read_log_empty_skeleton.dart';
-import 'package:bible_read/widgets/skeletons/streak_history_skeleton.dart';
 import 'package:bible_read/widgets/skeletons/read_through_card_skeleton.dart';
 
 void main() {
@@ -30,13 +29,6 @@ void main() {
         const MaterialApp(home: Scaffold(body: ReadLogEmptySkeleton())),
       );
       expect(find.byType(ReadLogEmptySkeleton), findsOneWidget);
-    });
-
-    testWidgets('StreakHistorySkeleton builds correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: StreakHistorySkeleton())),
-      );
-      expect(find.byType(StreakHistorySkeleton), findsOneWidget);
     });
 
     testWidgets('ReadThroughCardSkeleton builds correctly', (tester) async {

@@ -6,8 +6,6 @@ enum NotificationType {
   groupScheduleUpdate,
   groupInvite,
   friend,
-  seasonalChallenge,
-  badge,
 }
 
 /// Stores whether each notification type is enabled for a user.

@@ -6,46 +6,36 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/app_notification.dart';
-import '../pages/admin/feedback_admin_page.dart';
 import '../pages/notification_center_page.dart';
 import '../pages/settings_page.dart';
-import '../services/admin_role_service.dart';
-import '../services/feedback_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/notification_service.dart';
 import '../services/reading_status_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
-import 'animated_page_route.dart';
 import 'app_bottom_sheet.dart';
 import 'common_styles.dart';
 
 /// The sheet opened from the avatar: a profile row, up to three of the newest
-/// unread notifications (with "See all"), then Settings and, for admins, Inbox.
+/// unread notifications (with "See all"), then Settings.
 /// Sign out lives in Settings.
 class AppMenuSheet extends StatefulWidget {
   const AppMenuSheet({
     super.key,
     required this.vibrationService,
     required this.parentContext,
-    this.feedbackService,
-    this.adminRoleService,
     this.auth,
     this.firestore,
   });
 
   final VibrationService vibrationService;
   final BuildContext parentContext;
-  final FeedbackService? feedbackService;
-  final AdminRoleService? adminRoleService;
   final FirebaseAuth? auth;
   final FirebaseFirestore? firestore;
 
   static Future<void> show({
     required BuildContext context,
     VibrationService? vibrationService,
-    FeedbackService? feedbackService,
-    AdminRoleService? adminRoleService,
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
   }) {
@@ -59,8 +49,6 @@ class AppMenuSheet extends StatefulWidget {
         return AppMenuSheet(
           vibrationService: vibrationService ?? const VibrationService(),
           parentContext: context,
-          feedbackService: feedbackService,
-          adminRoleService: adminRoleService,
           auth: auth,
           firestore: firestore,
         );
@@ -73,36 +61,6 @@ class AppMenuSheet extends StatefulWidget {
 }
 
 class _AppMenuSheetState extends State<AppMenuSheet> {
-  bool _isAdmin = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkAdminRole();
-  }
-
-  Future<void> _checkAdminRole() async {
-    final service = widget.adminRoleService;
-    if (service == null) return;
-
-    if (service.cachedAdminRole != null) {
-      setState(() {
-        _isAdmin = service.cachedAdminRole!;
-      });
-    }
-
-    try {
-      final isAdmin = await service.isAdmin(allowStale: true);
-      if (mounted && isAdmin != _isAdmin) {
-        setState(() {
-          _isAdmin = isAdmin;
-        });
-      }
-    } catch (_) {
-      // Ignore errors
-    }
-  }
-
   /// Closes the sheet, then runs [action] against the page that opened it.
   void _closeThen(void Function(BuildContext context) action) {
     unawaited(widget.vibrationService.lightImpact());
@@ -132,18 +90,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
           firestore: widget.firestore ?? FirebaseFirestore.instance,
           googleSignInProvider: createGoogleSignIn,
           vibrationService: widget.vibrationService,
-        ),
-      ),
-    );
-  }
-
-  void _openInbox(BuildContext context) {
-    Navigator.of(context).push(
-      animatedPageRoute(
-        FeedbackAdminPage(
-          firestore: widget.feedbackService?.firestore,
-          auth: widget.feedbackService?.auth,
-          adminRoleService: widget.adminRoleService,
         ),
       ),
     );
@@ -202,13 +148,6 @@ class _AppMenuSheetState extends State<AppMenuSheet> {
             label: 'Settings',
             onTap: () => _closeThen(_openSettings),
           ),
-          if (_isAdmin)
-            _SheetRow(
-              icon: Icons.inbox_outlined,
-              label: 'Inbox',
-              tag: 'Admin',
-              onTap: () => _closeThen(_openInbox),
-            ),
         ],
       ),
     );
@@ -394,12 +333,10 @@ class _SheetRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.tag,
   });
 
   final IconData icon;
   final String label;
-  final String? tag;
   final VoidCallback onTap;
 
   @override
@@ -426,24 +363,6 @@ class _SheetRow extends StatelessWidget {
                     ?.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
-            if (tag != null)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.gap8,
-                  vertical: AppSpacing.gap2,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(AppSpacing.gap12),
-                ),
-                child: Text(
-                  tag!,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
           ],
         ),
       ),

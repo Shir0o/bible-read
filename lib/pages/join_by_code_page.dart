@@ -510,9 +510,8 @@ class _JoinByCodePageState extends State<JoinByCodePage> {
                   const SizedBox(height: AppSpacing.gap8),
                   Text(
                     'You’ll each see the other in Circle — when '
-                    'they show up, what they share, and the '
-                    'Badges they earn. Either of you can '
-                    'unfriend at any time.',
+                    'they show up and what they share. Either '
+                    'of you can unfriend at any time.',
                     style: AppTextStyles.bodySmall(context).copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

@@ -3,13 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/models/app_notification.dart';
-import 'package:bible_read/pages/admin/feedback_admin_page.dart';
 import 'package:bible_read/pages/group_join_requests_page.dart';
 import 'package:bible_read/pages/notification_center_page.dart';
 import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/services/notification_service.dart';
-import 'package:bible_read/services/admin_role_service.dart';
-import 'package:bible_read/services/feedback_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,38 +15,6 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
-
-class _AlwaysAdminService extends AdminRoleService {
-  _AlwaysAdminService()
-      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
-
-  @override
-  Future<bool> isAdmin({bool allowStale = true}) async => true;
-}
-
-class _NeverAdminService extends AdminRoleService {
-  _NeverAdminService()
-      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore());
-
-  @override
-  Future<bool> isAdmin({bool allowStale = true}) async => false;
-}
-
-class _StaleCachedAdminService extends AdminRoleService {
-  _StaleCachedAdminService(bool cachedValue)
-      : super(auth: MockFirebaseAuth(), firestore: FakeFirebaseFirestore()) {
-    primeCacheForTest(
-      cachedValue,
-      timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
-    );
-  }
-
-  @override
-  Future<bool> fetchAdminRole() async {
-    await Future<void>.delayed(const Duration(milliseconds: 10));
-    return true;
-  }
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -61,7 +26,6 @@ void main() {
 
   Future<void> openSheet(
     WidgetTester tester, {
-    AdminRoleService? admin,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
     VibrationService? vibration,
@@ -74,11 +38,6 @@ void main() {
               onPressed: () => AppMenuSheet.show(
                 context: context,
                 vibrationService: vibration ?? const VibrationService(),
-                feedbackService: FeedbackService(
-                  firestore: firestore ?? FakeFirebaseFirestore(),
-                  auth: auth ?? MockFirebaseAuth(),
-                ),
-                adminRoleService: admin ?? _NeverAdminService(),
                 auth: auth,
                 firestore: firestore,
               ),
@@ -266,67 +225,5 @@ void main() {
 
     expect(find.byType(AppMenuSheet), findsNothing);
     expect(find.byType(SettingsPage), findsOneWidget);
-  });
-
-  testWidgets('shows Inbox with an Admin tag only for admins', (tester) async {
-    final auth = signedInAuth();
-    final firestore = await seed(auth);
-    await openSheet(
-      tester,
-      auth: auth,
-      firestore: firestore,
-      admin: _AlwaysAdminService(),
-    );
-
-    expect(find.text('Inbox'), findsOneWidget);
-    expect(find.text('Admin'), findsOneWidget);
-
-    await tester.tap(find.text('Inbox'));
-    await tester.pumpAndSettle();
-    expect(find.byType(FeedbackAdminPage), findsOneWidget);
-  });
-
-  testWidgets('hides Inbox for non-admins', (tester) async {
-    final auth = signedInAuth();
-    final firestore = await seed(auth);
-    await openSheet(tester, auth: auth, firestore: firestore);
-
-    expect(find.text('Inbox'), findsNothing);
-    expect(find.text('Admin'), findsNothing);
-  });
-
-  testWidgets('menu uses cached admin value without waiting for refresh', (
-    tester,
-  ) async {
-    final adminRoleService = _StaleCachedAdminService(true);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) {
-              return FilledButton(
-                onPressed: () {
-                  AppMenuSheet.show(
-                    context: context,
-                    vibrationService: const VibrationService(),
-                    adminRoleService: adminRoleService,
-                  );
-                },
-                child: const Text('Open menu'),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open menu'));
-    await tester.pump();
-
-    expect(find.byType(AppMenuSheet), findsOneWidget);
-    expect(find.text('Inbox'), findsOneWidget);
-
-    await tester.pump(const Duration(milliseconds: 20));
   });
 }

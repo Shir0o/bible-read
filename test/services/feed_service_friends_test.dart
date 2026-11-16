@@ -114,27 +114,6 @@ void main() {
 
       expect(source.entries.single.uid, 'friend');
     });
-
-    test('merges Friend badge logs', () async {
-      await firestore
-          .collection('users')
-          .doc('friend')
-          .collection('friend_badge_log')
-          .doc('friend_days_7')
-          .set({
-        'uid': 'friend',
-        'badgeId': 'days_7',
-        'type': 'consistency',
-        'dateUnlocked': DateTime(2026, 10, 18),
-      });
-
-      final source = await FeedService(firestore: firestore).watch(const [],
-          friendUids: ['friend'],
-          today: today).firstWhere((s) => s.badges.isNotEmpty);
-
-      expect(source.badges.single.mirror.uid, 'friend');
-      expect(source.badges.single.friendUid, 'friend');
-    });
   });
 
   group('assembleFeed with Friends', () {

@@ -1032,8 +1032,6 @@ class _UpdateTile extends StatelessWidget {
     switch (update.kind) {
       case FeedUpdateKind.milestone:
         return '$name finished the ${update.milestone!.scope.label}';
-      case FeedUpdateKind.badge:
-        return '$name earned the ${update.badgeTitle} badge';
       case FeedUpdateKind.day:
         return update.reading != null
             ? '$name read ${update.reading}'
@@ -1074,20 +1072,6 @@ class _UpdateTile extends StatelessWidget {
 
     final Widget leading = switch (update.kind) {
       FeedUpdateKind.grouped => _StackedAvatars(people: update.people),
-      FeedUpdateKind.badge => Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.of(context).accentSoft,
-          ),
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.workspace_premium_rounded,
-            size: AppSpacing.iconMd,
-            color: colorScheme.tertiary,
-          ),
-        ),
       _ => _PersonAvatar(
           name: update.people.first.avatarName,
           photoUrl: update.people.first.photoUrl,

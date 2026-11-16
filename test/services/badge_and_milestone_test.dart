@@ -1,7 +1,6 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bible_read/models/badge_award.dart';
 import 'package:bible_read/models/read_through.dart';
 import 'package:bible_read/services/milestone_announcer.dart';
 
@@ -151,15 +150,6 @@ void main() {
       expect(FeedMilestone.fromMap(null), isNull);
       expect(FeedMilestone.fromMap('nonsense'), isNull);
       expect(FeedMilestone.fromMap({'lapNumber': 2}), isNull);
-    });
-  });
-
-  group('BadgeDefinition', () {
-    test('remaining counts down to the next landmark', () {
-      const counts = ReadThroughCounts(oldTestament: 3, newTestament: 4);
-      final five = BadgeDefinition.all.firstWhere((b) => b.id == 'bible_5');
-      expect(counts.wholeBible, 3);
-      expect(five.remainingFor(counts), 2);
     });
   });
 }

@@ -9,7 +9,6 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import '../helpers/fake_google_sign_in_platform.dart';
 
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/pages/challenges_page.dart';
 
 import 'package:bible_read/widgets/app_nav_bar.dart';
 import 'package:bible_read/widgets/nav_glyphs.dart';
@@ -415,10 +414,8 @@ void main() {
     Navigator.push(
       state.context as BuildContext,
       MaterialPageRoute(
-        builder: (_) => ChallengesPage(
-          auth: auth,
-          firestore: firestore,
-          vibrationService: _RecordingVibrationService(),
+        builder: (_) => const Scaffold(
+          body: Text('Dummy Subpage'),
         ),
       ),
     );
@@ -426,7 +423,7 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(ChallengesPage), findsOneWidget);
+    expect(find.text('Dummy Subpage'), findsOneWidget);
 
     final hasNavAfter = find
             .byType(AppNavBar, skipOffstage: false)

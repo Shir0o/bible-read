@@ -12,11 +12,9 @@ import '../models/notification_preferences.dart';
 import '../theme/app_theme.dart';
 import '../services/error_logger.dart';
 import '../services/notification_service.dart';
-import '../services/seasonal_challenge_service.dart';
 import '../services/vibration_service.dart';
 import '../services/group_service.dart';
 import '../widgets/sub_header.dart';
-import 'seasonal_challenges_page.dart';
 import 'group_join_requests_page.dart';
 import 'main_page.dart';
 
@@ -192,16 +190,6 @@ Future<void> openNotification(
       Navigator.of(context).popUntil((route) => route.isFirst);
       MainPage.requestedTab.value = MainPage.circleTabIndex;
       break;
-    case NotificationType.seasonalChallenge:
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => SeasonalChallengesPage(
-            auth: auth,
-            service: SeasonalChallengeService(firestore: service.firestore),
-          ),
-        ),
-      );
-      break;
     case NotificationType.groupJoinRequest:
       if (notification.groupId != null) {
         await Navigator.of(context).push(
@@ -226,8 +214,6 @@ Future<void> openNotification(
 /// Fallback line for a notification with no stored message.
 String defaultNotificationMessage(AppNotification n) {
   switch (n.type) {
-    case NotificationType.seasonalChallenge:
-      return 'Seasonal challenge update';
     case NotificationType.groupScheduleUpdate:
       return 'Group schedule updated';
     case NotificationType.groupJoinRequest:
@@ -431,9 +417,6 @@ class _NotificationItemState extends State<_NotificationItem> {
   Widget _buildSystemIcon(BuildContext context) {
     IconData icon;
     switch (widget.notification.type) {
-      case NotificationType.seasonalChallenge:
-        icon = Icons.eco;
-        break;
       case NotificationType.groupScheduleUpdate:
         icon = Icons.calendar_today;
         break;
@@ -454,8 +437,6 @@ class _NotificationItemState extends State<_NotificationItem> {
         return Icons.notifications_active;
       case NotificationType.groupScheduleUpdate:
         return Icons.calendar_today;
-      case NotificationType.seasonalChallenge:
-        return Icons.eco;
       default:
         return Icons.notifications;
     }
@@ -468,8 +449,6 @@ class _NotificationItemState extends State<_NotificationItem> {
         return colorScheme.tertiary;
       case NotificationType.groupJoinRequest:
         return colorScheme.primary;
-      case NotificationType.seasonalChallenge:
-        return colorScheme.secondary;
       default:
         return colorScheme.surfaceContainerHighest;
     }
@@ -482,8 +461,6 @@ class _NotificationItemState extends State<_NotificationItem> {
         return colorScheme.onTertiary;
       case NotificationType.groupJoinRequest:
         return colorScheme.onPrimary;
-      case NotificationType.seasonalChallenge:
-        return colorScheme.onSecondary;
       default:
         return colorScheme.onSurfaceVariant;
     }
@@ -555,8 +532,6 @@ class _NotificationItemState extends State<_NotificationItem> {
 
   String _getDefaultMessage() {
     switch (widget.notification.type) {
-      case NotificationType.seasonalChallenge:
-        return 'Seasonal challenge update';
       case NotificationType.groupScheduleUpdate:
         return 'Group schedule updated';
       case NotificationType.groupJoinRequest:

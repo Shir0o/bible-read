@@ -175,8 +175,8 @@ class _FriendInvitePageState extends State<FriendInvitePage> {
         ),
         const SizedBox(height: AppSpacing.gap8),
         Text(
-          'Be friends and you’ll see each other in Circle — when you show up, '
-          'what you share, the Badges you earn.',
+          'Be friends and you’ll see each other in Circle — when you show up '
+          'and what you share.',
           style: AppTextStyles.body(context).copyWith(
             color: colorScheme.onSurfaceVariant,
           ),

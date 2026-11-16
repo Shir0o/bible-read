@@ -96,9 +96,6 @@ class FriendService {
   ) =>
       firestore.collection(feedEntriesPath(authorUid, dateKey)).doc(authorUid);
 
-  /// The per-author log of Badges, read by their Friends.
-  static const String badgeLog = 'friend_badge_log';
-
   /// Length of a friend code.
   static const int codeLength = 8;
 

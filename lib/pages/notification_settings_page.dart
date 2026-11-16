@@ -322,10 +322,6 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         return 'Group invites';
       case NotificationType.friend:
         return 'New friends';
-      case NotificationType.seasonalChallenge:
-        return 'Seasonal challenges';
-      case NotificationType.badge:
-        return 'Badges';
     }
   }
 }
