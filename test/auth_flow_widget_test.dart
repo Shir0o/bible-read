@@ -238,7 +238,7 @@ void main() {
     expect(find.text('Read alongside others'), findsOneWidget);
     expect(
       find.text(
-          'Sign in to connect with friends, join groups, and share your daily reflections.'),
+          'Sign in to join groups, build streaks, and read alongside others.'),
       findsOneWidget,
     );
     expect(
