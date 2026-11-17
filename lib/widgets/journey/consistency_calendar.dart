@@ -172,9 +172,12 @@ class _ConsistencyCalendarState extends State<ConsistencyCalendar> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${_monthName(_currentMonth.month)} ${_currentMonth.year}',
-                        style: Theme.of(context).textTheme.titleMedium,
+                      Flexible(
+                        child: Text(
+                          '${_monthName(_currentMonth.month)} ${_currentMonth.year}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       Row(
                         children: [
