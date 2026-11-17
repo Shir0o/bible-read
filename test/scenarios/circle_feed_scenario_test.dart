@@ -145,26 +145,6 @@ void main() {
           .collection('likes')
           .doc(likerUid);
 
-  /// Seeds [uid]'s [badgeId] in [groupId]'s badge log, as the server's
-  /// badge awarding writes it.
-  Future<void> seedBadge(
-    String groupId,
-    String uid,
-    String badgeId,
-    int daysAgo,
-  ) =>
-      firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('badge_log')
-          .doc('${uid}_$badgeId')
-          .set({
-        'uid': uid,
-        'badgeId': badgeId,
-        'dateUnlocked': Timestamp.fromDate(
-            DateTime(today.year, today.month, today.day - daysAgo, 12)),
-      });
-
   Future<void> pumpCircle(
     WidgetTester tester, {
     FeedService? feedService,
@@ -265,30 +245,17 @@ void main() {
   });
 
   testWidgets(
-      'one update per person per day across two Groups, keeping the shared '
-      'Reflection; unshared Reflections never appear', (tester) async {
-    await seedGroup(
-        'g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
+      'one update per person per day across two Groups merges Group names',
+      (tester) async {
+    await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
     await seedGroup('g2', 'Evening', {'alice': 'Alice', 'bob': 'Bob'});
-    // Bob's copies differ: only the Morning copy carries the Reflection.
     await seedEntry('bob', ['g2']);
-    await seedEntry('bob', ['g1'], reflection: 'He restores my soul.');
-    // Cara kept her Reflection private: it lives only in her own document.
-    await seedEntry('cara', ['g1'], hour: 8);
-    await firestore
-        .collection('users')
-        .doc('cara')
-        .collection('reflections')
-        .doc(todayKey)
-        .set({'text': 'Just for me.', 'shared': false});
+    await seedEntry('bob', ['g1']);
 
     await pumpCircle(tester);
 
     expect(feedText('Bob showed up'), findsOneWidget);
-    expect(find.text('He restores my soul.'), findsOneWidget);
     expect(feedText('7:00 AM · Evening, Morning'), findsOneWidget);
-    expect(feedText('Cara showed up'), findsOneWidget);
-    expect(find.text('Just for me.'), findsNothing);
     expect(find.text('TODAY'), findsOneWidget);
     expect(find.text("That's the week"), findsOneWidget);
   });
@@ -396,62 +363,6 @@ void main() {
     expect(feedText('Cara showed up'), findsNothing);
   });
 
-  testWidgets('a Badge earned this week appears; an older one does not',
-      (tester) async {
-    await seedGroup(
-        'g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
-    await seedBadge('g1', 'bob', 'first_book', 1);
-    await seedBadge('g1', 'cara', 'first_nt', 9);
-
-    await pumpCircle(tester);
-
-    expect(find.text('YESTERDAY'), findsOneWidget);
-    expect(feedText('Bob earned the First Book badge'), findsOneWidget);
-    expect(find.textContaining('First New Testament'), findsNothing);
-  });
-
-  testWidgets('two Badges earned in one week both show', (tester) async {
-    await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
-    await seedBadge('g1', 'bob', 'first_book', 1);
-    await seedBadge('g1', 'bob', 'first_nt', 3);
-
-    await pumpCircle(tester);
-
-    expect(feedText('Bob earned the First Book badge'), findsOneWidget);
-    expect(
-        feedText('Bob earned the First New Testament badge'), findsOneWidget);
-  });
-
-  testWidgets(
-      'a Badge Amen is its own, apart from the Amen on that person\'s day',
-      (tester) async {
-    await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
-    await seedEntry('bob', ['g1'], hour: 8);
-    await seedBadge('g1', 'bob', 'first_book', 0);
-    await likeRef('g1', 'bob', 'zed').set({'name': 'Zed'});
-    final badgeLike =
-        firestore.doc('groups/g1/badge_log/bob_first_book/likes/alice');
-
-    await pumpCircle(tester);
-
-    final day = find.byKey(ValueKey('amen_$todayKey/bob'));
-    final badge = find.byKey(ValueKey('amen_$todayKey/bob_first_book'));
-    expect(feedText('Bob showed up'), findsOneWidget);
-    expect(feedText('Bob earned the First Book badge'), findsOneWidget);
-    expect(find.descendant(of: day, matching: find.text('1')), findsOneWidget);
-    expect(find.descendant(of: badge, matching: find.text('1')), findsNothing);
-
-    await tester.tap(badge);
-    await tester.pumpAndSettle();
-
-    expect((await badgeLike.get()).exists, isTrue);
-    expect((await likeRef('g1', 'bob', 'alice').get()).exists, isFalse);
-    expect(
-        find.descendant(of: badge, matching: find.text('1')), findsOneWidget);
-    expect(find.descendant(of: day, matching: find.text('1')), findsOneWidget);
-    expect(notified, ['bob']);
-  });
-
   testWidgets('the Feed covers today and the seven days before it',
       (tester) async {
     await seedGroup('g1', 'Morning', {
@@ -513,24 +424,16 @@ void main() {
     await seedGroup(
         'g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
     await seedEntry('bob', ['g1']);
-    await seedBadge('g1', 'bob', 'first_book', 1);
 
     await pumpCircle(tester);
 
     final day = find.byKey(ValueKey('amen_$todayKey/bob'));
-    final badge = find.byKey(ValueKey('amen_${keyFor(1)}/bob_first_book'));
     expect(find.descendant(of: day, matching: find.text('1')), findsNothing);
-    expect(find.descendant(of: badge, matching: find.text('1')), findsNothing);
 
     await likeRef('g1', 'bob', 'cara').set({'name': 'Cara'});
-    await firestore
-        .doc('groups/g1/badge_log/bob_first_book/likes/cara')
-        .set({'name': 'Cara'});
     await tester.pumpAndSettle();
 
     expect(find.descendant(of: day, matching: find.text('1')), findsOneWidget);
-    expect(
-        find.descendant(of: badge, matching: find.text('1')), findsOneWidget);
 
     await likeRef('g1', 'bob', 'cara').delete();
     await tester.pumpAndSettle();
@@ -561,25 +464,25 @@ void main() {
       (tester) async {
     await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
     await seedGroup('g2', 'Evening', {'alice': 'Alice', 'dee': 'Dee'});
-    await seedEntry('bob', ['g1'], reflection: 'Morning light.');
-    await seedEntry('dee', ['g2'], reflection: 'Evening rest.');
+    await seedEntry('bob', ['g1']);
+    await seedEntry('dee', ['g2'], daysAgo: 1);
 
     await pumpCircle(tester);
     expect(find.byKey(const ValueKey('status_dee')), findsOneWidget);
-    expect(find.text('Evening rest.'), findsOneWidget);
+    expect(feedText('Dee showed up'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilterChip, 'Morning'));
     await tester.pumpAndSettle();
     expect(find.text('MORNING'), findsOneWidget);
     expect(find.byKey(const ValueKey('status_bob')), findsOneWidget);
     expect(find.byKey(const ValueKey('status_dee')), findsNothing);
-    expect(find.text('Morning light.'), findsOneWidget);
-    expect(find.text('Evening rest.'), findsNothing);
+    expect(feedText('Bob showed up'), findsOneWidget);
+    expect(feedText('Dee showed up'), findsNothing);
 
     await tester.tap(find.widgetWithText(FilterChip, 'Everyone'));
     await tester.pumpAndSettle();
     expect(find.text('TOGETHER'), findsOneWidget);
-    expect(find.text('Evening rest.'), findsOneWidget);
+    expect(feedText('Dee showed up'), findsOneWidget);
   });
 
   testWidgets(
@@ -607,7 +510,7 @@ void main() {
     expect(find.text('No one here yet'), findsOneWidget);
     expect(
         find.text(
-          'Your Circle is your Friends and everyone you share a group with.',
+          'Your Circle is everyone you share a group with.',
         ),
         findsOneWidget);
     expect(find.text('Have a code?'), findsOneWidget);

@@ -3,10 +3,8 @@
 // plan list sits under the header with no title of its own.
 import 'package:bible_read/pages/bible_progress_page.dart';
 import 'package:bible_read/pages/journey_page.dart';
-import 'package:bible_read/pages/streak_history_page.dart';
 import 'package:bible_read/widgets/skeleton.dart';
 import 'package:bible_read/widgets/skeleton_loader.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -42,13 +40,6 @@ void main() {
     );
     if (settle) await tester.pumpAndSettle(const Duration(milliseconds: 1200));
   }
-
-  Future<void> seedSeason() => firestore.collection('seasons').doc('s1').set({
-        'title': 'Advent Journey',
-        'description': 'Walk toward the manger.',
-        'startDate': Timestamp.fromDate(DateTime(2026, 10, 1)),
-        'endDate': Timestamp.fromDate(DateTime(2026, 10, 20)),
-      });
 
   testWidgets('shows exactly the three sections and no stat tiles or strip', (
     tester,
@@ -93,19 +84,8 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
   });
 
-  testWidgets('the Seasonal Challenge card lives on Today, not Path', (
-    tester,
-  ) async {
-    await seedSeason();
-    await pumpPath(tester);
-
-    expect(find.text('Advent Journey'), findsNothing);
-    expect(find.byKey(const Key('today-challenge-card')), findsNothing);
-  });
-
-  testWidgets(
-      'streak and month figures head the card; tapping the calendar '
-      'opens streak history', (tester) async {
+  testWidgets('streak and month figures head the consistency card',
+      (tester) async {
     await firestore
         .collection('users')
         .doc('u1')
@@ -113,13 +93,11 @@ void main() {
         .doc('data')
         .set({'streak': 6});
     final now = DateTime.now();
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    final currentMonthHeader = '${months[now.month - 1]} ${now.year}';
     final monthStr = now.month.toString().padLeft(2, '0');
-    for (final key in ['${now.year}-$monthStr-01', '${now.year}-$monthStr-02']) {
+    for (final key in [
+      '${now.year}-$monthStr-01',
+      '${now.year}-$monthStr-02'
+    ]) {
       await firestore
           .collection('users')
           .doc('u1')
@@ -131,58 +109,15 @@ void main() {
 
     expect(find.text('6 days'), findsOneWidget);
     expect(find.text('2 days'), findsOneWidget);
-
-    await tester.tap(find.text(currentMonthHeader));
-    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-    expect(find.byType(StreakHistoryPage), findsOneWidget);
   });
 
-  testWidgets('Streak history link opens streak history', (tester) async {
+  testWidgets('Library opens Bible progress', (tester) async {
     await pumpPath(tester);
-    await tester.tap(find.text('Streak history'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-    expect(find.byType(StreakHistoryPage), findsOneWidget);
-  });
-
-  testWidgets(
-      'Library opens Bible progress; All lists earned and unearned badges', (
-    tester,
-  ) async {
-    await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('achievements')
-        .doc('first_book')
-        .set({
-      'title': 'First Book',
-      'dateUnlocked': Timestamp.fromDate(DateTime(2026, 9, 1)),
-    });
-    await pumpPath(tester);
-
-    expect(find.text('Latest badge'), findsOneWidget);
-    expect(find.text('First Book'), findsOneWidget);
-    expect(find.text('Next badge'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Library'));
     await tester.tap(find.text('Library'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
     expect(find.byType(BibleProgressPage), findsOneWidget);
-
-    tester.state<NavigatorState>(find.byType(Navigator)).pop();
-    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-
-    await tester.ensureVisible(find.text('All'));
-    await tester.tap(find.text('All'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-    expect(find.text('Badges'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel(RegExp(r'^First Book, earned')),
-      findsOneWidget,
-    );
-    expect(
-      find.bySemanticsLabel(RegExp(r'^First whole Bible, not yet earned')),
-      findsOneWidget,
-    );
   });
 
   testWidgets('Read-throughs shows Lap progress bars for each testament', (

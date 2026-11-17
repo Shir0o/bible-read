@@ -72,33 +72,6 @@ class MergeDryRunData {
   int get cloudStreak => cloudStatus.streak;
 }
 
-/// Thrown when linking an authentication credential collides with an existing
-/// Firebase account (`credential-already-in-use`).
-class AccountCollisionException implements Exception {
-  /// The credential that collided with an existing account.
-  final AuthCredential targetCredential;
-
-  /// Computed dry run comparison between guest and cloud accounts.
-  final MergeDryRunData dryRunData;
-
-  /// UID of the collided cloud account.
-  final String targetUid;
-
-  /// Human-readable explanation.
-  final String message;
-
-  AccountCollisionException({
-    required this.targetCredential,
-    required this.dryRunData,
-    required this.targetUid,
-    this.message = 'Credential already associated with another account.',
-  });
-
-  @override
-  String toString() =>
-      'AccountCollisionException: $message (targetUid: $targetUid)';
-}
-
 /// Service that manages linking guest readers to persistent credentials,
 /// computing dry-run preview statistics, and committing batch merges.
 class AccountLinkingService {
@@ -327,9 +300,9 @@ class AccountLinkingService {
 
   /// Attempts to link [credential] to the currently authenticated reader.
   ///
-  /// If the credential is in use by another Firebase user, throws
-  /// [AccountCollisionException] containing the dry-run merge statistics so
-  /// the UI can present the comparison and prompt the user.
+  /// If the credential is in use by another Firebase user, automatically
+  /// commits the merge (union of read dates + all merged plans) into the
+  /// target account and returns the signed-in [UserCredential].
   Future<UserCredential?> linkCredential(AuthCredential credential) async {
     final currentUser = auth.currentUser;
     if (currentUser == null) {
@@ -359,11 +332,13 @@ class AccountLinkingService {
           targetUid: cloudUid,
         );
 
-        throw AccountCollisionException(
-          targetCredential: credential,
-          dryRunData: dryRun,
+        await commitMerge(
           targetUid: cloudUid,
+          dates: dryRun.mergedDates,
+          plans: dryRun.mergedPlans,
         );
+
+        return cloudCred;
       }
       rethrow;
     }

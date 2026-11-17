@@ -1,6 +1,5 @@
-// Role-based group lifecycle in EditGroupPage (#776): the owner gets
-// Archive Group and Delete Group; a non-owner member gets Archive
-// Participation and Leave Group — and only their own participation changes.
+// Role-based group lifecycle in EditGroupPage: the owner gets
+// Delete Group; a non-owner member gets Leave Group.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -82,44 +81,19 @@ void main() {
     );
   }
 
-  testWidgets(
-      'owner sees Archive Group and Delete Group and archiving '
-      'shelves the group without destroying it', (tester) async {
-    await seedGroup();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
-    await pumpPage(tester, auth);
-    await scrollToSettings(tester);
-
-    expect(find.text('Archive Group'), findsOneWidget);
-    expect(find.text('Delete Group'), findsOneWidget);
-    expect(find.text('Archive Participation'), findsNothing);
-    expect(find.text('Leave Group'), findsNothing);
-
-    // Archive the group.
-    await tester.tap(find.text('Archive Group'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Archive'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-
-    final doc = await firestore.collection('groups').doc('g1').get();
-    expect(doc.exists, isTrue);
-    expect(doc.data()?['isArchived'], isTrue);
-    expect(doc.data()?['deletedAt'], isNull);
-
-    // Shelved: gone from the live list, present in the archive listing.
-    expect(await groupService.groupsForUser('u1').first, isEmpty);
-    final archived = await groupService.archivedGroupsForUser('u1');
-    expect(archived.single.id, 'g1');
-  });
-
-  testWidgets('owner Delete Group soft-deletes with a 30-day deadline',
+  testWidgets('owner sees Delete Group and deleting removes the group',
       (tester) async {
     await seedGroup();
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'u1'), signedIn: true);
     await pumpPage(tester, auth);
     await scrollToSettings(tester);
+
+    expect(find.text('Delete Group'), findsOneWidget);
+    expect(find.text('Archive Group'), findsNothing);
+    expect(find.text('Archive Participation'), findsNothing);
+    expect(find.text('Leave Group'), findsNothing);
+
     await tester.ensureVisible(find.text('Delete Group'));
     await tester.pumpAndSettle();
 
@@ -129,57 +103,24 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
 
     final doc = await firestore.collection('groups').doc('g1').get();
-    expect(doc.exists, isTrue);
-    expect(doc.data()?['deletedAt'], isNotNull);
-    expect(doc.data()?['deleteAfter'], isNotNull);
-    expect(doc.data()?['preDeleteState'], 'active');
+    expect(doc.exists, isFalse);
     expect(await groupService.groupsForUser('u1').first, isEmpty);
   });
 
   testWidgets(
-      'member sees Archive Participation and Leave Group, and '
-      'archiving participation touches only their membership', (tester) async {
-    await seedGroup();
-    final auth =
-        MockFirebaseAuth(mockUser: MockUser(uid: 'm2'), signedIn: true);
-    await pumpPage(tester, auth);
-    await scrollToSettings(tester);
-
-    expect(find.text('Archive Participation'), findsOneWidget);
-    expect(find.text('Leave Group'), findsOneWidget);
-    expect(find.text('Archive Group'), findsNothing);
-    expect(find.text('Delete Group'), findsNothing);
-
-    await tester.tap(find.text('Archive Participation'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 1200));
-
-    // The member's participation is archived; the group itself untouched.
-    final memberDoc = await firestore
-        .collection('groups')
-        .doc('g1')
-        .collection('members')
-        .doc('m2')
-        .get();
-    expect(memberDoc.data()?['isArchived'], isTrue);
-    final groupDoc = await firestore.collection('groups').doc('g1').get();
-    // The group itself was never touched: no lifecycle fields written.
-    expect(groupDoc.data()?.containsKey('isArchived'), isFalse);
-    expect(groupDoc.data()?['deletedAt'], isNull);
-
-    // The member's live list hides it; the owner's still shows it.
-    expect(await groupService.groupsForUser('m2').first, isEmpty);
-    expect(await groupService.groupsForUser('u1').first, hasLength(1));
-    final archived = await groupService.archivedGroupsForUser('m2');
-    expect(archived.single.id, 'g1');
-  });
-
-  testWidgets('member Leave Group removes only their membership',
+      'member sees Leave Group and leaving removes only their membership',
       (tester) async {
     await seedGroup();
     final auth =
         MockFirebaseAuth(mockUser: MockUser(uid: 'm2'), signedIn: true);
     await pumpPage(tester, auth);
     await scrollToSettings(tester);
+
+    expect(find.text('Leave Group'), findsOneWidget);
+    expect(find.text('Archive Participation'), findsNothing);
+    expect(find.text('Archive Group'), findsNothing);
+    expect(find.text('Delete Group'), findsNothing);
+
     await tester.ensureVisible(find.text('Leave Group'));
     await tester.pumpAndSettle();
 

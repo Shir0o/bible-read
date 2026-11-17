@@ -9,14 +9,14 @@ import 'package:flutter/material.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/list_rows_skeleton.dart';
+import '../models/notification_preferences.dart';
 import '../models/user_preferences.dart';
 import '../app_version.dart';
 import '../theme/app_theme.dart';
 import '../services/apple_sign_in_service.dart';
 import '../services/error_logger.dart';
-import '../services/feedback_service.dart';
-import '../services/friend_service.dart';
 import '../services/notification_preferences_service.dart';
+import '../services/reminder_service.dart';
 import '../services/user_preferences_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/vibration_service.dart';
@@ -28,11 +28,8 @@ import '../widgets/guest_account_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../widgets/vibration_button.dart';
 import '../services/account_linking_service.dart';
-import '../widgets/merge_dry_run_sheet.dart';
-import 'feedback_page.dart';
 import 'login_page.dart';
 import 'main_page.dart';
-import 'notification_settings_page.dart';
 import 'signup_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -43,9 +40,8 @@ class SettingsPage extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final UserPreferencesService? userPreferencesService;
+  final NotificationPreferencesService? notificationPreferencesService;
   final VibrationService vibrationService;
-  final FeedbackService feedbackService;
-  final FriendService friendService;
   final Widget Function(BuildContext)? mainPageBuilder;
 
   factory SettingsPage({
@@ -57,9 +53,8 @@ class SettingsPage extends StatefulWidget {
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
     UserPreferencesService? userPreferencesService,
+    NotificationPreferencesService? notificationPreferencesService,
     VibrationService? vibrationService,
-    FeedbackService? feedbackService,
-    FriendService? friendService,
     Widget Function(BuildContext)? mainPageBuilder,
   }) {
     final authInstance = auth ?? FirebaseAuth.instance;
@@ -81,10 +76,8 @@ class SettingsPage extends StatefulWidget {
       auth: authInstance,
       firestore: fs,
       userPreferencesService: userPreferencesService,
+      notificationPreferencesService: notificationPreferencesService,
       vibrationService: vibrationService ?? const VibrationService(),
-      feedbackService:
-          feedbackService ?? FeedbackService(firestore: fs, auth: authInstance),
-      friendService: friendService ?? FriendService(firestore: fs),
       mainPageBuilder: mainPageBuilder,
     );
   }
@@ -98,9 +91,8 @@ class SettingsPage extends StatefulWidget {
     required this.auth,
     required this.firestore,
     this.userPreferencesService,
+    this.notificationPreferencesService,
     required this.vibrationService,
-    required this.feedbackService,
-    required this.friendService,
     this.mainPageBuilder,
   });
 
@@ -113,7 +105,11 @@ class SettingsPageState extends State<SettingsPage> {
   bool _isSigningOut = false;
 
   late final UserPreferencesService _prefsService;
+  late final NotificationPreferencesService _notifService;
   UserPreferences _prefs = const UserPreferences();
+  NotificationPreferences _notifPrefs = NotificationPreferences();
+  bool _reminderEnabled = false;
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 7, minute: 0);
   bool _prefsLoading = true;
   StreamSubscription<UserPreferences>? _prefSub;
 
@@ -122,6 +118,8 @@ class SettingsPageState extends State<SettingsPage> {
     super.initState();
     _prefsService = widget.userPreferencesService ??
         UserPreferencesService(firestore: widget.firestore);
+    _notifService = widget.notificationPreferencesService ??
+        NotificationPreferencesService(firestore: widget.firestore);
     _loadPreferences();
   }
 
@@ -155,6 +153,23 @@ class SettingsPageState extends State<SettingsPage> {
         }
       },
     );
+
+    try {
+      final notifResults = await Future.wait([
+        _notifService.fetchPreferences(uid),
+        ReminderService().loadSettings(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _notifPrefs = notifResults[0] as NotificationPreferences;
+          final reminderSettings = notifResults[1] as Map<String, dynamic>;
+          _reminderEnabled = reminderSettings['enabled'] as bool;
+          _reminderTime = reminderSettings['time'] as TimeOfDay;
+        });
+      }
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+    }
   }
 
   Future<void> _updatePreference(bool value) async {
@@ -187,6 +202,50 @@ class SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _toggleNotifPref(NotificationType type, bool value) async {
+    final uid = widget.auth.currentUser?.uid;
+    if (uid == null) return;
+    unawaited(widget.vibrationService.lightImpact());
+    final prev = _notifPrefs[type];
+    setState(() {
+      _notifPrefs = NotificationPreferences(
+        values: {..._notifPrefs.values, type: value},
+      );
+    });
+    try {
+      await _notifService.updatePreference(uid, type, value);
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        setState(() {
+          _notifPrefs = NotificationPreferences(
+            values: {..._notifPrefs.values, type: prev},
+          );
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update preferences')),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleReminder(bool value) async {
+    unawaited(widget.vibrationService.lightImpact());
+    setState(() => _reminderEnabled = value);
+    await ReminderService().saveSettings(value, _reminderTime);
+  }
+
+  Future<void> _pickReminderTime() async {
+    final newTime = await showTimePicker(
+      context: context,
+      initialTime: _reminderTime,
+    );
+    if (newTime != null) {
+      setState(() => _reminderTime = newTime);
+      await ReminderService().saveSettings(_reminderEnabled, newTime);
+    }
+  }
+
   @override
   void dispose() {
     _prefSub?.cancel();
@@ -210,18 +269,7 @@ class SettingsPageState extends State<SettingsPage> {
 
       final currentUser = widget.auth.currentUser;
       if (currentUser != null && currentUser.isAnonymous) {
-        try {
-          await widget.accountLinkingService.linkCredential(credential);
-        } on AccountCollisionException catch (e) {
-          if (mounted) {
-            await showMergeDryRunSheet(
-              context: context,
-              dryRunData: e.dryRunData,
-              accountLinkingService: widget.accountLinkingService,
-              vibrationService: widget.vibrationService,
-            );
-          }
-        }
+        await widget.accountLinkingService.linkCredential(credential);
       } else {
         await widget.auth.signInWithCredential(credential);
       }
@@ -270,18 +318,7 @@ class SettingsPageState extends State<SettingsPage> {
       if (appleCred != null) {
         final currentUser = widget.auth.currentUser;
         if (currentUser != null && currentUser.isAnonymous) {
-          try {
-            await widget.accountLinkingService.linkCredential(appleCred);
-          } on AccountCollisionException catch (e) {
-            if (mounted) {
-              await showMergeDryRunSheet(
-                context: context,
-                dryRunData: e.dryRunData,
-                accountLinkingService: widget.accountLinkingService,
-                vibrationService: widget.vibrationService,
-              );
-            }
-          }
+          await widget.accountLinkingService.linkCredential(appleCred);
         } else {
           await widget.auth.signInWithCredential(appleCred);
         }
@@ -384,26 +421,6 @@ class SettingsPageState extends State<SettingsPage> {
     final uid = user.uid;
 
     try {
-      // 0. Remove the friend graph: code lookup, both sides of every
-      // friendship, and the Friend source. The server does this because a
-      // client may not delete another reader's side (ADR-0012). Abort rather
-      // than delete the account while their friendships linger.
-      try {
-        await widget.friendService.deleteMyFriendData();
-      } catch (e, st) {
-        ErrorLogger.log(e, st);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Couldn’t clear your friend data. Please try again.',
-              ),
-            ),
-          );
-        }
-        return;
-      }
-
       // 1. Clean up personal Firestore data
       final userDoc = widget.firestore.collection('users').doc(uid);
       try {
@@ -769,66 +786,64 @@ class SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                   ),
-                  Divider(
-                    height: 1,
-                    indent: AppSpacing.hPadding,
-                    endIndent: AppSpacing.hPadding,
-                    color: colorScheme.outlineVariant,
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.notifications_outlined),
-                    title: const Text('Notification settings'),
-                    trailing: const Icon(Icons.chevron_right),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.hPadding,
-                    ),
-                    onTap: () {
-                      unawaited(widget.vibrationService.lightImpact());
-                      Navigator.of(context).push(
-                        animatedPageRoute(
-                          NotificationSettingsPage(
-                            auth: widget.auth,
-                            service: NotificationPreferencesService(
-                              firestore: widget.firestore,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
                 ],
               ),
             ),
             const SizedBox(height: AppSpacing.gap24),
 
-            // Support
-            _sectionTitle(context, 'Support'),
+            // Notifications
+            _sectionTitle(context, 'Notifications'),
             const SizedBox(height: AppSpacing.gap12),
             CommonStyles.buildBorderedCard(
               context: context,
               child: Column(
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.bug_report_outlined),
-                    title: const Text('Report a bug'),
-                    trailing: const Icon(Icons.chevron_right),
+                  SwitchListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.hPadding,
                     ),
-                    onTap: () {
-                      unawaited(widget.vibrationService.lightImpact());
-                      final messenger = ScaffoldMessenger.of(context);
-                      Navigator.of(context).push(
-                        animatedPageRoute(
-                          FeedbackPage(
-                            initialTab: FeedbackTab.bug,
-                            feedbackService: widget.feedbackService,
-                            vibrationService: widget.vibrationService,
-                            parentMessenger: messenger,
-                          ),
-                        ),
-                      );
-                    },
+                    title: const Text('Daily reminder'),
+                    subtitle: Text(
+                      _reminderEnabled
+                          ? 'A gentle nudge at ${_reminderTime.format(context)}'
+                          : 'Get a gentle nudge to read each day',
+                    ),
+                    value: _reminderEnabled,
+                    onChanged: _toggleReminder,
+                  ),
+                  if (_reminderEnabled) ...[
+                    Divider(
+                      height: 1,
+                      indent: AppSpacing.hPadding,
+                      endIndent: AppSpacing.hPadding,
+                      color: colorScheme.outlineVariant,
+                    ),
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.hPadding,
+                      ),
+                      title: const Text('Time'),
+                      trailing: Text(
+                        _reminderTime.format(context),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      onTap: _pickReminderTime,
+                    ),
+                  ],
+                  Divider(
+                    height: 1,
+                    indent: AppSpacing.hPadding,
+                    endIndent: AppSpacing.hPadding,
+                    color: colorScheme.outlineVariant,
+                  ),
+                  SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.hPadding,
+                    ),
+                    title: const Text('Amens'),
+                    value: _notifPrefs[NotificationType.amen],
+                    onChanged: (v) =>
+                        _toggleNotifPref(NotificationType.amen, v),
                   ),
                   Divider(
                     height: 1,
@@ -836,27 +851,14 @@ class SettingsPageState extends State<SettingsPage> {
                     endIndent: AppSpacing.hPadding,
                     color: colorScheme.outlineVariant,
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.lightbulb_outline),
-                    title: const Text('Request a feature'),
-                    trailing: const Icon(Icons.chevron_right),
+                  SwitchListTile(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.hPadding,
                     ),
-                    onTap: () {
-                      unawaited(widget.vibrationService.lightImpact());
-                      final messenger = ScaffoldMessenger.of(context);
-                      Navigator.of(context).push(
-                        animatedPageRoute(
-                          FeedbackPage(
-                            initialTab: FeedbackTab.feature,
-                            feedbackService: widget.feedbackService,
-                            vibrationService: widget.vibrationService,
-                            parentMessenger: messenger,
-                          ),
-                        ),
-                      );
-                    },
+                    title: const Text('Nudges'),
+                    value: _notifPrefs[NotificationType.nudge],
+                    onChanged: (v) =>
+                        _toggleNotifPref(NotificationType.nudge, v),
                   ),
                 ],
               ),

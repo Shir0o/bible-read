@@ -101,6 +101,9 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   late final ValueNotifier<bool> _canAdjustNotifier;
 
   bool get _isGroupMode => widget.group != null;
+  bool get _isGroupOwner =>
+      widget.group != null &&
+      widget.group!.ownerUid == widget.auth.currentUser?.uid;
 
   @override
   void initState() {
@@ -108,7 +111,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     _burstUndo = BurstUndoController();
     _canAdjustNotifier = ValueNotifier<bool>(
       _isGroupMode
-          ? (widget.isMember && (widget.initialSchedule?.isNotEmpty ?? false))
+          ? (_isGroupOwner && (widget.initialSchedule?.isNotEmpty ?? false))
           : (widget.initialProgress != null),
     );
     final user = widget.auth.currentUser;
@@ -212,52 +215,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
       },
     );
     if (pickedDate != null && widget.plan != null) {
-      // Re-enrollment collision (#776): the plan was soft-deleted earlier and
-      // its old progress still waits in the trash. Ask before clobbering it.
-      final collision = await _planService.startPlan(
+      await _planService.startPlan(
         user.uid,
         widget.plan!.id,
         startDate: pickedDate,
       );
-      if (collision != null && mounted) {
-        final restore = await showDialog<bool>(
-          context: context,
-          barrierColor: AppColors.of(context).scrim,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Restore your progress?'),
-            content: Text(
-              'You deleted "${widget.plan!.title}" earlier, but its reading '
-              'record is still there for a few more days. Restore it and '
-              'continue where you left off, or start fresh?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Start Fresh'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Restore Progress'),
-              ),
-            ],
-          ),
-        );
-        if (restore == true) {
-          await _planService.startPlan(
-            user.uid,
-            widget.plan!.id,
-            restoreDeleted: true,
-          );
-        } else {
-          // Start fresh: drop the trashed record, then start anew.
-          await _planService.permanentlyDeletePlan(user.uid, widget.plan!.id);
-          await _planService.startPlan(
-            user.uid,
-            widget.plan!.id,
-            startDate: pickedDate,
-          );
-        }
-      }
     }
   }
 
@@ -368,7 +330,12 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
   Future<void> _handleAdjustSharedPace() async {
     final user = widget.auth.currentUser;
-    if (user == null || widget.group == null || !_isGroupMode) return;
+    if (user == null ||
+        widget.group == null ||
+        !_isGroupMode ||
+        !_isGroupOwner) {
+      return;
+    }
     final schedule = _latestGroupSchedule;
     if (schedule == null || schedule.isEmpty) return;
 
@@ -393,6 +360,8 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     final applied = await adjustSharedPace(
       context,
       firestore: _effectiveFirestore,
+      groupService: widget.groupService,
+      groupName: widget.group!.name,
       uid: user.uid,
       groupId: widget.group!.id,
       schedule: schedule,
@@ -500,8 +469,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 _latestGroupSchedule = fullSchedule;
                 _latestGroupProgress = remoteProgress;
 
-                final canAdjustGroup =
-                    widget.isMember && fullSchedule.isNotEmpty;
+                final canAdjustGroup = _isGroupOwner && fullSchedule.isNotEmpty;
                 if (_canAdjustNotifier.value != canAdjustGroup) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (mounted) _canAdjustNotifier.value = canAdjustGroup;

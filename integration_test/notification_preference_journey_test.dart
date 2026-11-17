@@ -1,5 +1,4 @@
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/pages/notification_settings_page.dart';
 import 'package:bible_read/pages/settings_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -90,70 +89,28 @@ void main() {
         .get();
     expect(generalDoc.data()?['autoMarkPlanRead'], isTrue);
 
-    // 5. Navigate to Notification Settings and Toggle
-    await tester.tap(find.text('Notification settings'));
-    await tester.pumpAndSettle();
-    expect(find.byType(NotificationSettingsPage), findsOneWidget);
-
-    // Wait for loading to finish
-    int timeout = 0;
-    while (find.byType(CircularProgressIndicator).evaluate().isNotEmpty &&
-        timeout < 10) {
-      await tester.pump(const Duration(milliseconds: 500));
-      timeout++;
-    }
-
-    // Toggle Like Notifications
-    final likeText = find.text('Like Notifications');
+    // 5. Toggle Amens inline in Settings
+    final amensText = find.text('Amens');
     await tester.dragUntilVisible(
-      likeText,
-      find.byType(ListView),
+      amensText,
+      find.byType(SingleChildScrollView),
       const Offset(0, -100),
     );
     await tester.pumpAndSettle();
 
-    final likeSwitch = find.ancestor(
-      of: likeText,
+    final amensSwitch = find.ancestor(
+      of: amensText,
       matching: find.byType(SwitchListTile),
     );
-    expect(tester.widget<SwitchListTile>(likeSwitch).value, isFalse);
-    await tester.tap(likeSwitch);
+    await tester.tap(amensSwitch);
     await tester.pumpAndSettle();
 
-    // Verify Firestore updated for like notification
-    final likeDoc = await firestore
+    final amenDoc = await firestore
         .collection('users')
         .doc('test_user_uid')
         .collection('notificationPrefs')
-        .doc('like')
+        .doc('amen')
         .get();
-    expect(likeDoc.data()?['enabled'], isTrue);
-
-    // Toggle Vibration
-    final vibrationText = find.text('Vibration');
-    await tester.dragUntilVisible(
-      vibrationText,
-      find.byType(ListView),
-      const Offset(0, -100),
-    );
-    await tester.pumpAndSettle();
-
-    final vibrationSwitch = find.ancestor(
-      of: vibrationText,
-      matching: find.byType(SwitchListTile),
-    );
-    expect(tester.widget<SwitchListTile>(vibrationSwitch).value, isFalse);
-    await tester.tap(vibrationSwitch);
-    await tester.pumpAndSettle(const Duration(seconds: 1));
-    expect(tester.widget<SwitchListTile>(vibrationSwitch).value, isTrue);
-
-    // Verify Firestore updated for vibration
-    final vibrationDoc = await firestore
-        .collection('users')
-        .doc('test_user_uid')
-        .collection('notificationPrefs')
-        .doc('vibration')
-        .get();
-    expect(vibrationDoc.data()?['enabled'], isTrue);
+    expect(amenDoc.data()?['enabled'], isFalse);
   });
 }

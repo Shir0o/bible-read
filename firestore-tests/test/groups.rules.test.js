@@ -119,27 +119,6 @@ describe('groups/{groupId}/members', () => {
     );
   });
 
-  it('denies approving a join request without removing it', async () => {
-    const admin = await asUser('admin-user');
-    await seed(`groups/${JOIN_GROUP}/joinRequests/dave`, { uid: 'dave' });
-    await assertFails(
-      admin.doc(`groups/${JOIN_GROUP}/members/dave`).set({ uid: 'dave', role: 'member' }),
-    );
-  });
-
-  it('lets an admin approve a join request in the same write as its removal', async () => {
-    const admin = await asUser('admin-user');
-    await seed(`groups/${JOIN_GROUP}/joinRequests/carol`, { uid: 'carol' });
-
-    const batch = admin.batch();
-    batch.set(admin.doc(`groups/${JOIN_GROUP}/members/carol`), {
-      uid: 'carol',
-      role: 'member',
-    });
-    batch.delete(admin.doc(`groups/${JOIN_GROUP}/joinRequests/carol`));
-    await assertSucceeds(batch.commit());
-  });
-
   it('denies a member promoting themselves', async () => {
     const alice = await asUser('alice');
     await assertFails(
@@ -307,82 +286,5 @@ describe('groups/{groupId}/progressSummary', () => {
         .doc(`groups/${PRIVATE_GROUP}/progressSummary/overall/entries/carol`)
         .set({ uid: 'carol', completed: 1 }),
     );
-  });
-});
-
-describe('groups/{groupId}/joinRequests', () => {
-  before(async () => {
-    await seedGroup(PRIVATE_GROUP, 'owner', false);
-    await seed(`groups/${PRIVATE_GROUP}/members/alice`, { uid: 'alice', role: 'member' });
-    await seed(`groups/${PRIVATE_GROUP}/joinRequests/carol`, { uid: 'carol' });
-  });
-
-  it('lets a user create their own join request', async () => {
-    const dave = await asUser('dave');
-    await assertSucceeds(
-      dave.doc(`groups/${PRIVATE_GROUP}/joinRequests/dave`).set({ uid: 'dave' }),
-    );
-  });
-
-  it('lets the requester read their request and denies other plain members', async () => {
-    const carol = await asUser('carol');
-    const alice = await asUser('alice');
-    await assertSucceeds(carol.doc(`groups/${PRIVATE_GROUP}/joinRequests/carol`).get());
-    await assertFails(alice.doc(`groups/${PRIVATE_GROUP}/joinRequests/carol`).get());
-  });
-
-  it('lets the owner read requests', async () => {
-    const owner = await asUser('owner');
-    await assertSucceeds(owner.doc(`groups/${PRIVATE_GROUP}/joinRequests/carol`).get());
-  });
-
-  it('lets the requester delete their request', async () => {
-    const dave = await asUser('dave');
-    await assertSucceeds(dave.doc(`groups/${PRIVATE_GROUP}/joinRequests/dave`).delete());
-  });
-});
-
-// The per-Group badge mirror: the server writes a member's latest badge here
-// when it awards one, and co-members read it — the rule a one-line membership
-// check, per ADR-0004. Writes are server-only.
-describe('groups/{groupId}/badges', () => {
-  before(async () => {
-    await seedGroup('g-badges', 'owner', false);
-    await seed('groups/g-badges/members/alice', { uid: 'alice', role: 'member' });
-    await seed('groups/g-badges/members/bob', { uid: 'bob', role: 'member' });
-    // Server-authored mirror of alice's latest badge.
-    await seed('groups/g-badges/badges/alice', { badgeId: 'first_nt', type: 'read_through' });
-  });
-
-  it('lets a co-member read a member’s mirrored badge', async () => {
-    const bob = await asUser('bob');
-    await assertSucceeds(bob.doc('groups/g-badges/badges/alice').get());
-  });
-
-  it('lets the badge owner read their own mirror', async () => {
-    const alice = await asUser('alice');
-    await assertSucceeds(alice.doc('groups/g-badges/badges/alice').get());
-  });
-
-  it('denies reads to non-members', async () => {
-    const carol = await asUser('carol');
-    await assertFails(carol.doc('groups/g-badges/badges/alice').get());
-  });
-
-  it('denies unauthenticated reads', async () => {
-    const anon = await asUnauthenticated();
-    await assertFails(anon.doc('groups/g-badges/badges/alice').get());
-  });
-
-  it('denies client writes, members included', async () => {
-    const bob = await asUser('bob');
-    const anon = await asUnauthenticated();
-    await assertFails(
-      bob.doc('groups/g-badges/badges/bob').set({ badgeId: 'self_granted' }),
-    );
-    await assertFails(
-      bob.doc('groups/g-badges/badges/alice').update({ badgeId: 'forged' }),
-    );
-    await assertFails(anon.doc('groups/g-badges/badges/alice').delete());
   });
 });

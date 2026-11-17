@@ -37,46 +37,38 @@ void main() {
     expect(find.text('Revelation'), findsOneWidget);
   });
 
-  testWidgets(
-    'BibleProgressPage shows completed status and handles optimistic toggle',
-    (tester) async {
-      final firestore = FakeFirebaseFirestore();
-      final user = MockUser(uid: 'u1');
-      final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
+  testWidgets('BibleProgressPage is read-only and displays completed books',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final user = MockUser(uid: 'u1');
+    final auth = MockFirebaseAuth(mockUser: user, signedIn: true);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: BibleProgressPage(firestore: firestore, auth: auth),
-        ),
-      );
-      await tester.pumpAndSettle();
+    await firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('read_through_state')
+        .doc('current')
+        .set({
+      'ot': {'Genesis': List.generate(50, (i) => i + 1)},
+      'nt': <String, dynamic>{},
+    });
 
-      // 1. Initially Genesis is not completed
-      expect(find.bySemanticsLabel('Genesis, Not read yet'), findsOneWidget);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BibleProgressPage(firestore: firestore, auth: auth),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      // 2. Tap to complete
-      await tester.tap(find.text('Genesis'));
-      await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Genesis, Read this lap'), findsOneWidget);
+    expect(find.bySemanticsLabel('Exodus, Not read yet'), findsOneWidget);
 
-      expect(find.text('Complete Genesis?'), findsOneWidget);
-      await tester.tap(find.text('Confirm'));
-
-      // 3. OPTIMISTIC CHECK: UI should update immediately after Confirm,
-      // even without waiting for Firestore or pumpAndSettle (though pump() is needed for next frame)
-      await tester.pump();
-
-      expect(find.bySemanticsLabel('Genesis, Read this lap'), findsOneWidget);
-
-      // 4. Verify Firestore was eventually called (optional but good)
-      final doc = await firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('bible_books')
-          .doc('Genesis')
-          .get();
-      expect(doc.exists, isTrue);
-    },
-  );
+    // Tapping on a book should not trigger any dialog (read-only)
+    await tester.tap(find.text('Genesis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mark Genesis as unread?'), findsNothing);
+    expect(find.text('Complete Genesis?'), findsNothing);
+  });
 
   testWidgets('BibleProgressPage scrolls to initialScrollToBook', (
     tester,

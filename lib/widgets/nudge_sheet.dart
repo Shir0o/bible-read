@@ -14,7 +14,6 @@ import '../services/vibration_service.dart';
 const List<String> kNudgePresets = [
   'Thinking of you today — no pressure, just glad you’re in this with us.',
   'We saved you a seat at the table. Read along whenever you’re ready.',
-  'Missed your reflection today. Hope you’re resting well.',
   'Just a gentle wave hello. The Word keeps — and so do we.',
 ];
 
@@ -71,20 +70,11 @@ class _NudgeSheet extends StatefulWidget {
 
 class _NudgeSheetState extends State<_NudgeSheet> {
   int _choice = 0;
-  bool _writing = false;
   bool _sending = false;
   bool _sent = false;
   String? _error;
-  final TextEditingController _custom = TextEditingController();
 
-  @override
-  void dispose() {
-    _custom.dispose();
-    super.dispose();
-  }
-
-  String get _message =>
-      _writing ? _custom.text.trim() : kNudgePresets[_choice];
+  String get _message => kNudgePresets[_choice];
 
   Future<void> _send() async {
     final message = _message;
@@ -233,7 +223,7 @@ class _NudgeSheetState extends State<_NudgeSheet> {
           ),
         ),
         const SizedBox(height: AppSpacing.gap12),
-        if (_writing) _buildCustomField(theme) else _buildPresets(theme),
+        _buildPresets(theme),
         if (_error != null) ...[
           const SizedBox(height: AppSpacing.gap12),
           Text(
@@ -266,7 +256,6 @@ class _NudgeSheetState extends State<_NudgeSheet> {
   }
 
   Widget _buildPresets(ThemeData theme) {
-    final colorScheme = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -279,52 +268,6 @@ class _NudgeSheetState extends State<_NudgeSheet> {
               onTap: () => setState(() => _choice = i),
             ),
           ),
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            // token-exempt: left-aligned list-row action; layout only
-            padding: const EdgeInsets.symmetric(
-                vertical: AppSpacing.gap12, horizontal: AppSpacing.gap12),
-            alignment: Alignment.centerLeft,
-            side: BorderSide(
-              color: colorScheme.outlineVariant,
-              style: BorderStyle.solid,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.rInset),
-            ),
-          ),
-          onPressed: () => setState(() => _writing = true),
-          icon: const Icon(Icons.edit_outlined, size: 16),
-          label: const Text('Write your own'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCustomField(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: _custom,
-          autofocus: true,
-          minLines: 3,
-          maxLines: 5,
-          textCapitalization: TextCapitalization.sentences,
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            hintText: 'Say something kind…',
-          ),
-        ),
-        const SizedBox(height: AppSpacing.gap8),
-        TextButton.icon(
-          onPressed: () => setState(() {
-            _writing = false;
-            _custom.clear();
-          }),
-          icon: const Icon(Icons.chevron_left, size: 18),
-          label: const Text('Back to notes'),
-        ),
       ],
     );
   }

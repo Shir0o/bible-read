@@ -205,44 +205,6 @@ class CoverageLedgerService {
   Future<void> markCelebrated(String uid, Iterable<String> ids) =>
       readThroughService.markCelebrated(uid, ids);
 
-  /// Adds a read-through entered by hand.
-  Future<List<ReadThrough>> addBackfilled({
-    required String uid,
-    required ReadThroughScope scope,
-    required DateTime completedAt,
-    required DatePrecision precision,
-    String location = '',
-    ReadThroughSource source = ReadThroughSource.backfilled,
-  }) =>
-      readThroughService.addBackfilled(
-        uid: uid,
-        scope: scope,
-        completedAt: completedAt,
-        precision: precision,
-        location: location,
-        source: source,
-      );
-
-  /// Edits user-supplied fields of a read-through row.
-  Future<void> updateReadThroughDetails(
-    String uid,
-    String id, {
-    DateTime? completedAt,
-    DatePrecision? datePrecision,
-    String? location,
-  }) =>
-      readThroughService.updateDetails(
-        uid,
-        id,
-        completedAt: completedAt,
-        datePrecision: datePrecision,
-        location: location,
-      );
-
-  /// Deletes a hand-entered record, reconciling any derived Bible records.
-  Future<void> deleteReadThrough(String uid, String id) =>
-      readThroughService.delete(uid, id);
-
   // ---------------------------------------------------------------------------
   // Book & Lifetime Chapter Coverage
   // ---------------------------------------------------------------------------
@@ -427,36 +389,5 @@ class CoverageLedgerService {
       ErrorLogger.log(e, st);
     }
     return null;
-  }
-
-  /// Sets or clears a manual book completion in users/{uid}/bible_books.
-  /// When [completed] is true, also credits the book's chapters to the current lap.
-  Future<void> setBookManualCompletion({
-    required String uid,
-    required String book,
-    required bool completed,
-  }) async {
-    final ref = firestore
-        .collection('users')
-        .doc(uid)
-        .collection('bible_books')
-        .doc(book);
-
-    if (completed) {
-      await ref.set({
-        'completed': true,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      final total = ReferenceParser.chapterCount(book) ?? 0;
-      if (total > 0) {
-        await creditChapters(
-          uid,
-          List<String>.generate(total, (i) => '$book ${i + 1}'),
-        );
-      }
-    } else {
-      await ref.delete();
-    }
   }
 }

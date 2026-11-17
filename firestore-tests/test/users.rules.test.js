@@ -35,133 +35,6 @@ describe('users/{userId} profile', () => {
   });
 });
 
-describe('users/{userId}/seasonChallenges', () => {
-  before(async () => {
-    await seed('users/alice/seasonChallenges/summer', {
-      progress: true,
-      claimed: false,
-    });
-  });
-
-  it('lets the owner write valid progress flags', async () => {
-    const alice = await asUser('alice');
-    await assertSucceeds(
-      alice
-        .doc('users/alice/seasonChallenges/summer')
-        .set({ progress: true, claimed: false }),
-    );
-  });
-
-  it('denies invalid progress flag values', async () => {
-    const alice = await asUser('alice');
-    await assertFails(
-      alice
-        .doc('users/alice/seasonChallenges/summer')
-        .set({ progress: 'yes', claimed: false }),
-    );
-  });
-
-  it('denies writes by other users', async () => {
-    const bob = await asUser('bob');
-    await assertFails(
-      bob
-        .doc('users/alice/seasonChallenges/summer')
-        .set({ progress: true, claimed: false }),
-    );
-  });
-
-  it('lets only the owner read', async () => {
-    const alice = await asUser('alice');
-    const bob = await asUser('bob');
-    const anon = await asUnauthenticated();
-    await assertSucceeds(alice.doc('users/alice/seasonChallenges/summer').get());
-    await assertFails(bob.doc('users/alice/seasonChallenges/summer').get());
-    await assertFails(anon.doc('users/alice/seasonChallenges/summer').get());
-  });
-});
-
-describe('users/{userId}/seasonRewards', () => {
-  before(async () => {
-    await seed('users/alice/seasonRewards/reward-1', { seasonId: 'summer' });
-  });
-
-  it('lets the owner read', async () => {
-    const alice = await asUser('alice');
-    await assertSucceeds(alice.doc('users/alice/seasonRewards/reward-1').get());
-  });
-
-  it('denies writes even by the owner', async () => {
-    const alice = await asUser('alice');
-    await assertFails(
-      alice.doc('users/alice/seasonRewards/reward-2').set({ seasonId: 'summer' }),
-    );
-  });
-
-  it('denies reads by other users', async () => {
-    const bob = await asUser('bob');
-    await assertFails(bob.doc('users/alice/seasonRewards/reward-1').get());
-  });
-});
-
-// Badges (the reader-facing word; the collection keeps `achievements`).
-//
-// Writes are server-only: the Admin SDK bypasses these rules, so a passing
-// `seed()` below is what "the server path can write" looks like. No client —
-// not even the owner — can grant one. Co-members read badges through the
-// per-Group mirror in groups.rules.test.js: sharing a group with the owner is
-// not expressible as a rule on this personal path (ADR-0004), so the direct
-// cross-user read here stays denied by design.
-describe('users/{userId}/achievements', () => {
-  before(async () => {
-    // Server-authored badge — the only way one comes into existence.
-    await seed('users/alice/achievements/first_nt', { type: 'read_through' });
-    // bob genuinely shares a group with alice; the mirror path in
-    // groups.rules.test.js is where his read belongs.
-    await seed('groups/g-shared-with-alice', { ownerUid: 'alice', isPublic: false });
-    await seed('groups/g-shared-with-alice/members/alice', { uid: 'alice', role: 'owner' });
-    await seed('groups/g-shared-with-alice/members/bob', { uid: 'bob', role: 'member' });
-  });
-
-  it('lets the owner read their own badges', async () => {
-    const alice = await asUser('alice');
-    await assertSucceeds(alice.doc('users/alice/achievements/first_nt').get());
-  });
-
-  it('denies the owner writing a badge for themselves', async () => {
-    const alice = await asUser('alice');
-    await assertFails(
-      alice.doc('users/alice/achievements/self_granted').set({ type: 'read_through' }),
-    );
-  });
-
-  it('denies the owner updating or deleting a badge', async () => {
-    const alice = await asUser('alice');
-    await assertFails(
-      alice.doc('users/alice/achievements/first_nt').update({ type: 'forged' }),
-    );
-    await assertFails(alice.doc('users/alice/achievements/first_nt').delete());
-  });
-
-  it('denies direct badge reads to co-members and strangers alike', async () => {
-    const bob = await asUser('bob');
-    const carol = await asUser('carol');
-    await assertFails(bob.doc('users/alice/achievements/first_nt').get());
-    await assertFails(carol.doc('users/alice/achievements/first_nt').get());
-  });
-
-  it('denies badge writes by other signed-in users', async () => {
-    const bob = await asUser('bob');
-    await assertFails(
-      bob.doc('users/alice/achievements/first_nt').set({ type: 'read_through' }),
-    );
-  });
-
-  it('denies unauthenticated reads', async () => {
-    const anon = await asUnauthenticated();
-    await assertFails(anon.doc('users/alice/achievements/first_nt').get());
-  });
-});
-
 // Every collection gated by `read, write: if auth.uid == userId`.
 describe('owner-only user collections', () => {
   const ownerOnlyDocs = [
@@ -169,13 +42,10 @@ describe('owner-only user collections', () => {
     'notificationPrefs/likes',
     'settings/theme',
     'plan_progress/plan-1',
-    'plan_pace/group-1',
     'bible_books/Genesis',
     'read_throughs/rt-1',
     'read_through_state/old-testament',
-    'reflections/2026-01-01',
     'summary/overall',
-    'cache/badges',
   ];
 
   before(async () => {

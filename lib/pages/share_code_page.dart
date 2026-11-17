@@ -8,8 +8,8 @@ import '../widgets/skeleton.dart';
 import '../widgets/skeleton_loader.dart';
 import '../models/group.dart';
 import '../services/error_logger.dart';
-import '../services/friend_invite.dart';
 import '../services/group_service.dart';
+import '../services/join_code_service.dart';
 import '../services/vibration_service.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/sub_header.dart';
@@ -28,12 +28,16 @@ class ShareCodePage extends StatefulWidget {
   /// Haptics for interactions.
   final VibrationService vibrationService;
 
+  /// Optional callback invoked when finishing the share step.
+  final VoidCallback? onDone;
+
   /// Creates a [ShareCodePage].
   const ShareCodePage({
     super.key,
     required this.group,
     required this.groupService,
     this.vibrationService = const VibrationService(),
+    this.onDone,
   });
 
   @override
@@ -90,7 +94,7 @@ class _ShareCodePageState extends State<ShareCodePage> {
     final code = _code;
     if (code == null) return;
     unawaited(widget.vibrationService.lightImpact());
-    final link = FriendInvite.linkFor(code);
+    final link = JoinCodeService.shareLink(code);
     await SharePlus.instance.share(ShareParams(
       text:
           'Join my group "${widget.group.name}" on Bible Reading Challenge: $link',
@@ -158,7 +162,13 @@ class _ShareCodePageState extends State<ShareCodePage> {
           children: [
             SubHeader(
               title: 'Share code',
-              onBack: () => Navigator.of(context).maybePop(),
+              onBack: () {
+                if (widget.onDone != null) {
+                  widget.onDone!();
+                } else {
+                  Navigator.of(context).maybePop();
+                }
+              },
             ),
             Expanded(
               child: Container(
@@ -244,16 +254,6 @@ class _ShareCodePageState extends State<ShareCodePage> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                if (!widget.group.isPublic) ...[
-                  const SizedBox(height: AppSpacing.gap8),
-                  Text(
-                    "You'll approve their request before they're in.",
-                    style: AppTextStyles.bodySmall(context).copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
                 const SizedBox(height: AppSpacing.gap24),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -301,6 +301,17 @@ class _ShareCodePageState extends State<ShareCodePage> {
               ),
           textAlign: TextAlign.center,
         ),
+        if (widget.onDone != null) ...[
+          const SizedBox(height: AppSpacing.gap24),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              onPressed: widget.onDone,
+              child: const Text('Done'),
+            ),
+          ),
+        ],
       ],
     );
   }

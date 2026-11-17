@@ -196,17 +196,17 @@ void main() {
     expect(_lastResult!.chaptersPerDay, 2);
   });
 
-  testWidgets('a shared plan says the change is the reader\'s alone',
+  testWidgets('a shared plan says the change updates everyone in the group',
       (tester) async {
     await _pump(tester, shared: true);
     expect(
-      find.textContaining('only your own schedule'),
+      find.textContaining('everyone in the group'),
       findsOneWidget,
     );
   });
 
   testWidgets('a personal plan carries no shared-plan copy', (tester) async {
     await _pump(tester);
-    expect(find.textContaining('only your own schedule'), findsNothing);
+    expect(find.textContaining('everyone in the group'), findsNothing);
   });
 }

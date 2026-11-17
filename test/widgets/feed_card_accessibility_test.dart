@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,7 +40,6 @@ void main() {
     final amenData = amenNode.getSemanticsData();
 
     // We expect it to have button flag
-    // ignore: deprecated_member_use
     expect(
       amenData.hasFlag(SemanticsFlag.isButton),
       isTrue,

@@ -33,6 +33,7 @@ void main() {
       final seeder = FirebaseSeeder(firestore);
 
       // Stub messaging
+      // ignore: deprecated_member_use
       when(() => messaging.getToken()).thenAnswer((_) async => 'fake_token');
 
       // Create user and get UID

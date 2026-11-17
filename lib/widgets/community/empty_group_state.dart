@@ -13,9 +13,7 @@ import '../../services/vibration_service.dart';
 import '../../theme/app_theme.dart';
 import '../app_bottom_sheet.dart';
 import '../find_group_card.dart';
-import '../group_preview_sheet.dart';
 import '../nav_glyphs.dart';
-import '../qr_scan_view.dart';
 
 /// The empty state for Circle when the reader has no active groups.
 ///
@@ -85,8 +83,6 @@ class EmptyGroupState extends StatelessWidget {
           groupService: groupService,
           auth: auth,
           vibrationService: vibrationService,
-          title: 'Their code',
-          scanViewBuilder: cameraQrScanView,
         ),
       ),
     );
@@ -174,7 +170,7 @@ class EmptyGroupState extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 250),
             child: Text(
-              'Your Circle is your Friends and everyone you share a group with.',
+              'Your Circle is everyone you share a group with.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -267,6 +263,13 @@ class _FindGroupSheetContent extends StatelessWidget {
     );
   }
 
+  String _readingSummary(Group group) {
+    final books = group.planConfig?.books ?? const <String>[];
+    if (books.isEmpty) return 'Bible reading plan';
+    if (books.length == 1) return 'Reading ${books.first}';
+    return 'Reading ${books.first} +${books.length - 1} more';
+  }
+
   Widget _buildGroups(BuildContext context, List<Group> allGroups) {
     final colorScheme = Theme.of(context).colorScheme;
     final groups = allGroups.where((g) => g.isPublic).toList();
@@ -286,16 +289,25 @@ class _FindGroupSheetContent extends StatelessWidget {
         final group = groups[index];
         return FindGroupCard(
           group: group,
-          readingSummary: GroupPreviewSheet.readingLabel(group),
-          onTap: () {
+          readingSummary: _readingSummary(group),
+          onTap: () async {
             vibrationService.lightImpact();
-            GroupPreviewSheet.show(
-              context: context,
-              group: group,
-              groupService: groupService,
-              auth: auth,
-              vibrationService: vibrationService,
-            );
+            final user = auth.currentUser;
+            if (user != null) {
+              await groupService.joinGroup(
+                groupId: group.id,
+                uid: user.uid,
+                name: user.displayName ?? '',
+                photoUrl: user.photoURL,
+                isPublic: group.isPublic,
+              );
+              if (context.mounted) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('You joined ${group.name}')),
+                );
+              }
+            }
           },
         );
       },

@@ -28,9 +28,6 @@ class ReadThroughHost extends StatefulWidget {
   final BibleProgressService? bibleProgressService;
   final VibrationService vibrationService;
 
-  /// Opened from the celebration's "Add where you were" button.
-  final void Function(ReadThrough readThrough)? onAddLocation;
-
   const ReadThroughHost({
     super.key,
     required this.auth,
@@ -40,7 +37,6 @@ class ReadThroughHost extends StatefulWidget {
     this.lapService,
     this.bibleProgressService,
     this.vibrationService = const VibrationService(),
-    this.onAddLocation,
   });
 
   @override
@@ -139,7 +135,6 @@ class _ReadThroughHostState extends State<ReadThroughHost> {
   ) async {
     if (!mounted) return;
     final navigator = Navigator.of(context, rootNavigator: true);
-    final onAddLocation = widget.onAddLocation;
 
     await navigator.push<void>(
       PageRouteBuilder<void>(
@@ -153,12 +148,6 @@ class _ReadThroughHostState extends State<ReadThroughHost> {
             counts: counts,
             vibrationService: widget.vibrationService,
             onDismiss: () => Navigator.of(context).pop(),
-            onAddLocation: onAddLocation == null
-                ? null
-                : () {
-                    Navigator.of(context).pop();
-                    onAddLocation(batch.last);
-                  },
           ),
         ),
       ),

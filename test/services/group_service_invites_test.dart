@@ -39,7 +39,7 @@ void main() {
       expect(groupDoc.data()?['memberCount'], equals(2)); // Owner + user1
     });
 
-    test('joinGroup creates request if group is private', () async {
+    test('joinGroup joins directly even if group is private', () async {
       final groupId = await groupService.createGroup(
         ownerUid: 'owner',
         name: 'Private Group',
@@ -59,15 +59,8 @@ void main() {
           .collection('members')
           .doc('user1')
           .get();
-      final requestDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('joinRequests')
-          .doc('user1')
-          .get();
 
-      expect(memberDoc.exists, isFalse);
-      expect(requestDoc.exists, isTrue);
+      expect(memberDoc.exists, isTrue);
     });
 
     test(
@@ -138,15 +131,9 @@ void main() {
           .collection('invites')
           .doc(recipientUid)
           .get();
-      final notificationSnap = await firestore
-          .collection('users')
-          .doc(recipientUid)
-          .collection('notifications')
-          .get();
 
       expect(memberDoc.exists, isTrue);
       expect(inviteDoc.exists, isFalse);
-      expect(notificationSnap.docs.isEmpty, isTrue);
     });
 
     test('respondToGroupInvite cannot accept missing invite', () async {
@@ -216,29 +203,6 @@ void main() {
         expect(inviteDoc.exists, isFalse);
       },
     );
-
-    test('approveJoinRequest cannot approve missing request', () async {
-      final groupId = await groupService.createGroup(
-        ownerUid: 'owner',
-        name: 'Private Group',
-      );
-
-      await expectLater(
-        groupService.approveJoinRequest(groupId: groupId, uid: 'user1'),
-        throwsStateError,
-      );
-
-      final memberDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('members')
-          .doc('user1')
-          .get();
-      final groupDoc = await firestore.collection('groups').doc(groupId).get();
-
-      expect(memberDoc.exists, isFalse);
-      expect(groupDoc.data()?['memberCount'], equals(1));
-    });
   });
 }
 

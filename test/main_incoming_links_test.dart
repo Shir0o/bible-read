@@ -1,6 +1,6 @@
 import 'package:bible_read/main.dart';
 import 'package:bible_read/pages/join_by_code_page.dart';
-import 'package:bible_read/services/friend_invite.dart';
+import 'package:bible_read/services/join_code_service.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
@@ -15,7 +15,6 @@ void main() {
     await Firebase.initializeApp();
   });
 
-  const code = '7QK4M2PX';
   const groupCode = 'ABC234';
 
   Future<IncomingLinkHandler> pumpShell(
@@ -43,21 +42,11 @@ void main() {
     return handler;
   }
 
-  testWidgets('an incoming invite link opens the confirm screen',
-      (tester) async {
-    final handler = await pumpShell(tester, signedIn: true);
-
-    await handler.handleUri(Uri.parse(FriendInvite.linkFor(code)));
-    await tester.pumpAndSettle();
-
-    expect(find.text('invite $code'), findsOneWidget);
-  });
-
   testWidgets('an incoming group invite link opens the confirm screen',
       (tester) async {
     final handler = await pumpShell(tester, signedIn: true);
 
-    await handler.handleUri(Uri.parse(FriendInvite.linkFor(groupCode)));
+    await handler.handleUri(Uri.parse(JoinCodeService.shareLink(groupCode)));
     await tester.pumpAndSettle();
 
     expect(find.text('invite $groupCode'), findsOneWidget);
@@ -76,13 +65,13 @@ void main() {
       (tester) async {
     final handler = await pumpShell(tester, signedIn: false);
 
-    await handler.handleUri(Uri.parse(FriendInvite.linkFor(code)));
+    await handler.handleUri(Uri.parse(JoinCodeService.shareLink(groupCode)));
     await tester.pumpAndSettle();
-    expect(find.text('invite $code'), findsNothing);
+    expect(find.text('invite $groupCode'), findsNothing);
 
     handler.onSignedIn();
     await tester.pumpAndSettle();
-    expect(find.text('invite $code'), findsOneWidget);
+    expect(find.text('invite $groupCode'), findsOneWidget);
   });
 
   testWidgets('default builder routes group code to JoinByCodePage',
@@ -103,7 +92,7 @@ void main() {
       ),
     );
 
-    await handler.handleUri(Uri.parse(FriendInvite.linkFor(groupCode)));
+    await handler.handleUri(Uri.parse(JoinCodeService.shareLink(groupCode)));
     await tester.pumpAndSettle();
 
     expect(find.byType(JoinByCodePage), findsOneWidget);

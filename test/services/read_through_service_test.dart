@@ -141,7 +141,6 @@ void main() {
         scope: ReadThroughScope.wholeBible,
         completedAt: DateTime(2011, 1, 1),
         precision: DatePrecision.year,
-        location: 'Fuller, Pasadena',
       );
 
       final rows = await service.fetchAll(uid);
@@ -150,8 +149,6 @@ void main() {
       expect(counts.oldTestament, 1);
       expect(counts.newTestament, 1);
       expect(counts.wholeBible, 1);
-      expect(ofScope(rows, ReadThroughScope.wholeBible).single.location,
-          'Fuller, Pasadena');
     });
 
     test('backfilled records are never celebrated', () async {
@@ -253,18 +250,6 @@ void main() {
       expect(at(DatePrecision.year).dateLabel, '2011');
       expect(at(DatePrecision.month).dateLabel, 'March 2011');
       expect(at(DatePrecision.day).dateLabel, '12 March 2011');
-    });
-
-    test('appends the location when there is one', () {
-      final row = ReadThrough(
-        id: 'x',
-        scope: ReadThroughScope.wholeBible,
-        completedAt: DateTime(2011),
-        datePrecision: DatePrecision.year,
-        location: 'Taipei',
-        source: ReadThroughSource.backfilled,
-      );
-      expect(row.subtitle, '2011 · Taipei');
     });
   });
 }

@@ -114,7 +114,7 @@ class CatchUpStatus {
   DateTime? get lastDate => entries.isEmpty ? null : entries.last.date;
 
   /// The reading a returning user should pick up — the current one if any is
-  /// due, otherwise the final reading (used to label "Read · <ref>").
+  /// due, otherwise the final reading (used to label "Read · `<ref>`").
   List<String> get currentReadings {
     if (currentIndex >= 0) return entries[currentIndex].readings;
     if (entries.isEmpty) return const [];

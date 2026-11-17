@@ -204,18 +204,16 @@ void main() {
       expect(initialCounts.oldTestament, 0);
       expect(initialCounts.newTestament, 0);
 
-      await service.addBackfilled(
+      await service.readThroughService.addBackfilled(
         uid: uid,
         scope: ReadThroughScope.newTestament,
         completedAt: DateTime(2025, 1, 1),
         precision: DatePrecision.month,
-        location: 'Home',
       );
 
       final rows = await service.fetchReadThroughs(uid);
       expect(rows.length, 1);
       expect(rows.first.scope, ReadThroughScope.newTestament);
-      expect(rows.first.location, 'Home');
 
       final counts = await service.fetchCounts(uid);
       expect(counts.newTestament, 1);
@@ -224,7 +222,7 @@ void main() {
     });
 
     test('pairing testaments derives whole-Bible read-through', () async {
-      await service.addBackfilled(
+      await service.readThroughService.addBackfilled(
         uid: uid,
         scope: ReadThroughScope.wholeBible,
         completedAt: DateTime(2025, 2, 1),
@@ -235,32 +233,6 @@ void main() {
       expect(counts.wholeBible, 1);
       expect(counts.oldTestament, 1);
       expect(counts.newTestament, 1);
-    });
-
-    test('updateReadThroughDetails and deleteReadThrough manage records',
-        () async {
-      final created = await service.addBackfilled(
-        uid: uid,
-        scope: ReadThroughScope.newTestament,
-        completedAt: DateTime(2025, 1, 1),
-        precision: DatePrecision.year,
-        location: 'Camp',
-      );
-      final id = created.first.id;
-
-      await service.updateReadThroughDetails(
-        uid,
-        id,
-        location: 'New Camp',
-        datePrecision: DatePrecision.day,
-      );
-
-      final updated = (await service.fetchReadThroughs(uid)).first;
-      expect(updated.location, 'New Camp');
-      expect(updated.datePrecision, DatePrecision.day);
-
-      await service.deleteReadThrough(uid, id);
-      expect(await service.fetchReadThroughs(uid), isEmpty);
     });
 
     test('uncelebrated and markCelebrated manage celebration queue', () async {
@@ -410,42 +382,6 @@ void main() {
 
       final emitted = await futureEmission;
       expect(emitted['Romans'], {1});
-    });
-
-    test('setBookManualCompletion writes bible_books and credits lap',
-        () async {
-      await service.setBookManualCompletion(
-        uid: uid,
-        book: 'Ruth',
-        completed: true,
-      );
-
-      final doc = await firestore
-          .collection('users')
-          .doc(uid)
-          .collection('bible_books')
-          .doc('Ruth')
-          .get();
-      expect(doc.exists, isTrue);
-
-      final lap = await service.fetchLapCoverage(uid);
-      expect(lap.oldTestament['Ruth'], {1, 2, 3, 4});
-
-      expect(await service.getLastCheckedBook(uid), 'Ruth');
-
-      // Un-marking
-      await service.setBookManualCompletion(
-        uid: uid,
-        book: 'Ruth',
-        completed: false,
-      );
-      final unmarkDoc = await firestore
-          .collection('users')
-          .doc(uid)
-          .collection('bible_books')
-          .doc('Ruth')
-          .get();
-      expect(unmarkDoc.exists, isFalse);
     });
   });
 }

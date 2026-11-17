@@ -79,6 +79,42 @@ class JoinCodeService {
   static String normalize(String raw) =>
       raw.toUpperCase().replaceAll(RegExp(r'[\s\-]'), '');
 
+  /// URL to share with others for joining via this [code].
+  static String shareLink(String code) =>
+      'https://shiroo.github.io/bible-read/f/?c=$code';
+
+  /// Extracts a 6-character group code from [uri] if present.
+  static String? codeFromUri(Uri uri) {
+    final c = uri.queryParameters['c'];
+    if (c != null) {
+      final norm = normalize(c);
+      if (norm.length == codeLength) return norm;
+    }
+    return null;
+  }
+
+  /// Extracts a 6-character group code from raw user input or pasted URL text.
+  static String? codeFromText(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null) {
+      final fromUri = codeFromUri(uri);
+      if (fromUri != null) return fromUri;
+    }
+    final urlMatch = RegExp(r'https?://\S+').firstMatch(trimmed);
+    if (urlMatch != null) {
+      final embeddedUri = Uri.tryParse(urlMatch.group(0)!);
+      if (embeddedUri != null) {
+        final fromEmbedded = codeFromUri(embeddedUri);
+        if (fromEmbedded != null) return fromEmbedded;
+      }
+    }
+    final norm = normalize(trimmed);
+    if (norm.length == codeLength) return norm;
+    return null;
+  }
+
   static String? _currentCode(DocumentSnapshot<Map<String, dynamic>> snap) {
     final code = snap.data()?['joinCode'] as String?;
     if (code == null || code.isEmpty) return null;

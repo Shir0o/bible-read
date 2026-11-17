@@ -27,7 +27,6 @@ import 'package:bible_read/pages/main_page.dart';
 import 'package:bible_read/pages/plan_detail_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
 import 'package:bible_read/theme/app_theme.dart';
-import 'package:bible_read/widgets/reflect_sheet.dart';
 import '../test/helpers/fake_google_sign_in_platform.dart';
 import 'helpers/screenshot_helper.dart';
 
@@ -434,9 +433,7 @@ void main() {
             key: ValueKey('checkin-$readToday-${at.hour}'),
             readToday: readToday,
             seasonDays: 41,
-            reflection: reflection,
             onConfirmRead: () async {},
-            onReflect: () {},
             onClose: () {},
             dateProvider: () => at,
             enableDriftAnimation: false,
@@ -504,28 +501,8 @@ void main() {
     await scrollBy(tester, -420);
     await shot(tester, '41_community_scroll');
 
-    // ===================== 6. Reflection sheet =====================
     await tapIf(tester, find.text('Home'));
     await settle(tester, frames: 12);
-    // Non-fatal: a failure here must not cost us the plan-detail captures.
-    try {
-      final sheetContext = navigatorKey.currentContext;
-      if (sheetContext != null) {
-        openReflectSheet(
-          sheetContext,
-          initialText: kSeededReflection,
-          prompt: reflectionPromptFor(today),
-        );
-        await settle(tester, frames: 16);
-        await shot(tester, '60_reflect_sheet');
-        await tapIf(tester, find.text('Skip for today'));
-        await settle(tester, frames: 8);
-      } else {
-        debugPrint('reflect sheet skipped: no navigator context');
-      }
-    } catch (e, st) {
-      debugPrint('reflect sheet capture failed: $e\n$st');
-    }
 
     // ===================== 5. Plan detail, light + dark =====================
     Future<void> pumpPlanDetail(ColorScheme scheme) async {
@@ -554,19 +531,4 @@ void main() {
     await scrollBy(tester, -420);
     await shot(tester, '53_plan_detail_dark_scroll');
   });
-}
-
-/// Fire-and-forget wrapper: the sheet's future only completes when it closes,
-/// which is after the capture.
-void openReflectSheet(
-  BuildContext context, {
-  required String initialText,
-  required String prompt,
-}) {
-  showReflectSheet(
-    context,
-    initialText: initialText,
-    prompt: prompt,
-    onSave: (_, __) async {},
-  );
 }

@@ -223,8 +223,9 @@ void main() {
   });
 
   testWidgets(
-      'PlanDetailPage shows "Adjust pace" button when member with schedule',
+      'PlanDetailPage shows "Adjust pace" button when group owner with schedule',
       (tester) async {
+    when(() => mockUser.uid).thenReturn('owner_uid');
     final today = DateTime.now();
     final schedules = [
       GroupSchedule(date: today, chapters: ['Genesis 1']),
@@ -242,7 +243,7 @@ void main() {
   });
 
   testWidgets(
-      'PlanDetailPage does not show "Adjust pace" button when not a member',
+      'PlanDetailPage does not show "Adjust pace" button when non-owner member',
       (tester) async {
     final today = DateTime.now();
     final schedules = [
@@ -252,7 +253,7 @@ void main() {
       () => mockGroupService.schedule('test_group'),
     ).thenAnswer((_) => Stream.value(schedules));
 
-    await tester.pumpWidget(createWidgetUnderTest(isMember: false));
+    await tester.pumpWidget(createWidgetUnderTest(isMember: true));
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Adjust pace'), findsNothing);

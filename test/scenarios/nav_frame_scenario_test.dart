@@ -15,10 +15,7 @@ import 'package:google_sign_in_platform_interface/google_sign_in_platform_interf
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bible_read/pages/check_in_page.dart';
-import 'package:bible_read/models/app_notification.dart';
-import 'package:bible_read/models/notification_preferences.dart';
 import 'package:bible_read/pages/create_plan_page.dart';
-import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/widgets/app_header.dart';
 import 'package:bible_read/widgets/app_nav_bar.dart';
 import 'package:bible_read/pages/main_page.dart';
@@ -187,31 +184,7 @@ void main() {
     }
   });
 
-  testWidgets('the avatar badge counts unread notifications', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final service = NotificationService(firestore: firestore);
-    for (var i = 0; i < 3; i++) {
-      await service.addNotification(
-        'u1',
-        AppNotification(
-          id: 'n$i',
-          type: NotificationType.nudge,
-          message: 'm$i',
-          timestamp: DateTime(2026, 1, 1, 8, i),
-          read: i == 0,
-        ),
-      );
-    }
-    await pumpMainPage(tester, firestore: firestore);
-
-    expect(
-      find.bySemanticsLabel('Open menu, 2 unread notifications'),
-      findsOneWidget,
-    );
-    expect(find.text('2'), findsOneWidget);
-  });
-
-  testWidgets('with nothing unread the avatar carries no badge', (
+  testWidgets('avatar carries Open menu label', (
     tester,
   ) async {
     await pumpMainPage(tester);

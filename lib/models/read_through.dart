@@ -94,9 +94,6 @@ class ReadThrough {
   /// How much of [completedAt] the user actually remembers.
   final DatePrecision datePrecision;
 
-  /// Free text saying where this happened. Empty when not given.
-  final String location;
-
   /// Where this record came from.
   final ReadThroughSource source;
 
@@ -118,7 +115,6 @@ class ReadThrough {
     required this.completedAt,
     required this.source,
     this.datePrecision = DatePrecision.day,
-    this.location = '',
     this.celebrated = false,
     this.lapNumber = 0,
     this.pairedOtId,
@@ -135,7 +131,6 @@ class ReadThrough {
       completedAt:
           (data['completedAt'] as Timestamp?)?.toDate() ?? DateTime(1970),
       datePrecision: DatePrecision.fromId(data['datePrecision'] as String?),
-      location: (data['location'] as String?) ?? '',
       source: ReadThroughSource.fromId(data['source'] as String?),
       celebrated: data['celebrated'] as bool? ?? false,
       pairedOtId: data['pairedOtId'] as String?,
@@ -147,7 +142,6 @@ class ReadThrough {
         'scope': scope.id,
         'completedAt': Timestamp.fromDate(completedAt),
         'datePrecision': datePrecision.id,
-        'location': location,
         'source': source.id,
         'celebrated': celebrated,
         if (pairedOtId != null) 'pairedOtId': pairedOtId,
@@ -159,7 +153,6 @@ class ReadThrough {
     ReadThroughScope? scope,
     DateTime? completedAt,
     DatePrecision? datePrecision,
-    String? location,
     ReadThroughSource? source,
     bool? celebrated,
     int? lapNumber,
@@ -171,7 +164,6 @@ class ReadThrough {
       scope: scope ?? this.scope,
       completedAt: completedAt ?? this.completedAt,
       datePrecision: datePrecision ?? this.datePrecision,
-      location: location ?? this.location,
       source: source ?? this.source,
       celebrated: celebrated ?? this.celebrated,
       lapNumber: lapNumber ?? this.lapNumber,
@@ -189,9 +181,8 @@ class ReadThrough {
             '${_monthNames[completedAt.month - 1]} ${completedAt.year}',
       };
 
-  /// The date plus the location, when there is one.
-  String get subtitle =>
-      location.isEmpty ? dateLabel : '$dateLabel · $location';
+  /// The date of completion.
+  String get subtitle => dateLabel;
 
   /// "1st time", "2nd time", ... for the badge line in lists.
   String get ordinalLabel => '${_ordinal(lapNumber)} time';

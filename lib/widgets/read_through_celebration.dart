@@ -23,7 +23,6 @@ class ReadThroughCelebration extends StatefulWidget {
   final ReadThroughCounts counts;
 
   final VoidCallback onDismiss;
-  final VoidCallback? onAddLocation;
   final VibrationService vibrationService;
 
   const ReadThroughCelebration({
@@ -31,7 +30,6 @@ class ReadThroughCelebration extends StatefulWidget {
     required this.completed,
     required this.counts,
     required this.onDismiss,
-    this.onAddLocation,
     this.vibrationService = const VibrationService(),
   });
 
@@ -219,28 +217,6 @@ class _ReadThroughCelebrationState extends State<ReadThroughCelebration>
                               child: const Text('Keep it'),
                             ),
                           ),
-                          if (widget.onAddLocation != null) ...[
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              width: double.infinity,
-                              height: AppSpacing.buttonHeight,
-                              child: OutlinedButton(
-                                onPressed: widget.onAddLocation,
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: ink,
-                                  side: const BorderSide(
-                                    color: Color(0x33FFFFFF),
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      AppSpacing.rButton,
-                                    ),
-                                  ),
-                                ),
-                                child: const Text('Add where you were'),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),

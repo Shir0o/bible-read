@@ -230,49 +230,6 @@ describe('other cloud functions', () => {
     Object.defineProperty(admin, 'messaging', { value: originalMessaging, writable: true, configurable: true });
   });
 
-  it('sendNudgeNotification checks Friends as part of the Circle', async () => {
-    const originalFirestore = admin.firestore;
-    const touched = [];
-    const fakeDb = {
-      collectionGroup: circleGroupStub(),
-      collection: (name) => {
-        touched.push(name);
-        return {
-          doc: () => ({
-            collection: (sub) => {
-              touched.push(`${name}/${sub}`);
-              return {
-                doc: () => ({
-                  get: async () => ({ exists: false }),
-                  set: async () => {}
-                })
-              };
-            },
-            get: async () => ({ data: () => ({ fcmToken: 'tokN' }) })
-          })
-        };
-      }
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = { serverTimestamp: () => 'ts' };
-    Object.defineProperty(admin, 'firestore', { value: fakeFirestore, configurable: true, writable: true });
-    Object.defineProperty(admin, 'messaging', {
-      value: () => ({ send: async () => {} }),
-      configurable: true,
-      writable: true
-    });
-
-    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
-    const res = await wrapped({ data: { toUid: 'u2', fromName: 'Sue' }, auth: { uid: 'u1' } });
-    assert.equal(res.alreadySent, false);
-    const joined = touched.join(',');
-    assert.ok(
-      joined.includes('users/friendships'),
-      `nudge path did not check Friends: ${joined}`,
-    );
-    Object.defineProperty(admin, 'firestore', { value: originalFirestore, writable: true, configurable: true });
-  });
-
   it('sendNudgeNotification dedupe is per recipient, not per group', async () => {
     // The ledger document id is the recipient uid with no group dimension,
     // so a recipient shared through two Groups hits the same document.
@@ -509,45 +466,6 @@ describe('other cloud functions', () => {
       /only nudge someone in your Circle/,
     );
     Object.defineProperty(admin, 'firestore', {value: originalFirestore, writable: true, configurable: true});
-  });
-
-  it('sendNudgeNotification accepts a Friend with no shared Group', async () => {
-    const originalFirestore = admin.firestore;
-    const originalMessaging = admin.messaging;
-    let sends = 0;
-    const fakeDb = {
-      collection: (name) => ({
-        doc: (docId) => ({
-          collection: (sub) => ({
-            doc: () => ({
-              // The friendship exists on the sender's side; the nudge ledger
-              // and reading lookup do not yet.
-              get: async () => ({exists: sub === 'friendships'}),
-              set: async () => {},
-            }),
-          }),
-          get: async () => ({data: () => ({fcmToken: 'tok', read: false})}),
-        }),
-      }),
-      collectionGroup: () => ({
-        where: () => ({get: async () => ({docs: []})}),
-      }),
-    };
-    function fakeFirestore() { return fakeDb; }
-    fakeFirestore.FieldValue = {serverTimestamp: () => 'ts'};
-    Object.defineProperty(admin, 'firestore', {value: fakeFirestore, configurable: true, writable: true});
-    Object.defineProperty(admin, 'messaging', {
-      value: () => ({send: async () => { sends += 1; }}),
-      configurable: true,
-      writable: true,
-    });
-
-    const wrapped = functionsTest.wrap(myFunctions.sendNudgeNotification);
-    const res = await wrapped({data: {toUid: 'friend', fromName: 'Sue'}, auth: {uid: 'u1'}});
-    assert.equal(res.alreadySent, false);
-    assert.equal(sends, 1);
-    Object.defineProperty(admin, 'firestore', {value: originalFirestore, writable: true, configurable: true});
-    Object.defineProperty(admin, 'messaging', {value: originalMessaging, writable: true, configurable: true});
   });
 
   it('sendNudgeNotification missing params', async () => {

@@ -50,9 +50,6 @@ class BibleProgressPageState extends State<BibleProgressPage> {
   final ScrollController _scrollController = ScrollController();
   final Map<String, GlobalKey> _bookKeys = {};
 
-  // Optimistic UI overrides: bookName -> isCompleted
-  final Map<String, bool> _localOverrides = {};
-
   static const List<MapEntry<String, List<String>>> _categories = [
     MapEntry('Pentateuch', [
       'Genesis',
@@ -199,26 +196,11 @@ class BibleProgressPageState extends State<BibleProgressPage> {
     }
   }
 
-  Map<String, Set<int>> _withOverrides(Map<String, Set<int>> base) {
-    if (_localOverrides.isEmpty) return base;
-
-    final Map<String, Set<int>> merged = Map.from(base);
-    _localOverrides.forEach((book, isCompleted) {
-      if (isCompleted) {
-        final count = ReferenceParser.chapterCount(book) ?? 0;
-        merged[book] = Set.from(List.generate(count, (i) => i + 1));
-      } else {
-        merged.remove(book);
-      }
-    });
-    return merged;
-  }
-
   /// What the grid fills in: chapters read in the *current* lap.
-  Map<String, Set<int>> _getDisplayData() => _withOverrides({
+  Map<String, Set<int>> _getDisplayData() => {
         ..._lapCoverage.oldTestament,
         ..._lapCoverage.newTestament,
-      });
+      };
 
   /// Whether a book was finished in an earlier lap. Those tiles stay visible,
   /// dashed, so starting a lap over never looks like losing progress.
@@ -231,87 +213,6 @@ class BibleProgressPageState extends State<BibleProgressPage> {
     final total = ReferenceParser.chapterCount(book) ?? 0;
     if (total <= 0) return false;
     return (data[book] ?? const <int>{}).length >= total;
-  }
-
-  Future<void> handleBookTap(String book, bool isCurrentlyCompleted) async {
-    final user = widget.auth.currentUser;
-    if (user == null) return;
-
-    final bool desiredCompleted = !isCurrentlyCompleted;
-
-    if (isCurrentlyCompleted) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        barrierColor: AppColors.of(context).scrim,
-        builder: (context) => AlertDialog.adaptive(
-          title: Text('Mark $book as unread?'),
-          content: Text('This will remove the manual completion for $book.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Confirm'),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true) return;
-    } else {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        barrierColor: AppColors.of(context).scrim,
-        builder: (context) => AlertDialog.adaptive(
-          title: Text('Complete $book?'),
-          content: Text('Mark $book as read?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Confirm'),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true) return;
-    }
-
-    // 1. Apply Optimistic Update
-    unawaited(widget.vibrationService.lightImpact());
-    setState(() {
-      _localOverrides[book] = desiredCompleted;
-    });
-
-    try {
-      await _coverageService.setBookManualCompletion(
-        uid: user.uid,
-        book: book,
-        completed: desiredCompleted,
-      );
-      if (desiredCompleted) {
-        await _loadData();
-      }
-
-      // Successfully updated, we can eventually clear override but
-      // keeping it is safe until next full reload.
-    } catch (e, st) {
-      // 2. Rollback on failure
-      setState(() {
-        _localOverrides.remove(book);
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update $book. Please try again.')),
-        );
-      }
-      ErrorLogger.log(e, st);
-    }
   }
 
   @override
@@ -417,7 +318,6 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                             book: book,
                             isUnlocked: isCompleted,
                             readInEarlierLap: earlier,
-                            onTap: () => handleBookTap(book, isCompleted),
                           );
                         }, childCount: entry.value.length),
                       ),
@@ -428,8 +328,7 @@ class BibleProgressPageState extends State<BibleProgressPage> {
                       padding: const EdgeInsets.fromLTRB(AppSpacing.gap16,
                           AppSpacing.gap20, AppSpacing.gap16, 0),
                       child: Text(
-                        '$completedBooks of 66 books this lap. '
-                        'Read in your own Bible — mark books as you go.',
+                        '$completedBooks of 66 books this lap.',
                         textAlign: TextAlign.center,
                         style: textTheme.bodySmall?.copyWith(
                           color: colorScheme.outline,
@@ -459,13 +358,10 @@ class _BookGridItem extends StatelessWidget {
   /// Finished in an earlier lap, but not yet in this one.
   final bool readInEarlierLap;
 
-  final VoidCallback onTap;
-
   const _BookGridItem({
     super.key,
     required this.book,
     required this.isUnlocked,
-    required this.onTap,
     this.readInEarlierLap = false,
   });
 
@@ -543,15 +439,10 @@ class _BookGridItem extends StatelessWidget {
     return RepaintBoundary(
       child: Tooltip(
         message: '$book ($status)',
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppSpacing.rInset),
-          child: Semantics(
-            label: '$book, $status',
-            button: true,
-            excludeSemantics: true,
-            child: tile,
-          ),
+        child: Semantics(
+          label: '$book, $status',
+          excludeSemantics: true,
+          child: tile,
         ),
       ),
     );

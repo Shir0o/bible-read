@@ -63,7 +63,6 @@ class ReadThroughService {
     required String uid,
     required ReadThroughScope scope,
     required DateTime completedAt,
-    String location = '',
   }) {
     assert(
       scope != ReadThroughScope.wholeBible,
@@ -74,12 +73,11 @@ class ReadThroughService {
       scopes: [scope],
       completedAt: completedAt,
       precision: DatePrecision.day,
-      location: location,
       source: ReadThroughSource.detected,
     );
   }
 
-  /// Adds a read-through the user entered by hand.
+  /// Adds a read-through recorded programmatically or via migration.
   ///
   /// Choosing [ReadThroughScope.wholeBible] records both testaments — reading
   /// the whole Bible *is* reading both — which then derives the whole-Bible
@@ -89,7 +87,6 @@ class ReadThroughService {
     required ReadThroughScope scope,
     required DateTime completedAt,
     required DatePrecision precision,
-    String location = '',
     ReadThroughSource source = ReadThroughSource.backfilled,
   }) {
     final scopes = scope == ReadThroughScope.wholeBible
@@ -100,25 +97,8 @@ class ReadThroughService {
       scopes: scopes,
       completedAt: completedAt,
       precision: precision,
-      location: location,
       source: source,
     );
-  }
-
-  /// Edits the human-supplied parts of a record. The app's own account of what
-  /// happened — the scope and the fact of it — is never editable.
-  Future<void> updateDetails(
-    String uid,
-    String id, {
-    DateTime? completedAt,
-    DatePrecision? datePrecision,
-    String? location,
-  }) async {
-    await _collection(uid).doc(id).update({
-      if (completedAt != null) 'completedAt': Timestamp.fromDate(completedAt),
-      if (datePrecision != null) 'datePrecision': datePrecision.id,
-      if (location != null) 'location': location,
-    });
   }
 
   /// Deletes a hand-entered record, then removes any whole-Bible record that
@@ -166,7 +146,6 @@ class ReadThroughService {
     required List<ReadThroughScope> scopes,
     required DateTime completedAt,
     required DatePrecision precision,
-    required String location,
     required ReadThroughSource source,
   }) async {
     final created = <ReadThrough>[];
@@ -176,7 +155,6 @@ class ReadThroughService {
         scope: scope,
         completedAt: completedAt,
         datePrecision: precision,
-        location: location,
         source: source,
         // A record the user entered about the past is not a moment to
         // celebrate, so it is born already celebrated.
@@ -230,7 +208,6 @@ class ReadThroughService {
         scope: ReadThroughScope.wholeBible,
         completedAt: closedBy.completedAt,
         datePrecision: closedBy.datePrecision,
-        location: closedBy.location,
         source: ReadThroughSource.derived,
         celebrated: closedBy.source != ReadThroughSource.detected,
         pairedOtId: ot[i].id,

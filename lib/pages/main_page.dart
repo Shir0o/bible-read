@@ -19,7 +19,6 @@ import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/pages/auth_selection_page.dart';
 import 'package:bible_read/pages/login_page.dart'; // Added
 import 'package:bible_read/widgets/animated_page_route.dart'; // Added
-import '../services/admin_role_service.dart';
 import '../services/circle_service.dart';
 import '../services/google_sign_in_factory.dart';
 import '../services/group_service.dart';
@@ -95,7 +94,6 @@ class MainPageState extends State<MainPage> {
   int get selectedIndex => _selectedIndex;
 
   VibrationService get vibrationService => widget.vibrationService;
-  late final AdminRoleService _adminRoleService;
   late final GroupService _groupService;
   late final CircleService _circleService;
 
@@ -147,11 +145,6 @@ class MainPageState extends State<MainPage> {
       firestore: widget.firestore,
     );
 
-    _adminRoleService = AdminRoleService(
-      firestore: widget.firestore,
-      auth: widget.auth,
-    );
-    unawaited(_adminRoleService.prewarm());
     unawaited(_saveFcmToken());
 
     _pages = [
@@ -161,7 +154,6 @@ class MainPageState extends State<MainPage> {
         readingStatusService: _readingStatusService,
         userPreferencesService: _userPreferencesService,
         groupService: _groupService,
-        circleService: _circleService,
         googleSignInProvider: widget.googleSignInProvider,
         dateProvider: () => DateTime.now(),
         onOpenJourney: () => _onItemTapped(2),
@@ -230,6 +222,7 @@ class MainPageState extends State<MainPage> {
     final user = widget.auth.currentUser;
     if (user == null || user.isAnonymous) return;
     try {
+      // ignore: deprecated_member_use
       final token = await widget.messaging.getToken();
       if (token != null) {
         await widget.firestore.collection('users').doc(user.uid).set({
@@ -436,7 +429,6 @@ class MainPageState extends State<MainPage> {
             child: NavigationMenuScope(
               onNavigate: _navigateFromMenu,
               vibrationService: widget.vibrationService,
-              adminRoleService: _adminRoleService,
               auth: widget.auth,
               firestore: widget.firestore,
               child: ResponsiveScaffold(

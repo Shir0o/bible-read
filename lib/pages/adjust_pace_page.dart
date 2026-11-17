@@ -8,6 +8,7 @@ import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 import '../services/catch_up_engine.dart';
 import '../services/error_logger.dart';
+import '../services/group_service.dart';
 import '../services/plan_pace.dart';
 import '../services/plan_pace_service.dart';
 import '../services/vibration_service.dart';
@@ -374,9 +375,8 @@ class _AdjustPacePageState extends State<AdjustPacePage> {
                       border: Border.all(color: appColors.border),
                     ),
                     child: Text(
-                      'This is a shared plan — your change adjusts only '
-                      'your own schedule. The plan your group follows, '
-                      'and everyone else\'s progress, stay as they are.',
+                      'This is a shared plan — your change updates the schedule '
+                      'for everyone in the group.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -793,16 +793,14 @@ Future<bool> adjustPersonalPace(
   }
 }
 
-/// Runs the Adjust pace flow on a Shared plan (#810): the arithmetic runs on
-/// the Group's [schedule], but the outcome is stored as the reader's own
-/// overlay — the Group's schedule and the other members' progress are never
-/// written. Shared by Path's plan card and Home's Plan ended card. Returns
-/// whether a pace was applied, so the caller can refresh.
+/// Owner action: adjusts the Group schedule for every member.
 Future<bool> adjustSharedPace(
   BuildContext context, {
   required FirebaseFirestore firestore,
   required String uid,
   required String groupId,
+  GroupService? groupService,
+  String? groupName,
   required List<GroupSchedule> schedule,
   required Set<String> completedDateIds,
   required int daysBehind,
@@ -825,66 +823,72 @@ Future<bool> adjustSharedPace(
   if (choice == null || !context.mounted) return false;
   try {
     final paceService = PlanPaceService(firestore: firestore);
-    switch (choice.option) {
-      case PaceOption.stretch:
-        await paceService.applySharedPlanOverlay(
-          uid: uid,
-          groupId: groupId,
-          adjusted: PlanPace.stretch(
-            days: schedule,
-            completedDateIds: completedDateIds,
-            daysBehind: daysBehind,
+    final adjusted = switch (choice.option) {
+      PaceOption.stretch => PlanPace.stretch(
+          days: schedule,
+          completedDateIds: completedDateIds,
+          daysBehind: daysBehind,
+        ),
+      PaceOption.keepFinish => PlanPace.redistribute(
+          days: schedule,
+          completedDateIds: completedDateIds,
+          resumeDate: PlanPace.resumeDate(
+            schedule,
+            completedDateIds,
+            today: today,
           ),
-        );
-      case PaceOption.keepFinish:
-        await paceService.applySharedPlanOverlay(
-          uid: uid,
-          groupId: groupId,
-          adjusted: PlanPace.redistribute(
-            days: schedule,
-            completedDateIds: completedDateIds,
-            resumeDate: PlanPace.resumeDate(
-              schedule,
-              completedDateIds,
-              today: today,
-            ),
-            finishDate: PlanPace.finishOf(schedule) ?? today,
+          finishDate: PlanPace.finishOf(schedule) ?? today,
+        ),
+      PaceOption.chaptersPerDay => PlanPace.byChaptersPerDay(
+          days: schedule,
+          completedDateIds: completedDateIds,
+          resumeDate: PlanPace.resumeDate(
+            schedule,
+            completedDateIds,
+            today: today,
           ),
-        );
-      case PaceOption.chaptersPerDay:
-        await paceService.applySharedPlanOverlay(
-          uid: uid,
-          groupId: groupId,
-          adjusted: PlanPace.byChaptersPerDay(
-            days: schedule,
-            completedDateIds: completedDateIds,
-            resumeDate: PlanPace.resumeDate(
-              schedule,
-              completedDateIds,
-              today: today,
-            ),
-            chaptersPerDay: choice.chaptersPerDay ?? 2,
+          chaptersPerDay: choice.chaptersPerDay ?? 2,
+        ),
+      PaceOption.beginAgain => PlanPace.beginAgain(
+          days: schedule,
+          startDate: PlanPace.resumeDate(
+            schedule,
+            completedDateIds,
+            today: today,
           ),
-        );
-      case PaceOption.beginAgain:
-        await paceService.applySharedPlanOverlay(
-          uid: uid,
-          groupId: groupId,
-          adjusted: PlanPace.beginAgain(
-            days: schedule,
-            startDate: PlanPace.resumeDate(
-              schedule,
-              completedDateIds,
-              today: today,
-            ),
-          ),
-        );
+        ),
+    };
+
+    final revision = await paceService.rescheduleGroup(
+      uid: uid,
+      groupId: groupId,
+      adjusted: adjusted,
+    );
+
+    final effectiveGroupService =
+        groupService ?? GroupService(firestore: firestore);
+    final cloudOk = await effectiveGroupService.remapGroupProgressCallable(
+      groupId: groupId,
+      newDays: adjusted,
+    );
+    if (cloudOk == false) {
+      await effectiveGroupService.applyOwnRemap(
+        groupId: groupId,
+        uid: uid,
+        oldDays: schedule,
+        newDays: adjusted,
+      );
     }
+    await effectiveGroupService.markMemberRemapped(
+      groupId: groupId,
+      uid: uid,
+      revision: revision,
+    );
+
     if (!context.mounted) return true;
+    final name = groupName != null ? ' for "$groupName"' : '';
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Your pace adjusted — the Shared plan is unchanged'),
-      ),
+      SnackBar(content: Text('Rescheduled group plan$name')),
     );
     return true;
   } catch (e, st) {

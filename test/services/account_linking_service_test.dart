@@ -284,8 +284,7 @@ void main() {
       expect(result, isNotNull);
     });
 
-    test('throws AccountCollisionException on credential-already-in-use',
-        () async {
+    test('automatically merges on credential-already-in-use', () async {
       final firestore = FakeFirebaseFirestore();
       final cred = _FakeCredential();
       final guestUser = _CollidingMockUser(expectedCredential: cred);
@@ -318,30 +317,17 @@ void main() {
         nowProvider: () => DateTime(2026, 10, 22),
       );
 
-      expect(
-        () => service.linkCredential(cred),
-        throwsA(isA<AccountCollisionException>()
-            .having(
-              (e) => e.dryRunData.guestDays,
-              'guestDays',
-              1,
-            )
-            .having(
-              (e) => e.dryRunData.cloudDays,
-              'cloudDays',
-              1,
-            )
-            .having(
-              (e) => e.dryRunData.mergedTotalDays,
-              'mergedTotalDays',
-              2,
-            )
-            .having(
-              (e) => e.targetUid,
-              'targetUid',
-              'cloud_uid',
-            )),
-      );
+      final result = await service.linkCredential(cred);
+      expect(result, isNotNull);
+
+      final mergedGuestDate = await firestore
+          .collection('users')
+          .doc('cloud_uid')
+          .collection('reading')
+          .doc('2026-10-21')
+          .get();
+      expect(mergedGuestDate.exists, isTrue);
+      expect(mergedGuestDate.data()?['read'], isTrue);
     });
   });
 }

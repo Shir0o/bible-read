@@ -51,8 +51,7 @@ void main() {
 
     expect(find.text('No one here yet'), findsOneWidget);
     expect(
-      find.text(
-          'Your Circle is your Friends and everyone you share a group with.'),
+      find.text('Your Circle is everyone you share a group with.'),
       findsOneWidget,
     );
     expect(find.text('Have a code?'), findsOneWidget);
@@ -83,7 +82,8 @@ void main() {
     expect(vibrationService.lightImpactCalls, 1);
   });
 
-  testWidgets('tapping Find a group opens the public-group preview sheet', (
+  testWidgets(
+      'tapping Find a group opens the public-group sheet and joins on tap', (
     tester,
   ) async {
     await firestore.collection('groups').doc('g1').set({
@@ -110,57 +110,19 @@ void main() {
 
     expect(find.text('Join an open group to read together.'), findsOneWidget);
     expect(find.text('Public Reading Group'), findsOneWidget);
-    // Member names live behind the approval gate, so browse shows none.
     expect(find.text('Alice'), findsNothing);
     expect(vibrationService.lightImpactCalls, 1);
 
     await tester.tap(find.text('Public Reading Group'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Bible reading plan'), findsOneWidget);
-    expect(find.text('1 member'), findsOneWidget);
-    expect(find.text('Request to join'), findsOneWidget);
-    expect(
-      find.textContaining('names and daily progress'),
-      findsOneWidget,
-    );
-    expect(find.text('Alice'), findsNothing);
-    expect(find.text('Read today'), findsNothing);
-  });
-
-  testWidgets('requesting to join creates an approval request, not a member', (
-    tester,
-  ) async {
-    await firestore.collection('groups').doc('g1').set({
-      'name': 'Public Reading Group',
-      'ownerUid': 'u2',
-      'isPublic': true,
-      'memberCount': 1,
-    });
-
-    await tester.pumpWidget(createWidget());
-
-    await tester.tap(find.text('Find a group'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Public Reading Group'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Request to join'));
-    await tester.pumpAndSettle();
-
-    final request = await firestore
-        .collection('groups')
-        .doc('g1')
-        .collection('joinRequests')
-        .doc('u1')
-        .get();
     final member = await firestore
         .collection('groups')
         .doc('g1')
         .collection('members')
         .doc('u1')
         .get();
-
-    expect(request.exists, isTrue);
-    expect(member.exists, isFalse);
+    expect(member.exists, isTrue);
+    expect(find.text('You joined Public Reading Group'), findsOneWidget);
   });
 }

@@ -47,7 +47,8 @@ void main() {
       expect(find.text('All synced'), findsNothing);
     });
 
-    testWidgets('transitions from offline to online: shows All synced then hides',
+    testWidgets(
+        'transitions from offline to online: shows All synced then hides',
         (tester) async {
       final controller = StreamController<ConnectionStatus>.broadcast();
       addTearDown(controller.close);

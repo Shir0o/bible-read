@@ -11,32 +11,26 @@ import '../services/google_sign_in_factory.dart';
 import '../services/active_reading_aggregator.dart';
 import '../services/bible_progress_service.dart';
 import '../services/catch_up_engine.dart' hide ReadingStatus;
-import '../services/circle_service.dart';
 import '../services/connectivity_service.dart';
 import '../services/group_service.dart';
 import '../services/habit_lifecycle_service.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reading_status_service.dart';
-import '../services/reflection_service.dart';
 import '../services/user_preferences_service.dart';
-import '../models/circle_member.dart';
 import '../models/group_member_progress.dart';
 import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
-import '../models/reflection.dart';
 
 import '../services/vibration_service.dart';
 import '../widgets/burst_undo_controller.dart';
 import '../widgets/catch_up_status_row.dart';
-import '../widgets/journey/seasonal_challenge_card.dart';
-import '../widgets/common_styles.dart'; // Kept for AppTextStyles if used, or verify usage. Check minimal usage.
+import '../widgets/common_styles.dart';
 import '../theme/app_theme.dart';
 import '../widgets/member_presence_stack.dart';
 
 import '../widgets/ambient_sync_indicator.dart';
 import '../widgets/app_header.dart';
 import '../widgets/sun_mark.dart';
-import '../widgets/reflect_sheet.dart';
 import '../widgets/skeleton_loader.dart';
 import '../widgets/skeletons/home_page_skeleton.dart';
 import 'adjust_pace_page.dart';
@@ -63,9 +57,7 @@ class HomePage extends StatefulWidget {
     BibleProgressService? bibleProgressService,
     ReadingPlanService? readingPlanService,
     UserPreferencesService? userPreferencesService,
-    ReflectionService? reflectionService,
     GroupService? groupService,
-    CircleService? circleService,
     ActiveReadingAggregator? activeReadingAggregator,
     this.habitLifecycleService,
     this.enableDriftAnimation = true,
@@ -86,21 +78,12 @@ class HomePage extends StatefulWidget {
             UserPreferencesService(
               firestore: firestore ?? FirebaseFirestore.instance,
             ),
-        reflectionService = reflectionService ??
-            ReflectionService(
-              firestore: firestore ?? FirebaseFirestore.instance,
-            ),
         vibrationService = vibrationService ?? const VibrationService(),
         googleSignInProvider = googleSignInProvider ?? createGoogleSignIn,
         bibleProgressService =
             bibleProgressService ?? BibleProgressService(firestore: firestore),
         groupService = groupService ??
             GroupService(firestore: firestore ?? FirebaseFirestore.instance),
-        circleService = circleService ??
-            (groupService?.circleService ??
-                CircleService(
-                  firestore: firestore ?? FirebaseFirestore.instance,
-                )),
         activeReadingAggregator = activeReadingAggregator ??
             ActiveReadingAggregator(
               firestore: firestore ?? FirebaseFirestore.instance,
@@ -140,15 +123,9 @@ class HomePage extends StatefulWidget {
   /// Service for managing user preferences.
   final UserPreferencesService userPreferencesService;
 
-  /// Service for loading and saving the day's private reflection.
-  final ReflectionService reflectionService;
-
   /// Loads the user's group, its schedule and member presence for the
   /// "together" reading card (design parity — Home shared-plan section).
   final GroupService groupService;
-
-  /// Service managing Circle derivation across shared groups.
-  final CircleService circleService;
 
   /// Switches to the Journey tab when the consistency glimpse is tapped.
   final VoidCallback? onOpenJourney;
@@ -174,12 +151,6 @@ class _HomePageState extends State<HomePage>
   bool _disposed = false;
   bool _readToday = false;
 
-  /// Today's saved reflection text, or `null` if none has been saved yet.
-  String? _reflection;
-
-  /// Whether today's reflection is currently shared with the Circle (#807).
-  bool _reflectionShared = false;
-
   /// Whether the page is currently fetching or toggling the read status.
   bool _toggleLoading = false;
 
@@ -197,12 +168,6 @@ class _HomePageState extends State<HomePage>
   /// Streams the current reading status, so a Firestore change updates Home
   /// without a pull-to-refresh.
   StreamSubscription<ReadingStatus>? _statusSub;
-
-  /// Streams today's reflection document.
-  StreamSubscription<dynamic>? _reflectionSub;
-
-  /// Streams today's Circle presence.
-  StreamSubscription<CirclePresenceSnapshot>? _communityFeedSub;
 
   /// Subscription to the active readings aggregator stream.
   StreamSubscription<ActiveReadingsSnapshot>? _readingsSub;
@@ -223,8 +188,6 @@ class _HomePageState extends State<HomePage>
 
   /// Whether the primary plan card's mark is mid-write.
   bool _planToggleLoading = false;
-
-  CirclePresenceSnapshot _circlePresence = CirclePresenceSnapshot.empty;
 
   /// The reading the user pinned as "Primary on Home" (typed key
   /// `plan:<id>` / `group:<id>`), or `null` to let ranking auto-pick the hero.
@@ -273,22 +236,13 @@ class _HomePageState extends State<HomePage>
   /// stream that does not change stays quiet.
   void _watchLiveData() {
     _statusSub?.cancel();
-    _reflectionSub?.cancel();
     _readingsSub?.cancel();
-    _communityFeedSub?.cancel();
 
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
 
     _statusSub = widget.readingStatusService.watchStatus().listen(
           _applyStatus,
-          onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-        );
-
-    _reflectionSub = widget.reflectionService
-        .watchReflection(uid, _dateKeyFor(widget.dateProvider()))
-        .listen(
-          _applyReflection,
           onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
         );
 
@@ -307,8 +261,6 @@ class _HomePageState extends State<HomePage>
       },
       onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
     );
-
-    _watchCommunity(uid);
   }
 
   void _applyStatus(ReadingStatus status) {
@@ -322,29 +274,6 @@ class _HomePageState extends State<HomePage>
       _totalReadDays = status.totalReadDays;
       _initialLoading = false;
     });
-  }
-
-  void _applyReflection(Reflection? reflection) {
-    if (_disposed || mounted == false) return;
-    setState(() {
-      _reflection = reflection?.text;
-      _reflectionShared = reflection?.shared ?? false;
-    });
-  }
-
-  void _watchCommunity(String uid) {
-    _communityFeedSub?.cancel();
-    final dateKey = _dateKeyFor(widget.dateProvider());
-    _communityFeedSub =
-        widget.circleService.watchDailyPresence(uid, dateKey: dateKey).listen(
-      (presence) {
-        if (_disposed || mounted == false) return;
-        setState(() {
-          _circlePresence = presence;
-        });
-      },
-      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-    );
   }
 
   Future<void> _loadInitialData({bool forceRefresh = false}) async {
@@ -373,8 +302,6 @@ class _HomePageState extends State<HomePage>
         }
       }),
       _loadActiveReadings(),
-      _loadCommunity(),
-      _loadReflection(),
     ];
 
     await Future.wait(futures);
@@ -416,54 +343,6 @@ class _HomePageState extends State<HomePage>
       ErrorLogger.log(e, st);
     }
   }
-
-  /// Loads today's saved reflection, if any. Private and independent of the
-  /// habit/reading writes — best-effort, any failure just leaves the prompt
-  /// card showing.
-  Future<void> _loadReflection() async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    try {
-      final reflection = await widget.reflectionService.fetchReflection(
-        uid,
-        _dateKeyFor(widget.dateProvider()),
-      );
-      if (!_disposed && mounted) {
-        setState(() {
-          _reflection = reflection?.text;
-          _reflectionShared = reflection?.shared ?? false;
-        });
-      }
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-    }
-  }
-
-  /// Loads today's community presence — the reader plus their Circle
-  /// (Group co-members and Friends) who have read today — for the bottom
-  /// "Your circle" glimpse. Best-effort.
-  Future<void> _loadCommunity() async {
-    final user = widget.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      final dateKey = _dateKeyFor(widget.dateProvider());
-      final presence = await widget.circleService.fetchDailyPresence(
-        user.uid,
-        dateKey: dateKey,
-      );
-      if (!_disposed && mounted) {
-        setState(() {
-          _circlePresence = presence;
-        });
-      }
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-    }
-  }
-
-  String _dateKeyFor(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   void _setupSyncListener() {
     _syncSub?.cancel();
@@ -1019,15 +898,8 @@ class _HomePageState extends State<HomePage>
           pageBuilder: (context, animation, secondaryAnimation) => CheckInPage(
             readToday: _readToday,
             seasonDays: _totalReadDays,
-            reflection: _reflection,
             dateProvider: widget.dateProvider,
             onConfirmRead: () => _toggleReadStatus(showSnackBar: false),
-            onReflect: () {
-              // The reflection sheet draws up ON TOP of the check-in screen; the
-              // check-in page stays on stage so "Done" (not the reflection) is
-              // what returns to Home.
-              _openReflectSheet(context, initialText: _reflection);
-            },
             onClose: () {
               Navigator.of(context).pop();
             },
@@ -1211,26 +1083,6 @@ class _HomePageState extends State<HomePage>
                 ] else ...[
                   _buildStartPlanInvitationCard(context),
                 ],
-                // Carries its own gap12 top spacing; renders nothing unless a
-                // season is active.
-                TodayChallengeCard(
-                  firestore: widget.firestore,
-                  auth: widget.auth,
-                  vibrationService: widget.vibrationService,
-                  dateProvider: widget.dateProvider,
-                ),
-                if (_readToday) ...[
-                  const SizedBox(height: AppSpacing.gap24),
-                  _buildReflectionSection(context),
-                ],
-                if (_readToday) ...[
-                  const SizedBox(height: AppSpacing.gap24),
-                  _buildConsistencyGlimpse(context),
-                ],
-                if (_circlePresence.isLoaded) ...[
-                  const SizedBox(height: AppSpacing.gap20),
-                  _buildCommunitySection(context),
-                ],
                 const SizedBox(height: AppSpacing.gap24),
               ],
             ),
@@ -1288,11 +1140,8 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: AppSpacing.gap12),
           CatchUpStatusRow(
             status: primary.status,
-            // A reader on their own pace overlay is on track with their own
-            // dates, not in step with the Group schedule (ADR-0007).
-            onTrackLabel: primary.isGroup && !primary.ownPace
-                ? 'In step with your group'
-                : "You're on track",
+            onTrackLabel:
+                primary.isGroup ? 'In step with your group' : "You're on track",
             onTap: () => _openPrimarySchedule(primary),
           ),
         ],
@@ -1702,32 +1551,29 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.gap8),
-              Expanded(
-                child: SizedBox(
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _adjustPace(item),
-                    icon: const Icon(Icons.speed_outlined,
-                        size: AppSpacing.iconSm),
-                    label: const Text(
-                      'Adjust pace',
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
+              if (!item.isGroup ||
+                  (item.group != null &&
+                      item.group!.ownerUid ==
+                          widget.auth.currentUser?.uid)) ...[
+                const SizedBox(width: AppSpacing.gap8),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _adjustPace(item),
+                      icon: const Icon(Icons.speed_outlined,
+                          size: AppSpacing.iconSm),
+                      label: const Text(
+                        'Adjust pace',
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ),
-          const SizedBox(height: AppSpacing.gap4),
-          Center(
-            child: TextButton(
-              onPressed: () => _finishReading(item),
-              style: AppButtonStyles.mutedText(context),
-              child: const Text('Finish plan'),
-            ),
           ),
         ],
       ),
@@ -1856,16 +1702,19 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Adjust pace on the Plan ended card — the same flow as Path's plan menu.
-  /// A personal plan's schedule is rewritten in place; a Shared plan only
-  /// gets the reader's own pace overlay (ADR-0007). A schedule rewrite
-  /// doesn't touch `plan_progress`, so the plans are reloaded afterwards.
+  /// A personal plan's schedule is rewritten in place; a Group plan can be
+  /// rescheduled by its owner. A schedule rewrite doesn't touch `plan_progress`,
+  /// so the plans are reloaded afterwards.
   Future<void> _adjustPace(ActiveReadingItem item) async {
     final uid = widget.auth.currentUser?.uid;
     final group = item.group;
     if (uid != null && group != null) {
+      if (group.ownerUid != uid) return;
       final applied = await adjustSharedPace(
         context,
         firestore: widget.firestore,
+        groupService: widget.groupService,
+        groupName: group.name,
         uid: uid,
         groupId: group.id,
         schedule: item.schedule,
@@ -1890,77 +1739,6 @@ class _HomePageState extends State<HomePage>
       vibrationService: widget.vibrationService,
     );
     if (applied && !_disposed && mounted) await _loadActiveReadings();
-  }
-
-  /// Finishes the ended plan on the card (ADR-0010) — personal, optimistic
-  /// and undoable. The plan leaves Home at once and returns if the write
-  /// fails; unread readings stay unmarked.
-  Future<void> _finishReading(ActiveReadingItem item) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    unawaited(widget.vibrationService.lightImpact());
-    final group = item.group;
-    final plan = item.plan;
-    final previousSnapshot = _readingsSnapshot;
-    setState(() {
-      _readingsSnapshot = _readingsSnapshot.withoutReading(item.pinKey);
-    });
-    try {
-      if (group != null) {
-        await widget.groupService.finishMemberParticipation(
-          groupId: group.id,
-          uid: uid,
-        );
-      } else {
-        await widget.readingPlanService.finishPlan(uid, plan!.id);
-      }
-      if (_disposed || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Finished "${item.title}"'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () => _unfinishReading(item),
-          ),
-        ),
-      );
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (_disposed || !mounted) return;
-      setState(() {
-        _readingsSnapshot = previousSnapshot;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to finish "${item.title}". Please try again.'),
-        ),
-      );
-    }
-  }
-
-  /// Undoes [_finishReading]; the live plan/group streams bring it back.
-  Future<void> _unfinishReading(ActiveReadingItem item) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    try {
-      final group = item.group;
-      if (group != null) {
-        await widget.groupService.unfinishMemberParticipation(
-          groupId: group.id,
-          uid: uid,
-        );
-      } else {
-        await widget.readingPlanService.unfinishPlan(uid, item.plan!.id);
-      }
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (_disposed || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to restore "${item.title}". Please try again.'),
-        ),
-      );
-    }
   }
 
   /// Opens the schedule/detail for any reading item (personal plan or group).
@@ -2079,399 +1857,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  /// The optional daily reflection — a saved-entry card with an Edit action,
-  /// or a prompt card that opens the editor. Only shown once the habit is
-  /// marked read (#747); saving/skipping never touches the habit mark itself.
-  Widget _buildReflectionSection(BuildContext context) {
-    final reflection = _reflection;
-    if (reflection != null && reflection.isNotEmpty) {
-      return _buildSavedReflectionCard(context, reflection);
-    }
-    return _buildReflectionPromptCard(context);
-  }
-
-  Widget _buildSavedReflectionCard(BuildContext context, String text) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPadding),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        border: Border.all(color: AppColors.of(context).border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  _reflectionShared
-                      ? 'YOUR REFLECTION · SHARED WITH YOUR CIRCLE'
-                      : 'YOUR REFLECTION',
-                  style: AppTextStyles.caption(context).copyWith(
-                    color: _reflectionShared
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => _openReflectSheet(context, initialText: text),
-                style: AppButtonStyles.compactText(context),
-                child: const Text('Edit'),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.gap8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.format_quote_rounded,
-                size: 20,
-                color: colorScheme.primary.withValues(alpha: 0.5),
-              ),
-              const SizedBox(width: AppSpacing.gap12),
-              Expanded(
-                child: Text(
-                  text,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontFamily: AppTheme.fontSerif,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReflectionPromptCard(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final prompt = reflectionPromptFor(widget.dateProvider());
-    return Material(
-      color: colorScheme.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        side: BorderSide(color: AppColors.of(context).border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _openReflectSheet(context, initialText: null),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.cardPadding),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.of(context).accentSoft,
-                  borderRadius: BorderRadius.circular(AppSpacing.rInset),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.edit_note_rounded,
-                  size: AppSpacing.iconLg,
-                  color: theme.colorScheme.tertiary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.gap12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Take a moment',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.gap2),
-                    Text(
-                      prompt,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: colorScheme.outline,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Opens the reflection editor. Saving/skipping is entirely independent of
-  /// the daily habit mark — this is only ever reachable once that's already
-  /// happened. A saved entry opens with its current share state; a fresh one
-  /// always starts unshared (#807).
-  Future<void> _openReflectSheet(
-    BuildContext context, {
-    required String? initialText,
-  }) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    final dateKey = _dateKeyFor(widget.dateProvider());
-    final savedReflection = await widget.reflectionService.fetchReflection(
-      uid,
-      dateKey,
-    );
-    if (!mounted || !context.mounted) return;
-    await showReflectSheet(
-      context,
-      initialText: initialText,
-      prompt: reflectionPromptFor(widget.dateProvider()),
-      initialShared: savedReflection?.shared ?? false,
-      onSave: (text, share) async {
-        await widget.reflectionService.saveReflection(
-          uid,
-          dateKey,
-          text,
-          share: share,
-        );
-        if (!_disposed && mounted) {
-          setState(() {
-            _reflection = text;
-            _reflectionShared = share;
-          });
-        }
-      },
-    );
-  }
-
-  /// The design's "consistency glimpse" — a tappable record of showing up
-  /// (week-dots + season count) that opens the Journey tab. Describes the
-  /// *habit*, not plan progress.
-  Widget _buildConsistencyGlimpse(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-
-    return Material(
-      color: colorScheme.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.rCard),
-        side: BorderSide(color: AppColors.of(context).border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: widget.onOpenJourney,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.cardPadding,
-            vertical: AppSpacing.gap16,
-          ),
-          child: Row(
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (var i = 0; i < 7; i++) ...[
-                    if (i > 0) const SizedBox(width: AppSpacing.gap6),
-                    _weekDot(
-                      context,
-                      labels[i],
-                      _readOnWeekday(i == 0 ? 7 : i),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(width: AppSpacing.gap12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Here $_totalReadDays day${_totalReadDays == 1 ? '' : 's'} this season',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.gap2),
-                    Text(
-                      "Whenever you return, it's enough.",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: colorScheme.outline,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Whether the user read on the given ISO weekday (Mon=1..Sun=7). [_pastWeek]
-  /// is indexed by `weekday % 7` (Sun=0), matching [_toggleReadStatus].
-  bool _readOnWeekday(int weekday) {
-    final idx = weekday % 7;
-    return idx < _pastWeek.length && _pastWeek[idx];
-  }
-
-  Widget _weekDot(BuildContext context, String label, bool read) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 9,
-          height: 9,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: read ? colorScheme.primary : Colors.transparent,
-            border: read
-                ? null
-                : Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.6),
-                    width: 1.5,
-                  ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.gap6),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: colorScheme.outline,
-                letterSpacing: 0,
-              ),
-        ),
-      ],
-    );
-  }
-
-  /// The bottom "Your circle" glimpse: who among the reader's Circle
-  /// (Group co-members and Friends) has read today. Tapping opens the
-  /// Community tab.
-  Widget _buildCommunitySection(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final readers = _circlePresence.readers;
-
-    final String subtitle;
-    if (readers.isEmpty) {
-      subtitle = 'Be the first to show up today';
-    } else if (readers.length == 1) {
-      subtitle = '${readers.first.firstName} showed up — join them';
-    } else if (readers.length == 2) {
-      subtitle = '${readers[0].firstName} & ${readers[1].firstName} '
-          'showed up';
-    } else {
-      subtitle = '${readers[0].firstName}, ${readers[1].firstName} '
-          '& ${readers.length - 2} more';
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: _sectionHeaderHeight,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Your circle',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              TextButton(
-                onPressed: widget.onOpenCommunity,
-                style: _sectionLinkStyle(context),
-                child: const Text('Open'),
-              ),
-            ],
-          ),
-        ),
-        Material(
-          color: colorScheme.surfaceContainerLowest,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.rCard),
-            side: BorderSide(color: AppColors.of(context).border),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: widget.onOpenCommunity,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.cardPadding),
-              child: Row(
-                children: [
-                  MemberPresenceStack(
-                    members: readers
-                        .map(
-                          (r) => GroupMemberProgressData(
-                            uid: r.uid,
-                            name: r.name,
-                            photoUrl: r.photoUrl,
-                            completion: 1.0,
-                          ),
-                        )
-                        .toList(),
-                    size: 36,
-                    max: 5,
-                    showDoneBadge: false,
-                  ),
-                  const SizedBox(width: AppSpacing.gap12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${_circlePresence.readCount} of ${_circlePresence.totalCount} read today',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.gap2),
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20,
-                    color: colorScheme.outline,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   void dispose() {
     _disposed = true;
@@ -2481,8 +1866,6 @@ class _HomePageState extends State<HomePage>
     _syncSub?.cancel();
     _readingsSub?.cancel();
     _statusSub?.cancel();
-    _reflectionSub?.cancel();
-    _communityFeedSub?.cancel();
     super.dispose();
   }
 

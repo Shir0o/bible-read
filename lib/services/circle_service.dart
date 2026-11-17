@@ -4,36 +4,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/circle_member.dart';
 import 'error_logger.dart';
-import 'friend_service.dart';
 import 'group_collections.dart';
 
-/// Deep module encapsulating Circle derivation (ADR-0012).
+/// Deep module encapsulating Circle derivation.
 ///
-/// A reader's Circle consists of everyone they share at least one Group with
-/// plus their Friends. The Circle is derived dynamically from Group
-/// membership and the friend graph; there is no stored circle collection.
+/// A reader's Circle consists of everyone they share at least one Group with.
+/// The Circle is derived dynamically from Group membership; there is no
+/// stored circle collection.
 ///
 /// This service encapsulates:
-/// - One-shot lookup of Circle IDs across shared groups and Friends ([fetchCircleMemberIds]).
+/// - One-shot lookup of Circle IDs across shared groups ([fetchCircleMemberIds]).
 /// - Reactive streaming of deduplicated [CircleMember]s ([watchCircleMembers]).
 /// - Observing co-members' reading progress / completed date keys in a group schedule ([memberCompletedDates]).
 class CircleService {
   /// Firestore instance used for database operations.
   final FirebaseFirestore firestore;
 
-  /// Source of the reader's Friends. Defaults to a [FriendService] on the
-  /// same Firestore.
-  final FriendService friendService;
-
   final Map<String, String> _profileNameCache = {};
 
   /// Creates a [CircleService] using [FirebaseFirestore.instance] by default.
   CircleService({
     FirebaseFirestore? firestore,
-    FriendService? friendService,
-  })  : firestore = firestore ?? FirebaseFirestore.instance,
-        friendService = friendService ??
-            FriendService(firestore: firestore ?? FirebaseFirestore.instance);
+  }) : firestore = firestore ?? FirebaseFirestore.instance;
 
   static Future<void> _safeLog(Object e, StackTrace? st) async {
     try {
@@ -63,9 +55,8 @@ class CircleService {
     };
   }
 
-  /// Everyone [uid] shares at least one Group with, plus their Friends.
-  /// Derived at read time; never stored. Pending join requests confer
-  /// nothing. The reader themselves is excluded.
+  /// Everyone [uid] shares at least one Group with.
+  /// Derived at read time; never stored. The reader themselves is excluded.
   Future<Set<String>> fetchCircleMemberIds(String uid) async {
     final groupIds = await fetchGroupIds(uid);
 
@@ -91,95 +82,19 @@ class CircleService {
         circle.add(ownerUid);
       }
     }
-    circle.addAll(await friendService.fetchFriendIds(uid));
     return circle;
   }
 
   /// Backward-compatible alias for [fetchCircleMemberIds].
   Future<Set<String>> circleMemberIds(String uid) => fetchCircleMemberIds(uid);
 
-  /// Live stream of the reader's Circle (ADR-0012): the co-members of every
-  /// Group [uid] belongs to, plus their Friends, deduplicated by uid. A person
-  /// in two shared Groups appears once, carrying both Group ids; a Friend who
-  /// also shares a Group keeps their Group ids and is marked [isFriend].
-  /// The reader is excluded. No Groups and no Friends yields an empty list,
+  /// Live stream of the reader's Circle: the co-members of every
+  /// Group [uid] belongs to, deduplicated by uid. A person
+  /// in two shared Groups appears once, carrying both Group ids.
+  /// The reader is excluded. No Groups yields an empty list,
   /// not an error.
-  Stream<List<CircleMember>> watchCircleMembers(String uid) {
-    final coMembers = _watchCoMembers(uid);
-    final friendMembers = friendService.watchFriends(uid).map(
-          (friends) => [
-            for (final friend in friends)
-              CircleMember(
-                uid: friend.uid,
-                groupIds: const <String>{},
-                name: friend.name,
-                photoUrl: friend.photoUrl,
-                isFriend: true,
-                friendSince: friend.since,
-              ),
-          ],
-        );
-
-    return Stream<List<CircleMember>>.multi((controller) {
-      List<CircleMember>? co;
-      List<CircleMember>? friends;
-      var closed = false;
-
-      void emit() {
-        if (closed || co == null || friends == null) return;
-        final byUid = <String, CircleMember>{
-          for (final member in co!) member.uid: member,
-        };
-        for (final friend in friends!) {
-          final existing = byUid[friend.uid];
-          byUid[friend.uid] = existing == null
-              ? friend
-              : CircleMember(
-                  uid: existing.uid,
-                  groupIds: existing.groupIds,
-                  name: existing.name ?? friend.name,
-                  photoUrl: existing.photoUrl ?? friend.photoUrl,
-                  isFriend: true,
-                  friendSince: friend.friendSince,
-                );
-        }
-        controller.add(byUid.values.toList());
-      }
-
-      final subs = <StreamSubscription<dynamic>>[];
-
-      subs.add(coMembers.listen(
-        (members) {
-          co = members;
-          emit();
-        },
-        onError: (Object e, StackTrace st) {
-          unawaited(_safeLog(e, st));
-          co = const <CircleMember>[];
-          emit();
-        },
-      ));
-
-      subs.add(friendMembers.listen(
-        (members) {
-          friends = members;
-          emit();
-        },
-        onError: (Object e, StackTrace st) {
-          unawaited(_safeLog(e, st));
-          friends = const <CircleMember>[];
-          emit();
-        },
-      ));
-
-      controller.onCancel = () {
-        closed = true;
-        for (final sub in subs) {
-          unawaited(sub.cancel());
-        }
-      };
-    });
-  }
+  Stream<List<CircleMember>> watchCircleMembers(String uid) =>
+      _watchCoMembers(uid);
 
   /// Backward-compatible alias for [watchCircleMembers].
   Stream<List<CircleMember>> circleMembers(String uid) =>
@@ -462,11 +377,7 @@ class CircleService {
       Map<String, CircleMember>? circleByUid;
       final groupEntrySubs =
           <String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>{};
-      final friendEntrySubs = <String,
-          StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>>{};
       final groupEntries = <String, Map<String, String?>>{};
-      final friendEntries = <String, String?>{};
-      final friendReported = <String>{};
       var closed = false;
       var emitGeneration = 0;
 
@@ -475,14 +386,6 @@ class CircleService {
         if (activeGroupIds == null || circleByUid == null) return;
         for (final g in activeGroupIds!) {
           if (!groupEntries.containsKey(g)) return;
-        }
-        final wantedFriends = <String>{
-          uid,
-          for (final m in circleByUid!.values)
-            if (m.isFriend) m.uid,
-        };
-        for (final f in wantedFriends) {
-          if (!friendReported.contains(f)) return;
         }
 
         final myGen = ++emitGeneration;
@@ -497,11 +400,6 @@ class CircleService {
             if (allUids.contains(e.key)) {
               entryNames[e.key] ??= e.value;
             }
-          }
-        }
-        for (final f in wantedFriends) {
-          if (friendEntries.containsKey(f) && allUids.contains(f)) {
-            entryNames[f] ??= friendEntries[f];
           }
         }
 
@@ -572,47 +470,6 @@ class CircleService {
         }
       }
 
-      void syncFriendSubs() {
-        final currentCircle = circleByUid;
-        if (currentCircle == null) return;
-        final wanted = <String>{
-          uid,
-          for (final m in currentCircle.values)
-            if (m.isFriend) m.uid,
-        };
-        for (final existing in friendEntrySubs.keys.toList()) {
-          if (!wanted.contains(existing)) {
-            friendEntrySubs.remove(existing)?.cancel();
-            friendEntries.remove(existing);
-            friendReported.remove(existing);
-          }
-        }
-        for (final targetUid in wanted) {
-          if (friendEntrySubs.containsKey(targetUid)) continue;
-          friendEntrySubs[targetUid] =
-              FriendService.feedEntry(firestore, targetUid, dateKey)
-                  .snapshots()
-                  .listen(
-            (doc) {
-              if (doc.exists) {
-                friendEntries[targetUid] =
-                    _nonEmptyTrimmed(doc.data()?['name']);
-              } else {
-                friendEntries.remove(targetUid);
-              }
-              friendReported.add(targetUid);
-              unawaited(emit());
-            },
-            onError: (Object e, StackTrace st) {
-              unawaited(_safeLog(e, st));
-              friendEntries.remove(targetUid);
-              friendReported.add(targetUid);
-              unawaited(emit());
-            },
-          );
-        }
-      }
-
       final subs = <StreamSubscription<dynamic>>[];
       subs.add(groupIdsStream.listen(
         (groupIds) {
@@ -630,13 +487,11 @@ class CircleService {
       subs.add(circleStream.listen(
         (members) {
           circleByUid = {for (final m in members) m.uid: m};
-          syncFriendSubs();
           unawaited(emit());
         },
         onError: (Object e, StackTrace st) {
           unawaited(_safeLog(e, st));
           circleByUid = const <String, CircleMember>{};
-          syncFriendSubs();
           unawaited(emit());
         },
       ));
@@ -647,9 +502,6 @@ class CircleService {
           unawaited(sub.cancel());
         }
         for (final sub in groupEntrySubs.values) {
-          unawaited(sub.cancel());
-        }
-        for (final sub in friendEntrySubs.values) {
           unawaited(sub.cancel());
         }
       };

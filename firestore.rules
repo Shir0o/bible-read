@@ -10,42 +10,6 @@ service cloud.firestore {
     return value == true || value == 'true' || value == 1 || value == '1';
   }
 
-  function isAdmin() {
-    return request.auth != null && (
-      isTruthy(request.auth.token.admin) ||
-      isTruthy(request.auth.token.isAdmin) ||
-      (
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        (
-          isTruthy(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin) ||
-          isTruthy(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin) ||
-          (
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role is string &&
-            (
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner'
-            )
-          ) ||
-          (
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles is map &&
-            (
-              isTruthy(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.admin) ||
-              isTruthy(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.isAdmin)
-            )
-          )
-        )
-      )
-    );
-  }
-
-  // ADR-0012: a Friend is a mutual connection stored on both readers.
-  // The friend document lives on the viewer's own side, so this is a point
-  // read on a path the viewer owns.
-  function isFriendOf(authorUid) {
-    return request.auth != null &&
-      exists(/databases/$(database)/documents/users/$(request.auth.uid)/friendships/$(authorUid));
-  }
-
   // 🔐 Collection Group Rules
   // Own entries, or any entry of a group the caller belongs to (the Circle
   // reads a co-member's completed dates via uid + groupId). Queries must
@@ -64,445 +28,213 @@ service cloud.firestore {
     allow read: if request.auth != null && (resource.data.uid == request.auth.uid);
   }
 
-  match /{path=**}/joinRequests/{docId} {
-    allow read: if request.auth != null && (resource.data.uid == request.auth.uid);
+  // 🔐 App Check error logs — allow authenticated writes only
+  match /app_check_errors/{docId} {
+    allow write: if request.auth != null;
+    allow read: if false; // no public reads
   }
 
-  function isValidFeedbackCreate() {
-      return request.resource.data.keys().hasOnly([
-            'uid',
-            'email',
-            'displayName',
-            'title',
-            'description',
-            'reproductionSteps',
-            'platform',
-            'timestamp',
-            'status',
-            'updatedAt',
-            'resolvedAt',
-            'resolutionNotes',
-          ]) &&
-          request.resource.data.keys().hasAll([
-            'title',
-            'description',
-            'platform',
-            'timestamp',
-            'status',
-            'updatedAt',
-          ]) &&
-          request.resource.data.title is string &&
-          request.resource.data.description is string &&
-          request.resource.data.platform is string &&
-          request.resource.data.timestamp is timestamp &&
-          request.resource.data.updatedAt is timestamp &&
-          request.resource.data.status is string &&
-          request.resource.data.status == 'open' &&
-          request.resource.data.updatedAt == request.resource.data.timestamp &&
-          isStringOrNull(request.resource.data.uid) &&
-          isStringOrNull(request.resource.data.email) &&
-          isStringOrNull(request.resource.data.displayName) &&
-          isStringOrNull(request.resource.data.reproductionSteps) &&
-          request.resource.data.resolvedAt == null &&
-          request.resource.data.resolutionNotes == null;
+  // 🔓 User profiles (publicly readable, user-owned writable)
+  match /users/{userId} {
+    // Any signed-in user can read all user profiles.
+    allow read: if request.auth != null;
+
+    // Only the user can create/update their own profile
+    allow write: if request.auth != null && request.auth.uid == userId;
+
+    // 🔐 Nested collections — user-only access
+    match /private/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // 🔐 App Check error logs — allow authenticated writes only
-    match /app_check_errors/{docId} {
-      allow write: if request.auth != null;
-      allow read: if false; // no public reads
+    match /reading/{dateKey} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /likes/{likerId} {
+        allow read: if request.auth != null &&
+          (request.auth.uid == userId || request.auth.uid == likerId);
+        allow write: if request.auth != null && request.auth.uid == likerId;
+      }
     }
 
-    // 🔓 User profiles (publicly readable, user-owned writable)
-    match /users/{userId} {
-      // Any signed-in user can read all user profiles.
-      allow read: if request.auth != null;
+    // Nudge ledger: one doc per recipient the sender nudged today.
+    match /nudges/{recipientUid} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
 
-      // Only the user can create/update their own profile
+    match /notificationPrefs/{type} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /notifications/{noteId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.resource.data.senderUid == request.auth.uid;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /plan_progress/{planId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /bible_books/{bookName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Read-through ledger. Owner-only: the public announcement of a
+    // read-through is a separate field on that day's read_logs entry, so
+    // hand-entered records never become readable by anyone else.
+    match /read_throughs/{readThroughId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Chapters marked in the current lap of each testament.
+    match /read_through_state/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /summary/{docId} {
+      // Summary documents remain private to the owner.
+      allow read: if request.auth != null && request.auth.uid == userId;
       allow write: if request.auth != null && request.auth.uid == userId;
-
-      // 🔐 Nested collections — user-only access
-
-      // The reader's friend code on their own private data. It is deliberately
-      // not on the publicly readable profile: the only way to get a code is
-      // for its owner to hand it over (ADR-0012).
-      match /private/{docId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      // One side of a mutual friendship. Only the owner can read their side;
-      // both sides are written together by the redeemFriendCode callable, so
-      // no client may write here (a client write could leave one side only).
-      match /friendships/{friendUid} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if false;
-      }
-
-      // A reader's own Fan-out of updates for their Friends (ADR-0012):
-      // the same shape as a Group read-log entry, its Amens, and the Badge
-      // log. A Friend can read the author's source; nobody else can.
-      match /friend_feed/{date}/entries/{entryUid} {
-        allow read: if request.auth != null &&
-          (request.auth.uid == userId || isFriendOf(userId));
-        allow create, update: if request.auth != null &&
-          request.auth.uid == userId && entryUid == userId;
-        allow delete: if request.auth != null &&
-          request.auth.uid == userId && entryUid == userId;
-
-        match /likes/{likerId} {
-          allow read: if request.auth != null &&
-            (request.auth.uid == userId || isFriendOf(userId));
-          allow write: if request.auth != null &&
-            request.auth.uid == likerId &&
-            (isFriendOf(userId) || request.auth.uid == userId);
-        }
-      }
-
-      match /friend_badge_log/{awardId} {
-        allow read: if request.auth != null &&
-          (request.auth.uid == userId || isFriendOf(userId));
-        allow write: if false;
-
-        match /likes/{likerId} {
-          allow read: if request.auth != null &&
-            (request.auth.uid == userId || isFriendOf(userId));
-          allow write: if request.auth != null &&
-            request.auth.uid == likerId &&
-            (isFriendOf(userId) || request.auth.uid == userId);
-        }
-      }
-
-      match /seasonChallenges/{docId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null &&
-          request.auth.uid == userId &&
-          ((request.resource.data.progress == true ||
-              request.resource.data.progress == false ||
-              request.resource.data.progress == null) &&
-            (request.resource.data.claimed == true ||
-              request.resource.data.claimed == false ||
-              request.resource.data.claimed == null));
-      }
-
-      match /seasonRewards/{docId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if false;
-      }
-
-      match /reading/{dateKey} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-
-        match /likes/{likerId} {
-          allow read: if request.auth != null &&
-            (request.auth.uid == userId || request.auth.uid == likerId);
-          allow write: if request.auth != null && request.auth.uid == likerId;
-        }
-      }
-
-      // Private daily journal entry — never readable by anyone but the owner.
-      match /reflections/{dateKey} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      // Nudge ledger: one doc per recipient the sender nudged today.
-      match /nudges/{recipientUid} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /notificationPrefs/{type} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /settings/{settingId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /notifications/{noteId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow create: if request.auth != null && request.resource.data.senderUid == request.auth.uid;
-        allow update, delete: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /plan_progress/{planId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      // The reader's private pace overlay for a Shared plan (#810): one
-      // member adjusting their own schedule must never move the Group's
-      // schedule or another member's progress, so the adjusted view lives
-      // here — strictly the reader's own, like plan_progress.
-      match /plan_pace/{groupId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /bible_books/{bookName} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      // Read-through ledger. Owner-only: the public announcement of a
-      // read-through is a separate field on that day's read_logs entry, so
-      // hand-entered records never become readable by anyone else.
-      match /read_throughs/{readThroughId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      // Chapters marked in the current lap of each testament.
-      match /read_through_state/{docId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      // Badges. Awarded only by the server (Admin SDK bypasses these rules);
-      // no client — not even the owner — can grant one. Co-members read them
-      // through the per-Group mirror in the groups block below: sharing a
-      // group with the owner is not expressible as a rule on this personal
-      // path (see ADR-0004).
-      match /achievements/{achievementId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if false;
-      }
-
-      match /summary/{docId} {
-        // Summary documents remain private to the owner.
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null && request.auth.uid == userId;
-      }
-
-      match /cache/{docId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null && request.auth.uid == userId;
-      }
-
     }
 
-    // 👥 Groups
-    match /groups/{groupId} {
-      function isMember() {
-        return request.auth != null &&
-          exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
-      }
+    match /cache/{docId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
 
-      function isOwner() {
-        return request.auth != null &&
-          get(/databases/$(database)/documents/groups/$(groupId)).data.ownerUid == request.auth.uid;
-      }
+  // 👥 Groups
+  match /groups/{groupId} {
+    function isMember() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+    }
 
-      function isOwnerOrAdmin() {
-        return isOwner() || (
-          request.auth != null &&
-          exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == 'admin'
-        );
-      }
+    function isOwner() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/groups/$(groupId)).data.ownerUid == request.auth.uid;
+    }
 
+    function isOwnerOrAdmin() {
+      return isOwner() || (
+        request.auth != null &&
+        exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    allow read: if request.auth != null;
+    allow create: if request.auth != null;
+    allow update: if isOwnerOrAdmin() ||
+      (
+        isMember() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joinCode']) &&
+        request.resource.data.joinCode is string &&
+        request.resource.data.joinCode.size() > 0 &&
+        existsAfter(/databases/$(database)/documents/joinCodes/$(request.resource.data.joinCode))
+      );
+    allow delete: if isOwnerOrAdmin();
+
+    match /members/{uid} {
       allow read: if request.auth != null;
-      // Allow any signed-in user to create a new group document.
-      allow create: if request.auth != null;
-      // Owner/admins may modify anything. A plain member may change only the
-      // group's join code — regenerating it from the Share code screen — and
-      // the new code must be a non-empty string whose lookup document exists
-      // (staged in the same transaction by ensure/regenerate, or committed
-      // earlier), so the group document can never point at a dead code.
-      allow update: if isOwnerOrAdmin() ||
-        (
-          isMember() &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joinCode']) &&
-          request.resource.data.joinCode is string &&
-          request.resource.data.joinCode.size() > 0 &&
-          existsAfter(/databases/$(database)/documents/joinCodes/$(request.resource.data.joinCode))
+      allow create: if (
+          (isOwner() && request.auth != null && request.auth.uid == uid)
+        ) || (
+          request.auth != null && request.auth.uid == uid &&
+          (
+            get(/databases/$(database)/documents/groups/$(groupId)).data.isPublic == true ||
+            exists(/databases/$(database)/documents/groups/$(groupId)/invites/$(request.auth.uid))
+          )
         );
+      allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow update: if isOwnerOrAdmin() || (
+        request.auth != null &&
+        request.auth.uid == uid &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.uid == resource.data.uid
+      );
+    }
+
+    match /invites/{uid} {
+      allow create, update: if isOwnerOrAdmin();
+      allow read: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
+    }
+
+    match /schedule/{date} {
+      allow read: if request.auth != null;
+      allow write: if isOwnerOrAdmin();
+    }
+
+    match /progress/{dateId} {
+      allow read: if isMember() || isOwnerOrAdmin();
       allow delete: if isOwnerOrAdmin();
 
-      match /members/{uid} {
-        allow read: if request.auth != null;
-        // Owner can create their own member record at group creation.
-        // Admin/owner can create a member when approving a join request.
-        // User can create their own member record if the group is public.
-        // User can create their own member record if they have an invitation.
-        allow create: if (
-            (isOwner() && request.auth != null && request.auth.uid == uid)
-          ) || (
-            isOwnerOrAdmin() &&
-            exists(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(uid)) &&
-            !existsAfter(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(uid))
-          ) || (
-            request.auth != null && request.auth.uid == uid &&
-            (
-              get(/databases/$(database)/documents/groups/$(groupId)).data.isPublic == true ||
-              exists(/databases/$(database)/documents/groups/$(groupId)/invites/$(request.auth.uid))
-            )
-          );
-        allow delete: if isOwnerOrAdmin();
-        allow update: if isOwnerOrAdmin() || (
-          request.auth.uid == uid &&
-          request.resource.data.role == resource.data.role &&
-          request.resource.data.uid == resource.data.uid
-        );
-      }
-
-      match /invites/{uid} {
-        // Only owners/admins can send invites.
-        allow create, update: if isOwnerOrAdmin();
-        // Recipients can read their own invites (for collectionGroup) and owners/admins can read all.
-        allow read: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
-        // Owners/admins can delete, and recipients can delete when responding.
-        allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
-      }
-
-      match /schedule/{date} {
-        allow read: if request.auth != null;
-        allow write: if isOwnerOrAdmin();
-      }
-
-      // Per-group progress: members can mark their own completion for a date.
-      match /progress/{dateId} {
-        // Allow owner/admin to read progress for management; members can read too.
+      match /entries/{uid} {
         allow read: if isMember() || isOwnerOrAdmin();
-        // Allow owner/admin to clean up progress documents when managing or deleting the group.
-        allow delete: if isOwnerOrAdmin();
+        allow write: if isMember() && request.auth != null && request.auth.uid == uid;
+        allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
 
-        match /entries/{uid} {
-          // Allow owner/admin to read entries; members can read.
+        match /items/{itemId} {
           allow read: if isMember() || isOwnerOrAdmin();
           allow write: if isMember() && request.auth != null && request.auth.uid == uid;
-          // Owner/admin may delete any member's progress when deleting the group or moderating.
           allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
-
-          // Per-item completion under an entry for partial progress
-          match /items/{itemId} {
-            allow read: if isMember() || isOwnerOrAdmin();
-            allow write: if isMember() && request.auth != null && request.auth.uid == uid;
-            allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
-          }
         }
       }
+    }
 
-      // Cached per-member overall progress across all scheduled chapters.
-      match /progressSummary/{docId} {
+    match /progressSummary/{docId} {
+      allow read: if isMember() || isOwnerOrAdmin();
+      allow delete: if isOwnerOrAdmin();
+
+      match /entries/{uid} {
         allow read: if isMember() || isOwnerOrAdmin();
-        allow delete: if isOwnerOrAdmin();
-
-        match /entries/{uid} {
-          allow read: if isMember() || isOwnerOrAdmin();
-          allow write: if request.auth != null && request.auth.uid == uid;
-          allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
-        }
-      }
-
-      // The reader's daily feed entry for this Group (ADR-0004). Written by
-      // its author, read by members — a one-line membership check that
-      // replaces the retired, world-readable global read_logs collection.
-      match /read_log/{date}/entries/{entryUid} {
-        allow read: if isMember();
-        allow create, update: if isMember() && request.auth != null && request.auth.uid == entryUid;
-        allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == entryUid);
-
-        match /likes/{likerId} {
-          allow read: if isMember();
-          allow write: if isMember() && request.auth != null && request.auth.uid == likerId;
-        }
-      }
-
-      // The server mirrors a member's latest badge here when it awards one,
-      // so co-members can see it. Membership is the one check this path can
-      // express (ADR-0004); writes stay server-only.
-      match /badges/{memberUid} {
-        allow read: if isMember();
-        allow write: if false;
-      }
-
-      // The Feed's badge history (ADR-0011): the server logs each badge a
-      // member is awarded, one document per award, so the week's badges all
-      // stay visible. Its likes are Amens on that Badge alone, gated like the
-      // read_log ones; the award itself stays server-only.
-      match /badge_log/{awardId} {
-        allow read: if isMember();
-        allow write: if false;
-
-        match /likes/{likerId} {
-          allow read: if isMember();
-          allow write: if isMember() && request.auth != null && request.auth.uid == likerId;
-        }
-      }
-
-      match /joinRequests/{uid} {
-        allow create: if request.auth != null && request.auth.uid == uid;
-        // Allow owners/admins to read all requests for their group, and allow
-        // the requesting user to read their own join request (for collectionGroup queries).
-        allow read: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
+        allow write: if request.auth != null && request.auth.uid == uid;
         allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == uid);
       }
     }
 
-    // 🔗 Join codes. The document id IS the six-character code; the body
-    // carries only the group it redeems to — no member data lives here, so
-    // resolving a code exposes nothing beyond the group preview any
-    // signed-in user can already read. Point reads are what redemption
-    // needs; lists are denied outright, so codes cannot be enumerated.
-    match /joinCodes/{code} {
-      function isGroupMember(groupId) {
-        return request.auth != null &&
-          exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
-      }
+    match /read_log/{date}/entries/{entryUid} {
+      allow read: if isMember();
+      allow create, update: if isMember() && request.auth != null && request.auth.uid == entryUid;
+      allow delete: if isOwnerOrAdmin() || (request.auth != null && request.auth.uid == entryUid);
 
-      allow get: if request.auth != null;
-      allow list: if false;
-      allow create: if request.resource.data.keys().hasOnly(['groupId']) &&
-        request.resource.data.groupId is string &&
-        isGroupMember(request.resource.data.groupId);
-      allow delete: if resource.data.keys().hasOnly(['groupId']) &&
-        resource.data.groupId is string &&
-        isGroupMember(resource.data.groupId);
-      allow update: if false;
-    }
-
-    // 🔗 Friend codes. The document id IS the eight-character code; the body
-    // carries only the owner's uid. A point read names the person for the
-    // preview; lists are denied outright, so codes cannot be enumerated and
-    // there is no people directory (ADR-0012). Only the owner can create or
-    // retire their own lookup.
-    match /friendCodes/{code} {
-      allow get: if request.auth != null;
-      allow list: if false;
-      allow create: if request.auth != null &&
-        request.resource.data.keys().hasOnly(['ownerUid']) &&
-        request.resource.data.ownerUid == request.auth.uid;
-      allow delete: if request.auth != null &&
-        resource.data.ownerUid == request.auth.uid;
-      allow update: if false;
-    }
-
-    // 🍂 Seasonal challenges
-    match /seasons/{seasonId} {
-      allow read: if request.auth != null;
-      allow write: if false;
-
-      match /challenges/{challengeId} {
-        allow read: if request.auth != null;
-        allow write: if false;
+      match /likes/{likerId} {
+        allow read: if isMember();
+        allow write: if isMember() && request.auth != null && request.auth.uid == likerId;
       }
     }
-
-
-  // 🐞 Bug reports
-  match /bugReports/{docId} {
-    allow read: if (request.auth != null && resource.data.uid != null && request.auth.uid == resource.data.uid) || isAdmin();
-    allow create: if request.auth != null && isValidFeedbackCreate();
-    allow update, delete: if isAdmin();
   }
 
-  // 💡 Feature requests
-  match /featureRequests/{docId} {
-    allow read: if (request.auth != null && resource.data.uid != null && request.auth.uid == resource.data.uid) || isAdmin();
-    allow create: if request.auth != null && isValidFeedbackCreate();
-    allow update, delete: if isAdmin();
+  // 🔗 Join codes
+  match /joinCodes/{code} {
+    function isGroupMember(groupId) {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+    }
+
+    allow get: if request.auth != null;
+    allow list: if false;
+    allow create: if request.resource.data.keys().hasOnly(['groupId']) &&
+      request.resource.data.groupId is string &&
+      isGroupMember(request.resource.data.groupId);
+    allow delete: if resource.data.keys().hasOnly(['groupId']) &&
+      resource.data.groupId is string &&
+      isGroupMember(resource.data.groupId);
+    allow update: if false;
   }
+
   // 📖 Custom Reading Plans
   match /custom_plans/{planId} {
-    // Split read/write so `create` never dereferences `resource` (null on
-    // create — a null deref fails the whole rule closed in production).
     allow read: if request.auth != null && request.auth.uid == resource.data.userId;
     allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
   }
+
   }
 }

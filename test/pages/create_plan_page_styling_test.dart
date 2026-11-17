@@ -77,10 +77,6 @@ void main() {
       find.text('Today, ${formatPlanDateShort(DateTime.now())}'),
       findsOneWidget,
     );
-    expect(find.text('Begins at'), findsOneWidget);
-    expect(find.text('Genesis 1'), findsOneWidget);
-    // Day one reads the pace, so there is nothing to set apart.
-    expect(find.text('Day one reads'), findsNothing);
     // The first three days, then where the plan lands.
     expect(find.text('Genesis 1–4'), findsOneWidget);
     expect(find.textContaining('DAY 3 · ', findRichText: true), findsOneWidget);
@@ -140,7 +136,6 @@ void main() {
     expect(find.text('Change books'), findsOneWidget);
     expect(find.text('Pace by'), findsOneWidget);
     expect(find.text('Chapters a day'), findsOneWidget);
-    expect(find.text('Verses a day'), findsOneWidget);
 
     // A daily amount takes a stepper and reshapes the preview.
     await tester.tap(find.text('Chapters a day'));
@@ -149,28 +144,6 @@ void main() {
     await tester.tap(find.byKey(const Key('create_plan_chapters_inc')));
     await tester.pumpAndSettle();
     expect(previewText(tester), startsWith('23 reading days'));
-
-    // Beginning mid-book trims the books it reads.
-    await tester.tap(find.byKey(const Key('create_plan_begins_at')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Matthew').last);
-    await tester.tap(find.text('5').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Begin at Matthew 5'));
-    await tester.pumpAndSettle();
-    expect(find.text('4 books · 85 chapters scheduled'), findsOneWidget);
-    expect(find.text('Matthew 1–4 left out'), findsOneWidget);
-    expect(find.text('Matthew · from 5', findRichText: true), findsOneWidget);
-
-    // Removing that book moves day one back to the start of what is left.
-    await tester.tap(find.text('Change books'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(BookPickerKeys.tile('Matthew')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(BookPickerKeys.done));
-    await tester.pumpAndSettle();
-    expect(find.text('3 books · 61 chapters scheduled'), findsOneWidget);
-    expect(find.text('Mark 1'), findsOneWidget);
 
     // Leaving Choose books goes back to the whole Bible paced by length.
     await tester.tap(find.text('In order'));

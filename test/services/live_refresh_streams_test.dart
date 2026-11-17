@@ -3,7 +3,6 @@
 import 'dart:async';
 
 import 'package:bible_read/services/reading_status_service.dart';
-import 'package:bible_read/services/reflection_service.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,44 +111,6 @@ void main() {
 
       final dates = await changed.timeout(const Duration(seconds: 3));
       expect(dates, contains(DateTime(2024, 7, 30)));
-    });
-  });
-
-  group('ReflectionService stream', () {
-    test('watchReflection emits saved text and deletion', () async {
-      final firestore = FakeFirebaseFirestore();
-      final service = ReflectionService(firestore: firestore);
-      const uid = 'u1';
-      const dateKey = '2024-07-30';
-
-      final saved = nextWhere(
-        service.watchReflection(uid, dateKey),
-        (reflection) => reflection?.text == 'Live update',
-      );
-
-      await firestore
-          .collection('users')
-          .doc(uid)
-          .collection('reflections')
-          .doc(dateKey)
-          .set({'text': 'Live update', 'shared': false});
-
-      expect(
-        (await saved.timeout(const Duration(seconds: 3)))?.text,
-        'Live update',
-      );
-
-      final deleted = nextWhere(
-        service.watchReflection(uid, dateKey),
-        (reflection) => reflection == null,
-      );
-      await firestore
-          .collection('users')
-          .doc(uid)
-          .collection('reflections')
-          .doc(dateKey)
-          .delete();
-      expect(await deleted.timeout(const Duration(seconds: 3)), isNull);
     });
   });
 }
