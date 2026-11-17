@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
-import '../models/app_notification.dart';
 import '../models/group_member_progress.dart';
 import '../models/group_plan_config.dart';
 import '../models/group_schedule.dart';
@@ -11,13 +10,11 @@ import '../models/group.dart';
 import '../models/circle_member.dart';
 import '../models/group_invite.dart';
 import '../models/group_member_role.dart';
-import '../models/notification_preferences.dart';
 import 'circle_service.dart';
 import 'error_logger.dart';
 import 'group_collections.dart';
 import 'join_code_service.dart';
 import 'read_through_coordinator.dart';
-import 'notification_service.dart';
 import 'progress_remap.dart';
 
 export 'group_collections.dart';
@@ -31,9 +28,6 @@ class GroupService {
   /// Firestore instance used for database operations.
   final FirebaseFirestore firestore;
 
-  /// Service for writing notification documents.
-  final NotificationService notificationService;
-
   /// Credits marked chapters to the reader's testament laps.
   final ReadThroughCoordinator readThroughCoordinator;
 
@@ -46,23 +40,22 @@ class GroupService {
   /// Creates a [GroupService] using [FirebaseFirestore.instance] by default.
   GroupService({
     FirebaseFirestore? firestore,
-    NotificationService? notificationService,
     ReadThroughCoordinator? readThroughCoordinator,
     JoinCodeService? joinCodeService,
     CircleService? circleService,
   })  : firestore = firestore ?? FirebaseFirestore.instance,
-        notificationService = notificationService ??
-            NotificationService(
-              firestore: firestore ?? FirebaseFirestore.instance,
-            ),
         readThroughCoordinator = readThroughCoordinator ??
             ReadThroughCoordinator(
               firestore: firestore ?? FirebaseFirestore.instance,
             ),
         joinCodeService = joinCodeService ??
-            JoinCodeService(firestore: firestore ?? FirebaseFirestore.instance),
+            JoinCodeService(
+              firestore: firestore ?? FirebaseFirestore.instance,
+            ),
         circleService = circleService ??
-            CircleService(firestore: firestore ?? FirebaseFirestore.instance);
+            CircleService(
+              firestore: firestore ?? FirebaseFirestore.instance,
+            );
 
   static Future<void> _safeLog(Object e, StackTrace? st) async {
     try {
@@ -144,10 +137,7 @@ class GroupService {
     }
   }
 
-  /// Join the group with [groupId] as [uid].
-  ///
-  /// If the group is public, it joins directly. Otherwise, it creates a join
-  /// request for the group owner to approve.
+  /// Join the group with [groupId] as [uid] directly.
   Future<void> joinGroup({
     required String groupId,
     required String uid,
@@ -156,39 +146,19 @@ class GroupService {
     bool? isPublic,
   }) async {
     try {
-      bool public = isPublic ?? false;
-      if (isPublic == null) {
-        final groupSnap = await firestore
-            .collection(GroupCollections.groups)
-            .doc(groupId)
-            .get();
-        public = groupSnap.data()?['isPublic'] as bool? ?? false;
-      }
-
-      if (public) {
-        return joinGroupDirectly(
-          groupId: groupId,
-          uid: uid,
-          name: name,
-          photoUrl: photoUrl,
-        );
-      } else {
-        return requestJoin(
-          groupId: groupId,
-          uid: uid,
-          name: name,
-          photoUrl: photoUrl,
-        );
-      }
+      await joinGroupDirectly(
+        groupId: groupId,
+        uid: uid,
+        name: name,
+        photoUrl: photoUrl,
+      );
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
     }
   }
 
-  /// Directly add [uid] to the group with [groupId] without a join request.
-  ///
-  /// Typically used for public groups or when an invite is accepted.
+  /// Directly add [uid] to the group with [groupId].
   Future<void> joinGroupDirectly({
     required String groupId,
     required String uid,
@@ -237,77 +207,6 @@ class GroupService {
     }
   }
 
-  /// Create a join request for [uid] on [groupId].
-  Future<void> requestJoin({
-    required String groupId,
-    required String uid,
-    required String name,
-    String? photoUrl,
-  }) async {
-    try {
-      final groupSnap = await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .get();
-
-      if (!groupSnap.exists) {
-        throw StateError('Group does not exist');
-      }
-
-      final memberSnap = await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.members)
-          .doc(uid)
-          .get();
-      if (memberSnap.exists) {
-        return;
-      }
-
-      final data = <String, dynamic>{
-        'uid': uid,
-        'name': name,
-        'requestedAt': FieldValue.serverTimestamp(),
-      };
-      if (photoUrl != null && photoUrl.isNotEmpty) {
-        data['photoUrl'] = photoUrl;
-      }
-
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.joinRequests)
-          .doc(uid)
-          .set(data);
-
-      final ownerUid = groupSnap.data()?['ownerUid'] as String?;
-      if (ownerUid != null && ownerUid != uid) {
-        // Deterministic ID to avoid duplicates per requester per group.
-        final notificationId = 'groupJoinRequest_${groupId}_$uid';
-        final notification = AppNotification(
-          id: notificationId,
-          type: NotificationType.groupJoinRequest,
-          fromUid: uid,
-          senderUid: uid,
-          groupId: groupId,
-          message:
-              name.isNotEmpty ? '$name requested to join your group' : null,
-          timestamp: DateTime.now(),
-          read: false,
-        );
-        await firestore
-            .collection(NotificationCollections.users)
-            .doc(ownerUid)
-            .collection(NotificationCollections.notifications)
-            .doc(notificationId)
-            .set(notification.toFirestore(), SetOptions(merge: true));
-      }
-    } catch (e, st) {
-      await _safeLog(e, st);
-      rethrow;
-    }
-  }
-
   /// Stream of invitations for the user with [uid].
   Stream<List<GroupInvite>> userInvites(String uid) {
     return firestore
@@ -343,83 +242,6 @@ class GroupService {
         );
       }
       await inviteRef.delete();
-
-      // Cleanup notifications
-      final snaps = await firestore
-          .collection(NotificationCollections.users)
-          .doc(uid)
-          .collection(NotificationCollections.notifications)
-          .where('groupId', isEqualTo: groupId)
-          .where('type', isEqualTo: NotificationType.groupInvite.name)
-          .get();
-
-      final batch = firestore.batch();
-      for (final doc in snaps.docs) {
-        batch.delete(doc.reference);
-      }
-      await batch.commit();
-    } catch (e, st) {
-      await _safeLog(e, st);
-      rethrow;
-    }
-  }
-
-  /// Approve a join request for [uid] on [groupId].
-  Future<void> approveJoinRequest({
-    required String groupId,
-    required String uid,
-  }) async {
-    try {
-      final groupRef =
-          firestore.collection(GroupCollections.groups).doc(groupId);
-      final requestRef =
-          groupRef.collection(GroupCollections.joinRequests).doc(uid);
-      final requestSnap = await requestRef.get();
-      if (!requestSnap.exists) {
-        throw StateError('Cannot approve a missing join request.');
-      }
-      final name = requestSnap.data()?['name'] as String?;
-      final photoUrl = requestSnap.data()?['photoUrl'] as String?;
-
-      final memberRef = groupRef.collection(GroupCollections.members).doc(uid);
-      final memberSnap = await memberRef.get();
-      final data = <String, dynamic>{
-        'uid': uid,
-        'role': 'member',
-        'joinedAt': FieldValue.serverTimestamp(),
-      };
-      if (name != null && name.isNotEmpty) {
-        data['name'] = name;
-      }
-      if (photoUrl != null && photoUrl.isNotEmpty) {
-        data['photoUrl'] = photoUrl;
-      }
-      final batch = firestore.batch();
-      batch.set(memberRef, data, SetOptions(merge: true));
-      if (!memberSnap.exists) {
-        await _ensureMemberCount(groupRef);
-        batch.update(groupRef, {'memberCount': FieldValue.increment(1)});
-      }
-      batch.delete(requestRef);
-      await batch.commit();
-    } catch (e, st) {
-      await _safeLog(e, st);
-      rethrow;
-    }
-  }
-
-  /// Deny a join request for [uid] on [groupId].
-  Future<void> denyJoinRequest({
-    required String groupId,
-    required String uid,
-  }) async {
-    try {
-      await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.joinRequests)
-          .doc(uid)
-          .delete();
     } catch (e, st) {
       await _safeLog(e, st);
       rethrow;
@@ -850,43 +672,6 @@ class GroupService {
     }
 
     // Best-effort: attempt to notify members. Log failures but do not fail
-    // the schedule update, since notifications can be restricted by rules.
-    try {
-      final members = await firestore
-          .collection(GroupCollections.groups)
-          .doc(groupId)
-          .collection(GroupCollections.members)
-          .get();
-
-      // ⚡ Bolt: Use Future.wait to parallelize sending schedule update
-      // notifications instead of waiting for each one sequentially.
-      await Future.wait(
-        members.docs.map((doc) async {
-          final uid = doc.id;
-          try {
-            final notificationId = firestore
-                .collection(NotificationCollections.users)
-                .doc(uid)
-                .collection(NotificationCollections.notifications)
-                .doc()
-                .id;
-            final notification = AppNotification(
-              id: notificationId,
-              type: NotificationType.groupScheduleUpdate,
-              timestamp: DateTime.now(),
-              read: false,
-            );
-            await notificationService.addNotification(uid, notification);
-          } catch (e, st) {
-            await _safeLog(e, st);
-            // continue notifying other members
-          }
-        }),
-      );
-    } catch (e, st) {
-      await _safeLog(e, st);
-      // Do not rethrow: schedule has been updated successfully.
-    }
   }
 
   /// Update multiple schedule entries for [groupId] using batched writes.
@@ -1093,36 +878,22 @@ class GroupService {
         .where('deletedAt', isNull: true)
         .snapshots();
 
-    final joinRequestSnaps = firestore
-        .collectionGroup(GroupCollections.joinRequests)
-        .where('uid', isEqualTo: uid)
-        .snapshots();
-
     return Stream<List<Group>>.multi((controller) {
       var memberGroups = <Group>[];
       var ownerGroups = <Group>[];
-      var pendingGroups = <Group>[];
       var finishedIds = <String>{};
 
-      // Every source must report once (success or error) before anything is
-      // published: otherwise the fastest query emits a partial — often
-      // empty — first event, which first-event consumers like
-      // HomePage._loadGroup mistake for "no groups" (#779).
       var memberReported = false;
       var ownerReported = false;
-      var joinRequestsReported = false;
 
       Future<void> emit() async {
-        if (!(memberReported && ownerReported && joinRequestsReported)) return;
+        if (!(memberReported && ownerReported)) return;
         if (controller.isClosed) return;
         final merged = <String, Group>{};
         for (final g in memberGroups) {
           merged[g.id] = g;
         }
         for (final g in ownerGroups) {
-          merged[g.id] = g;
-        }
-        for (final g in pendingGroups) {
           merged[g.id] = g;
         }
         if (!includeFinished) {
@@ -1176,23 +947,6 @@ class GroupService {
         await emit();
       }
 
-      Future<void> handleJoinRequest(
-        QuerySnapshot<Map<String, dynamic>> snap,
-      ) async {
-        try {
-          final ids = snap.docs
-              .map((doc) => doc.reference.parent.parent?.id)
-              .whereType<String>()
-              .toList();
-          pendingGroups = await _fetchGroupsByIds(ids);
-        } catch (e, st) {
-          await _safeLog(e, st);
-          pendingGroups = <Group>[];
-        }
-        joinRequestsReported = true;
-        await emit();
-      }
-
       final sub1 = memberSnaps.listen(
         (snap) => unawaited(handleMember(snap)),
         onError: (e, st) async {
@@ -1211,21 +965,10 @@ class GroupService {
           await emit();
         },
       );
-      final sub3 = joinRequestSnaps.listen(
-        (snap) => unawaited(handleJoinRequest(snap)),
-        onError: (e, st) async {
-          await _safeLog(e, st);
-          pendingGroups = <Group>[];
-          joinRequestsReported = true;
-          await emit();
-        },
-      );
 
       controller.onCancel = () {
         sub1.cancel();
         sub2.cancel();
-
-        sub3.cancel();
       };
     });
   }

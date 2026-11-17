@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bible_read/models/notification_preferences.dart';
-import 'package:bible_read/models/app_notification.dart';
-import 'package:bible_read/pages/group_join_requests_page.dart';
-import 'package:bible_read/pages/notification_center_page.dart';
 import 'package:bible_read/pages/settings_page.dart';
-import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
 import 'package:bible_read/widgets/app_menu_sheet.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -51,41 +46,6 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<FakeFirebaseFirestore> seed(
-    MockFirebaseAuth auth, {
-    int unread = 0,
-    int read = 0,
-  }) async {
-    final firestore = FakeFirebaseFirestore();
-    final service = NotificationService(firestore: firestore);
-    var minute = 0;
-    for (var i = 0; i < unread; i++) {
-      await service.addNotification(
-        'u1',
-        AppNotification(
-          id: 'unread-$i',
-          type: NotificationType.nudge,
-          message: 'Unread message $i',
-          timestamp: DateTime(2026, 1, 1, 8, minute++),
-          read: false,
-        ),
-      );
-    }
-    for (var i = 0; i < read; i++) {
-      await service.addNotification(
-        'u1',
-        AppNotification(
-          id: 'read-$i',
-          type: NotificationType.nudge,
-          message: 'Read message $i',
-          timestamp: DateTime(2026, 1, 1, 9, minute++),
-          read: true,
-        ),
-      );
-    }
-    return firestore;
-  }
-
   MockFirebaseAuth signedInAuth() => MockFirebaseAuth(
         mockUser: MockUser(uid: 'u1', displayName: 'Test User'),
         signedIn: true,
@@ -95,7 +55,7 @@ void main() {
     tester,
   ) async {
     final auth = signedInAuth();
-    final firestore = await seed(auth);
+    final firestore = FakeFirebaseFirestore();
     await openSheet(tester, auth: auth, firestore: firestore);
 
     expect(find.text('Test User'), findsOneWidget);
@@ -107,6 +67,7 @@ void main() {
       'History',
       'Sign out',
       'Inbox',
+      'Notifications',
     ]) {
       expect(find.text(gone), findsNothing, reason: '"$gone" should be gone');
     }
@@ -114,7 +75,7 @@ void main() {
 
   testWidgets('shows the streak line from the summary doc', (tester) async {
     final auth = signedInAuth();
-    final firestore = await seed(auth);
+    final firestore = FakeFirebaseFirestore();
     await firestore
         .collection('users')
         .doc('u1')
@@ -126,98 +87,9 @@ void main() {
     expect(find.text('12-day streak'), findsOneWidget);
   });
 
-  testWidgets('lists at most 3 unread notifications and counts them all', (
-    tester,
-  ) async {
-    final auth = signedInAuth();
-    final firestore = await seed(auth, unread: 5, read: 2);
-    await openSheet(tester, auth: auth, firestore: firestore);
-
-    expect(find.text('NOTIFICATIONS · 5 NEW'), findsOneWidget);
-    expect(find.textContaining('Unread message'), findsNWidgets(3));
-    // Newest first.
-    expect(find.text('Unread message 4'), findsOneWidget);
-    expect(find.text('Unread message 0'), findsNothing);
-    expect(find.textContaining('Read message'), findsNothing);
-  });
-
-  testWidgets('shows a quiet empty state when nothing is unread', (
-    tester,
-  ) async {
-    final auth = signedInAuth();
-    final firestore = await seed(auth);
-    await openSheet(tester, auth: auth, firestore: firestore);
-
-    expect(find.text('NOTIFICATIONS'), findsOneWidget);
-    expect(find.text('No new notifications'), findsOneWidget);
-    // Read notifications do not count as unread.
-    expect(find.textContaining('NEW'), findsNothing);
-  });
-
-  testWidgets('See all opens the notification center', (tester) async {
-    final auth = signedInAuth();
-    final firestore = await seed(auth, unread: 1);
-    await openSheet(tester, auth: auth, firestore: firestore);
-
-    await tester.tap(find.text('See all'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(AppMenuSheet), findsNothing);
-    expect(find.byType(NotificationCenterPage), findsOneWidget);
-  });
-
-  testWidgets('tapping a notification marks it read and closes the sheet', (
-    tester,
-  ) async {
-    final auth = signedInAuth();
-    final firestore = await seed(auth, unread: 2);
-    await openSheet(tester, auth: auth, firestore: firestore);
-
-    await tester.tap(find.text('Unread message 1'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(AppMenuSheet), findsNothing);
-    final doc = await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('notifications')
-        .doc('unread-1')
-        .get();
-    expect(doc.data()!['read'], isTrue);
-  });
-
-  testWidgets('tapping a join-request notification still routes by groupId', (
-    tester,
-  ) async {
-    final auth = signedInAuth();
-    final firestore = FakeFirebaseFirestore();
-    await firestore.collection('groups').doc('g1').set({
-      'name': 'Group',
-      'ownerId': 'u1',
-      'members': ['u1'],
-    });
-    await NotificationService(firestore: firestore).addNotification(
-      'u1',
-      AppNotification(
-        id: 'join',
-        type: NotificationType.groupJoinRequest,
-        groupId: 'g1',
-        message: 'Sam wants to join',
-        timestamp: DateTime(2026, 1, 1),
-        read: false,
-      ),
-    );
-    await openSheet(tester, auth: auth, firestore: firestore);
-
-    await tester.tap(find.text('Sam wants to join'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(GroupJoinRequestsPage), findsOneWidget);
-  });
-
   testWidgets('Settings opens the settings page', (tester) async {
     final auth = signedInAuth();
-    final firestore = await seed(auth);
+    final firestore = FakeFirebaseFirestore();
     await openSheet(tester, auth: auth, firestore: firestore);
 
     await tester.tap(find.text('Settings'));

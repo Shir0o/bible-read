@@ -11,7 +11,6 @@ import '../models/group.dart';
 import '../services/circle_service.dart';
 import '../services/error_logger.dart';
 import '../services/feed_service.dart';
-import '../services/friend_service.dart';
 import '../services/group_service.dart';
 import '../services/nudge_service.dart';
 import '../services/read_log_service.dart';
@@ -22,16 +21,20 @@ import '../widgets/app_bottom_sheet.dart';
 import '../widgets/app_header.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/community/empty_group_state.dart';
-import '../widgets/friend_sheet.dart';
-import '../widgets/group_preview_sheet.dart';
 import '../widgets/nudge_sheet.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/skeleton_loader.dart';
-import 'friend_code_page.dart';
 import 'group_members_page.dart';
 import 'share_code_page.dart';
 
-/// The Circle tab is the Feed (ADR-0011): a status row of everyone the
+String _readingLabel(Group group) {
+  final books = group.planConfig?.books ?? const <String>[];
+  if (books.isEmpty) return 'Bible reading plan';
+  if (books.length == 1) return 'Reading ${books.first}';
+  return 'Reading ${books.first} +${books.length - 1} more';
+}
+
+/// The Circle tab is the Feed: a status row of everyone the
 /// reader shares a Group with (ringed when Shown up today; tap to Nudge),
 /// above a seven-day Feed of updates readers can Amen. Group filter chips
 /// narrow both. Group actions live behind the header's Invite slot.
@@ -44,7 +47,6 @@ class CommunityPage extends StatefulWidget {
   final VibrationService vibrationService;
   final NudgeService? nudgeService;
   final FeedService? feedService;
-  final FriendService? friendService;
 
   /// Tells an update's author someone said Amen (the `sendLikeNotification`
   /// callable). Null sends nothing.
@@ -65,7 +67,6 @@ class CommunityPage extends StatefulWidget {
     required this.vibrationService,
     this.nudgeService,
     this.feedService,
-    this.friendService,
     this.onSendLikeNotification,
     required this.dateProvider,
   }) : circleService = circleService ?? groupService.circleService;
@@ -79,9 +80,6 @@ class _CommunityPageState extends State<CommunityPage>
   /// The Group the filter chips narrow to, or null for the whole Circle.
   String? _filterGroupId;
 
-  /// Whether the Friends chip is the active filter.
-  bool _filterFriends = false;
-
   String? _groupsUid;
   Stream<List<Group>>? _groupsStream;
   String? _circleUid;
@@ -89,9 +87,6 @@ class _CommunityPageState extends State<CommunityPage>
 
   late final NudgeService _nudgeService =
       widget.nudgeService ?? NudgeService(firestore: widget.firestore);
-
-  late final FriendService _friendService =
-      widget.friendService ?? FriendService(firestore: widget.firestore);
 
   @override
   bool get wantKeepAlive => true;
@@ -105,7 +100,7 @@ class _CommunityPageState extends State<CommunityPage>
   }
 
   /// One Circle subscription for the page: it decides the empty state and
-  /// the Friends chip here, and feeds the status row and Feed below.
+  /// feeds the status row and Feed below.
   Stream<List<CircleMember>> _circleFor(String uid) {
     if (_circleUid != uid || _circleStream == null) {
       _circleUid = uid;
@@ -127,7 +122,6 @@ class _CommunityPageState extends State<CommunityPage>
         firestore: widget.firestore,
         groupService: widget.groupService,
         nudgeService: _nudgeService,
-        friendService: _friendService,
         vibrationService: widget.vibrationService,
         dateProvider: widget.dateProvider,
       ),
@@ -157,9 +151,6 @@ class _CommunityPageState extends State<CommunityPage>
             return StreamBuilder<List<CircleMember>>(
               stream: _circleFor(user.uid),
               builder: (context, circleSnap) {
-                final hasFriends =
-                    circleSnap.data?.any((member) => member.isFriend) ?? false;
-                if (!hasFriends && circleSnap.hasData) _filterFriends = false;
                 if (_filterGroupId != null &&
                     !(groups ?? const <Group>[])
                         .any((g) => g.id == _filterGroupId)) {
@@ -189,10 +180,7 @@ class _CommunityPageState extends State<CommunityPage>
                           ),
                         ),
                       ),
-                      if (groups != null &&
-                          groups.isEmpty &&
-                          circleSnap.hasData &&
-                          !hasFriends) ...[
+                      if (groups != null && groups.isEmpty) ...[
                         const SliverToBoxAdapter(
                             child: SizedBox(height: AppSpacing.gap8)),
                         SliverToBoxAdapter(
@@ -211,22 +199,14 @@ class _CommunityPageState extends State<CommunityPage>
                           child: _CircleFeed(
                             groups: groups,
                             circle: circleSnap.data,
-                            hasFriends: hasFriends,
                             selectedGroupId: _filterGroupId,
-                            selectedFriends: _filterFriends,
                             onSelectGroup: (id) => setState(() {
                               _filterGroupId = id;
-                              _filterFriends = false;
-                            }),
-                            onSelectFriends: () => setState(() {
-                              _filterGroupId = null;
-                              _filterFriends = true;
                             }),
                             auth: widget.auth,
                             feedService: widget.feedService ??
                                 FeedService(firestore: widget.firestore),
                             nudgeService: _nudgeService,
-                            friendService: _friendService,
                             vibrationService: widget.vibrationService,
                             onSendLikeNotification:
                                 widget.onSendLikeNotification,
@@ -245,23 +225,17 @@ class _CommunityPageState extends State<CommunityPage>
   }
 }
 
-/// "Everyone" chip plus the Friends chip and one chip per Group; selecting
+/// "Everyone" chip plus one chip per Group; selecting
 /// narrows the status row and the Feed.
 class _GroupFilterChips extends StatelessWidget {
   final List<Group> groups;
   final String? selectedId;
-  final bool selectedFriends;
-  final bool hasFriends;
   final ValueChanged<String?> onSelected;
-  final VoidCallback onSelectFriends;
 
   const _GroupFilterChips({
     required this.groups,
     required this.selectedId,
-    required this.selectedFriends,
-    required this.hasFriends,
     required this.onSelected,
-    required this.onSelectFriends,
   });
 
   @override
@@ -281,7 +255,6 @@ class _GroupFilterChips extends StatelessWidget {
           label: Text(label),
           selected: selected,
           showCheckmark: false,
-          // Padded to a 48px target; the strip's gaps absorb the extra.
           materialTapTargetSize: MaterialTapTargetSize.padded,
           padding: EdgeInsets.zero,
           labelPadding:
@@ -311,15 +284,9 @@ class _GroupFilterChips extends StatelessWidget {
         children: [
           buildChip(
             label: 'Everyone',
-            selected: selectedId == null && !selectedFriends,
+            selected: selectedId == null,
             onTap: () => onSelected(null),
           ),
-          if (hasFriends)
-            buildChip(
-              label: 'Friends',
-              selected: selectedFriends,
-              onTap: onSelectFriends,
-            ),
           for (final group in groups)
             buildChip(
               label: group.name,
@@ -338,15 +305,11 @@ class _GroupFilterChips extends StatelessWidget {
 class _CircleFeed extends StatefulWidget {
   final List<Group>? groups;
   final List<CircleMember>? circle;
-  final bool hasFriends;
   final String? selectedGroupId;
-  final bool selectedFriends;
   final ValueChanged<String?> onSelectGroup;
-  final VoidCallback onSelectFriends;
   final FirebaseAuth auth;
   final FeedService feedService;
   final NudgeService nudgeService;
-  final FriendService friendService;
   final VibrationService vibrationService;
   final Future<void> Function({
     required String ownerUid,
@@ -357,15 +320,11 @@ class _CircleFeed extends StatefulWidget {
   const _CircleFeed({
     required this.groups,
     required this.circle,
-    required this.hasFriends,
     required this.selectedGroupId,
-    required this.selectedFriends,
     required this.onSelectGroup,
-    required this.onSelectFriends,
     required this.auth,
     required this.feedService,
     required this.nudgeService,
-    required this.friendService,
     required this.vibrationService,
     required this.onSendLikeNotification,
     required this.dateProvider,
@@ -382,33 +341,16 @@ class _CircleFeedState extends State<_CircleFeed> {
   /// Optimistic Amen state by update key; dropped once the source agrees.
   final Map<String, bool> _amenOverrides = {};
 
-  /// Latest sources, kept so a Friend's sheet can be opened from either the
-  /// status row or the Feed without re-reading anything.
-  FeedSource? _lastSource;
-  List<CircleMember> _lastCircle = const [];
-  Map<String, String> _lastGroupNames = const {};
-  DateTime _lastToday = DateTime.now();
-
-  /// Subscribes to every Group and Friend source once, so chips narrow
-  /// locally. Called from build once the Circle has reported, because the
-  /// Friend source list is not known before that.
   void _ensureFeed(
     List<Group> groups,
-    List<CircleMember> circle,
     String uid,
   ) {
     final groupIds = groups.map((g) => g.id).toList()..sort();
-    final friendIds = [
-      for (final member in circle)
-        if (member.isFriend) member.uid,
-      uid,
-    ]..sort();
-    final key = '$uid|${groupIds.join(',')}|${friendIds.join(',')}';
+    final key = '$uid|${groupIds.join(',')}';
     if (key == _sourceKey) return;
     _sourceKey = key;
     _feed = widget.feedService.watch(
       groupIds,
-      friendUids: friendIds,
       today: widget.dateProvider(),
     );
   }
@@ -473,40 +415,6 @@ class _CircleFeedState extends State<_CircleFeed> {
     );
   }
 
-  void _openFriend(String uid) {
-    final user = widget.auth.currentUser;
-    if (user == null) return;
-    final friend = _lastCircle.where((m) => m.uid == uid).firstOrNull;
-    if (friend == null || !friend.isFriend) return;
-    final source = _lastSource;
-    final shownUp = <String>{
-      if (source != null)
-        for (final entry in source.entries)
-          if (entry.uid == uid) entry.dateKey,
-    };
-    final reading = source?.entries
-        .where((e) => e.uid == uid && e.reading != null)
-        .map((e) => e.reading)
-        .nonNulls
-        .firstOrNull;
-    unawaited(showFriendSheet(
-      context,
-      friend: friend,
-      sharedGroupNames: [
-        for (final groupId in friend.groupIds)
-          if (_lastGroupNames[groupId] != null) _lastGroupNames[groupId]!,
-      ]..sort(),
-      shownUpDateKeys: shownUp,
-      reading: reading,
-      friendService: widget.friendService,
-      nudgeService: widget.nudgeService,
-      vibrationService: widget.vibrationService,
-      myUid: user.uid,
-      myName: _myFirstName.isEmpty ? 'Someone' : _myFirstName,
-      today: _lastToday,
-    ));
-  }
-
   @override
   Widget build(BuildContext context) {
     final groups = widget.groups;
@@ -514,8 +422,8 @@ class _CircleFeedState extends State<_CircleFeed> {
     final colors = AppColors.of(context);
 
     final circleData = widget.circle;
-    if (groups != null && user != null && circleData != null) {
-      _ensureFeed(groups, circleData, user.uid);
+    if (groups != null && user != null) {
+      _ensureFeed(groups, user.uid);
     }
     return StreamBuilder<FeedSource>(
       stream: _feed,
@@ -530,24 +438,11 @@ class _CircleFeedState extends State<_CircleFeed> {
         if (!loading) {
           final circle = circleData;
           final allGroupIds = groups.map((g) => g.id).toSet();
-          final allFriendUids = {
-            for (final member in circle)
-              if (member.isFriend) member.uid,
-          };
           final selectedGroupIds = widget.selectedGroupId != null
               ? {widget.selectedGroupId!}
-              : (widget.selectedFriends ? <String>{} : allGroupIds);
-          final selectedFriendUids = widget.selectedGroupId != null
-              ? <String>{}
-              : (widget.selectedFriends
-                  ? allFriendUids
-                  : {...allFriendUids, user.uid});
+              : allGroupIds;
           final today = widget.dateProvider();
           final groupNames = {for (final g in groups) g.id: g.name};
-          _lastSource = feedSnap.data;
-          _lastCircle = circle;
-          _lastGroupNames = groupNames;
-          _lastToday = today;
           final days = assembleFeed(
             source: feedSnap.data!,
             myUid: user.uid,
@@ -555,7 +450,6 @@ class _CircleFeedState extends State<_CircleFeed> {
             myPhotoUrl: user.photoURL,
             circle: circle,
             groupIds: selectedGroupIds,
-            friendUids: selectedFriendUids,
             today: today,
           );
           // Optimistic overrides retire once the source agrees.
@@ -571,7 +465,6 @@ class _CircleFeedState extends State<_CircleFeed> {
               source: feedSnap.data!,
               circle: circle,
               selectedGroupIds: selectedGroupIds,
-              selectedFriendUids: selectedFriendUids,
               user: user,
               todayKey: ReadLogService.dateKeyFor(today),
             ),
@@ -581,9 +474,6 @@ class _CircleFeedState extends State<_CircleFeed> {
             days: days,
             today: today,
             groupNames: groupNames,
-            onOpenPerson: _openFriend,
-            isFriend: (uid) =>
-                circle.any((member) => member.uid == uid && member.isFriend),
             isAmened: (u) => _amened(u, user.uid),
             amenCount: (u) {
               final source = u.likerUids.contains(user.uid);
@@ -597,14 +487,11 @@ class _CircleFeedState extends State<_CircleFeed> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (groups != null && (groups.isNotEmpty || widget.hasFriends))
+            if (groups != null && groups.isNotEmpty)
               _GroupFilterChips(
                 groups: groups,
                 selectedId: widget.selectedGroupId,
-                selectedFriends: widget.selectedFriends,
-                hasFriends: widget.hasFriends,
                 onSelected: widget.onSelectGroup,
-                onSelectFriends: widget.onSelectFriends,
               ),
             const SizedBox(height: AppSpacing.gap8),
             SkeletonLoader(
@@ -634,34 +521,26 @@ class _CircleFeedState extends State<_CircleFeed> {
     required FeedSource source,
     required List<CircleMember> circle,
     required Set<String> selectedGroupIds,
-    required Set<String> selectedFriendUids,
     required User user,
     required String todayKey,
   }) {
-    // The reader's own mark is not subject to the filter: "You" always
-    // reflects today, even while the Friends chip hides their Group copies.
     final selfShownUp =
         source.entries.any((e) => e.uid == user.uid && e.dateKey == todayKey);
     final marks = <String, DateTime>{};
     for (final e in source.entries) {
       if (e.dateKey != todayKey) continue;
-      final visible = e.friendUid != null
-          ? selectedFriendUids.contains(e.friendUid)
-          : selectedGroupIds.contains(e.groupId);
-      if (!visible) continue;
+      if (!selectedGroupIds.contains(e.groupId)) continue;
       final t = e.timestamp ?? DateTime(0);
       if (marks[e.uid] == null || t.isAfter(marks[e.uid]!)) marks[e.uid] = t;
     }
     final others = [
       for (final m in circle)
-        if (m.groupIds.any(selectedGroupIds.contains) ||
-            (m.isFriend && selectedFriendUids.contains(m.uid)))
+        if (m.groupIds.any(selectedGroupIds.contains))
           _StatusPerson(
             uid: m.uid,
             name: (m.name ?? 'Reader').trim().split(' ').first,
             photoUrl: m.photoUrl,
             shownUp: marks.containsKey(m.uid),
-            friendSince: m.friendSince,
           ),
     ]..sort((a, b) {
         if (a.shownUp != b.shownUp) return a.shownUp ? 1 : -1;
@@ -688,7 +567,6 @@ class _StatusPerson {
   final String? photoUrl;
   final bool shownUp;
   final bool isMe;
-  final DateTime? friendSince;
   final String? avatarName;
 
   const _StatusPerson({
@@ -697,7 +575,6 @@ class _StatusPerson {
     required this.photoUrl,
     required this.shownUp,
     this.isMe = false,
-    this.friendSince,
     this.avatarName,
   });
 }
@@ -877,8 +754,6 @@ class _FeedList extends StatelessWidget {
   final List<FeedDay> days;
   final DateTime today;
   final Map<String, String> groupNames;
-  final ValueChanged<String> onOpenPerson;
-  final bool Function(String uid) isFriend;
   final bool Function(FeedUpdate) isAmened;
   final int Function(FeedUpdate) amenCount;
   final ValueChanged<FeedUpdate> onAmen;
@@ -887,8 +762,6 @@ class _FeedList extends StatelessWidget {
     required this.days,
     required this.today,
     required this.groupNames,
-    required this.onOpenPerson,
-    required this.isFriend,
     required this.isAmened,
     required this.amenCount,
     required this.onAmen,
@@ -979,10 +852,6 @@ class _FeedList extends StatelessWidget {
               amened: isAmened(update),
               amenCount: amenCount(update),
               onAmen: () => onAmen(update),
-              onOpen:
-                  update.people.length == 1 && isFriend(update.people.first.uid)
-                      ? () => onOpenPerson(update.people.first.uid)
-                      : null,
             ),
         ],
         if (days.isNotEmpty)
@@ -1008,7 +877,6 @@ class _UpdateTile extends StatelessWidget {
   final bool amened;
   final int amenCount;
   final VoidCallback onAmen;
-  final VoidCallback? onOpen;
 
   const _UpdateTile({
     super.key,
@@ -1018,7 +886,6 @@ class _UpdateTile extends StatelessWidget {
     required this.amened,
     required this.amenCount,
     required this.onAmen,
-    this.onOpen,
   });
 
   static String _time(DateTime t) {
@@ -1054,13 +921,9 @@ class _UpdateTile extends StatelessWidget {
       for (final id in update.groupIds)
         if (groupNames[id] != null) groupNames[id]!,
     ]..sort();
-    // The reader's own Friend-source copy does not make them a Friend.
-    final fromFriend =
-        update.isFriend && update.people.any((person) => !person.isMe);
     return [
       if (update.time != null) _time(update.time!),
       if (groups.isNotEmpty) groups.join(', '),
-      if (fromFriend) 'Friend',
     ].join(' · ');
   }
 
@@ -1117,19 +980,6 @@ class _UpdateTile extends StatelessWidget {
                   ),
                 ),
               ],
-              if (update.reflection != null) ...[
-                const SizedBox(height: AppSpacing.gap8),
-                Text(
-                  update.reflection!,
-                  key: const ValueKey('feed_reflection'),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontFamily: AppTheme.fontSerif,
-                    fontStyle: FontStyle.italic,
-                    height: 1.45,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ],
               const SizedBox(height: AppSpacing.gap8),
               _AmenPill(
                 key: ValueKey('amen_${update.key}'),
@@ -1143,7 +993,7 @@ class _UpdateTile extends StatelessWidget {
       ],
     );
 
-    final tile = Padding(
+    return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.hPadding,
         vertical: AppSpacing.gap8,
@@ -1159,7 +1009,6 @@ class _UpdateTile extends StatelessWidget {
             )
           : body,
     );
-    return onOpen == null ? tile : InkWell(onTap: onOpen, child: tile);
   }
 }
 
@@ -1354,7 +1203,6 @@ class _InviteSheet extends StatelessWidget {
   final FirebaseFirestore firestore;
   final GroupService groupService;
   final NudgeService nudgeService;
-  final FriendService friendService;
   final VibrationService vibrationService;
   final DateTime Function() dateProvider;
 
@@ -1365,7 +1213,6 @@ class _InviteSheet extends StatelessWidget {
     required this.firestore,
     required this.groupService,
     required this.nudgeService,
-    required this.friendService,
     required this.vibrationService,
     required this.dateProvider,
   });
@@ -1408,20 +1255,6 @@ class _InviteSheet extends StatelessWidget {
     return _SheetBody(
       title: 'Bring people in',
       children: [
-        _SheetRow(
-          icon: Icons.person_add_alt_1_rounded,
-          label: 'Add a friend',
-          onTap: () => onSelected((c) => Navigator.of(c).push(
-                MaterialPageRoute(
-                  builder: (_) => FriendCodePage(
-                    auth: auth,
-                    friendService: friendService,
-                    groupService: groupService,
-                    vibrationService: vibrationService,
-                  ),
-                ),
-              )),
-        ),
         if (groups.isNotEmpty)
           _SheetRow(
             icon: Icons.ios_share_rounded,
@@ -1476,7 +1309,7 @@ class _InviteSheet extends StatelessWidget {
               label: group.name,
               detail: '${group.memberCount} '
                   'member${group.memberCount == 1 ? '' : 's'} · '
-                  '${GroupPreviewSheet.readingLabel(group)}',
+                  '${_readingLabel(group)}',
               trailing: true,
               onTap: () => onSelected((c) {
                 vibrationService.lightImpact();

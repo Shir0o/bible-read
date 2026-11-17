@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bible_read/models/reading_plan_progress.dart';
 import 'package:bible_read/pages/create_plan_page.dart';
-import 'package:bible_read/pages/group_invite_page.dart';
+import 'package:bible_read/pages/share_code_page.dart';
 import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/pages/plan_detail_page.dart';
 import 'package:bible_read/services/group_service.dart';
@@ -156,9 +156,9 @@ void main() {
     expect(books, isNot(contains('Genesis')));
     // A Shared plan is the Group's schedule — no personal plan is written.
     expect((await firestore.collection('custom_plans').get()).docs, isEmpty);
-    // The new group offers its invite first, then lands in the group.
-    expect(find.byType(GroupInvitePage), findsOneWidget);
-    await tester.tap(find.byKey(const Key('group_invite_done')));
+    // The new group offers its share code first, then lands in the group.
+    expect(find.byType(ShareCodePage), findsOneWidget);
+    await tester.tap(find.text('Done'));
     await tester.pumpAndSettle(const Duration(seconds: 1));
     expect(find.byType(GroupMembersPage), findsOneWidget);
   });

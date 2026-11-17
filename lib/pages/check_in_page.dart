@@ -23,13 +23,11 @@ CheckInTimeOfDay getTimeOfDay([DateTime? d]) {
 ///  • Dynamic sky background based on time of day (dawn, day, dusk, night) with motion.
 ///  • Large interactive sun button that rises on tap.
 ///  • Sunrise-gold flood animation upon confirmation.
-///  • "Thank you for being here" payoff view displaying season count & reflection option.
+///  • "Thank you for being here" payoff view displaying season count.
 class CheckInPage extends StatefulWidget {
   final bool readToday;
   final int seasonDays;
-  final String? reflection;
   final Future<void> Function()? onConfirmRead;
-  final VoidCallback? onReflect;
   final VoidCallback onClose;
   final DateTime Function()? dateProvider;
   final VibrationService vibrationService;
@@ -39,9 +37,7 @@ class CheckInPage extends StatefulWidget {
     super.key,
     required this.readToday,
     this.seasonDays = 0,
-    this.reflection,
     this.onConfirmRead,
-    this.onReflect,
     required this.onClose,
     this.dateProvider,
     this.vibrationService = const VibrationService(),
@@ -458,41 +454,6 @@ class _CheckInPageState extends State<CheckInPage>
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (widget.onReflect != null)
-                                    SizedBox(
-                                      width: double.infinity,
-                                      height: 54,
-                                      child: OutlinedButton(
-                                        onPressed: widget.onReflect,
-                                        style: OutlinedButton.styleFrom(
-                                          backgroundColor: CheckInSky.buttonFill
-                                              .withValues(alpha: 0.75),
-                                          foregroundColor: CheckInSky.ink,
-                                          side: const BorderSide(
-                                            color: CheckInSky.ink,
-                                            width: 3,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                          ),
-                                          elevation: 0,
-                                        ),
-                                        child: Text(
-                                          widget.reflection != null &&
-                                                  widget.reflection!.isNotEmpty
-                                              ? 'Edit your reflection'
-                                              : 'Add a reflection',
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w900,
-                                            letterSpacing: 0.2,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  if (widget.onReflect != null)
-                                    const SizedBox(height: 12),
                                   SizedBox(
                                     width: double.infinity,
                                     height: 54,

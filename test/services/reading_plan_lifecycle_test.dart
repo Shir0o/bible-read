@@ -8,8 +8,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bible_read/models/reading_plan.dart';
-import 'package:bible_read/models/reading_plan_progress.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 
 void main() {

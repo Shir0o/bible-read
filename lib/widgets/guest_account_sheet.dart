@@ -17,7 +17,6 @@ import '../theme/app_theme.dart';
 import 'animated_page_route.dart';
 import 'app_bottom_sheet.dart';
 import 'auth/apple_sign_in_button.dart';
-import 'merge_dry_run_sheet.dart';
 
 /// Displays the Sanctuary Liturgy modal sheet prompting guest readers to sign in
 /// or link an account when accessing social surfaces.
@@ -48,16 +47,6 @@ Future<T?> showGuestAccountSheet<T>(
     ),
   );
 
-  if (result is AccountCollisionException && context.mounted) {
-    await showMergeDryRunSheet(
-      context: context,
-      dryRunData: result.dryRunData,
-      accountLinkingService: linkingService,
-      vibrationService: vibrationService,
-    );
-    return null;
-  }
-
   return result as T?;
 }
 
@@ -70,7 +59,6 @@ class GuestAccountSheet extends StatefulWidget {
   final GoogleSignIn Function() googleSignInProvider;
   final AppleSignInService appleSignInService;
   final VibrationService vibrationService;
-  final void Function(AccountCollisionException collision)? onCollision;
 
   GuestAccountSheet({
     super.key,
@@ -80,7 +68,6 @@ class GuestAccountSheet extends StatefulWidget {
     GoogleSignIn Function()? googleSignInProvider,
     AppleSignInService? appleSignInService,
     VibrationService? vibrationService,
-    this.onCollision,
   })  : auth = auth ?? FirebaseAuth.instance,
         firestore = firestore ?? FirebaseFirestore.instance,
         accountLinkingService = accountLinkingService ??
@@ -116,18 +103,7 @@ class _GuestAccountSheetState extends State<GuestAccountSheet> {
 
       final currentUser = widget.auth.currentUser;
       if (currentUser != null && currentUser.isAnonymous) {
-        try {
-          await widget.accountLinkingService.linkCredential(credential);
-        } on AccountCollisionException catch (e) {
-          if (mounted) {
-            if (widget.onCollision != null) {
-              widget.onCollision!(e);
-            } else {
-              Navigator.of(context).pop(e);
-            }
-            return;
-          }
-        }
+        await widget.accountLinkingService.linkCredential(credential);
       } else {
         await widget.auth.signInWithCredential(credential);
       }
@@ -164,22 +140,11 @@ class _GuestAccountSheetState extends State<GuestAccountSheet> {
       if (appleCred != null) {
         final currentUser = widget.auth.currentUser;
         if (currentUser != null && currentUser.isAnonymous) {
-          try {
-            await widget.accountLinkingService.linkCredential(appleCred);
-            if (mounted) {
-              Navigator.of(context).pop();
-            }
-            return;
-          } on AccountCollisionException catch (e) {
-            if (mounted) {
-              if (widget.onCollision != null) {
-                widget.onCollision!(e);
-              } else {
-                Navigator.of(context).pop(e);
-              }
-              return;
-            }
+          await widget.accountLinkingService.linkCredential(appleCred);
+          if (mounted) {
+            Navigator.of(context).pop();
           }
+          return;
         } else {
           await widget.auth.signInWithCredential(appleCred);
           if (mounted) {
@@ -250,7 +215,7 @@ class _GuestAccountSheetState extends State<GuestAccountSheet> {
           ),
           const SizedBox(height: AppSpacing.gap8),
           Text(
-            'Sign in to connect with friends, join groups, and share your daily reflections.',
+            'Sign in to join groups, build streaks, and read alongside others.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,

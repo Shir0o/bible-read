@@ -27,15 +27,12 @@ import 'package:bible_read/pages/bible_progress_page.dart';
 import 'package:bible_read/pages/check_in_page.dart';
 import 'package:bible_read/pages/login_page.dart';
 import 'package:bible_read/pages/main_page.dart';
-import 'package:bible_read/pages/notification_settings_page.dart';
 import 'package:bible_read/pages/plan_detail_page.dart';
 import 'package:bible_read/pages/settings_page.dart';
 import 'package:bible_read/pages/signup_page.dart';
 import 'package:bible_read/pages/welcome_page.dart';
 import 'package:bible_read/services/google_sign_in_factory.dart';
-import 'package:bible_read/services/notification_preferences_service.dart';
 import 'package:bible_read/theme/app_theme.dart';
-import 'package:bible_read/widgets/reflect_sheet.dart';
 import '../test/helpers/fake_google_sign_in_platform.dart';
 import 'helpers/screenshot_helper.dart';
 
@@ -372,9 +369,7 @@ void main() {
             key: ValueKey('checkin-$readToday-${at.hour}'),
             readToday: readToday,
             seasonDays: 41,
-            reflection: reflection,
             onConfirmRead: () async {},
-            onReflect: () {},
             onClose: () {},
             dateProvider: () => at,
             enableDriftAnimation: false,
@@ -399,7 +394,6 @@ void main() {
     await pumpCheckIn(
       readToday: true,
       at: today.add(const Duration(hours: 19)),
-      reflection: kSeededReflection,
     );
     await shot(tester, '14_checkin_payoff');
 
@@ -409,23 +403,6 @@ void main() {
     await scrollBy(tester, -450);
     await shot(tester, '21_today_behind_scrolled');
     await scrollBy(tester, 600);
-
-    // Reflection Sheet
-    try {
-      final sheetCtx = navigatorKey.currentContext;
-      if (sheetCtx != null) {
-        showReflectSheet(
-          sheetCtx,
-          initialText: kSeededReflection,
-          prompt: 'What stood out to you in Exodus 3-6 today?',
-          onSave: (_, __) async {},
-        );
-        await settle(tester, frames: 16);
-        await shot(tester, '22_today_reflection_sheet');
-        await tapIf(tester, find.text('Skip for today'));
-        await settle(tester, frames: 8);
-      }
-    } catch (_) {}
 
     // ==================== 4. CIRCLE TAB ====================
     await tapIf(tester, find.text('Circle'));
@@ -500,20 +477,6 @@ void main() {
       await tapIf(tester, find.text('Cancel'));
       await settle(tester, frames: 8);
     }
-
-    // Notification Settings
-    await tester.pumpWidget(
-      MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.appTheme(AppTheme.designLightScheme),
-        home: NotificationSettingsPage(
-          auth: auth,
-          service: NotificationPreferencesService(firestore: firestore),
-        ),
-      ),
-    );
-    await settle(tester, frames: 20);
-    await shot(tester, '73_settings_notifications');
 
     // ==================== 9. DARK THEME KEY SURFACES ====================
     await pumpApp(AppTheme.designDarkScheme);

@@ -154,7 +154,6 @@ class MainPageState extends State<MainPage> {
         readingStatusService: _readingStatusService,
         userPreferencesService: _userPreferencesService,
         groupService: _groupService,
-        circleService: _circleService,
         googleSignInProvider: widget.googleSignInProvider,
         dateProvider: () => DateTime.now(),
         onOpenJourney: () => _onItemTapped(2),
@@ -223,6 +222,7 @@ class MainPageState extends State<MainPage> {
     final user = widget.auth.currentUser;
     if (user == null || user.isAnonymous) return;
     try {
+      // ignore: deprecated_member_use
       final token = await widget.messaging.getToken();
       if (token != null) {
         await widget.firestore.collection('users').doc(user.uid).set({

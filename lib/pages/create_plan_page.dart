@@ -25,9 +25,9 @@ import '../widgets/plan_day_list.dart';
 import '../widgets/start_chapter_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../services/nudge_service.dart';
-import 'group_invite_page.dart';
 import 'group_members_page.dart';
 import 'plan_detail_page.dart';
+import 'share_code_page.dart';
 
 /// Who a new plan is for. Answered as a field inside the creation flow
 /// (#809), not as a fork before it begins.
@@ -576,7 +576,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (inviteContext) => GroupInvitePage(
+        builder: (inviteContext) => ShareCodePage(
           group: group,
           groupService: groupService,
           vibrationService: widget.vibrationService,

@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/read_through.dart';
 import 'error_logger.dart';
-import 'friend_service.dart';
 
 /// Announces a detected read-through in the feed.
 ///
@@ -94,11 +93,6 @@ class MilestoneAnnouncer {
           SetOptions(merge: true),
         );
       }
-      batch.set(
-        FriendService.feedEntry(firestore, uid, dateKey),
-        data,
-        SetOptions(merge: true),
-      );
       await batch.commit();
     } catch (e, st) {
       // The read-through is already recorded; a missed announcement is not

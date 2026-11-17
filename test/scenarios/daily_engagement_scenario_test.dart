@@ -3,7 +3,6 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:bible_read/pages/group_members_page.dart';
 import 'package:bible_read/services/group_service.dart';
-import 'package:bible_read/services/notification_service.dart';
 import 'package:bible_read/services/nudge_service.dart';
 import 'package:bible_read/models/group.dart';
 import 'package:network_image_mock/network_image_mock.dart';
@@ -28,10 +27,8 @@ void main() {
       final seeder = FirebaseSeeder(firestore);
 
       // Create services manually
-      final notificationService = NotificationService(firestore: firestore);
       final groupService = GroupService(
         firestore: firestore,
-        notificationService: notificationService,
       );
       final nudgeService = NudgeService(firestore: firestore);
 

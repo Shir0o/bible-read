@@ -17,9 +17,7 @@ import 'package:bible_read/models/group_schedule.dart';
 import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/join_code_service.dart';
-import 'package:bible_read/models/notification_preferences.dart';
-import 'package:bible_read/services/notification_service.dart'
-    show NotificationCollections;
+
 
 class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
@@ -158,10 +156,11 @@ void main() {
       expect(member.data()?['name'], 'user');
     });
 
-    test('joinGroup creates join request and notification', () async {
+    test('joinGroup adds member directly', () async {
       await firestore.collection(GroupCollections.groups).doc('g1').set({
         'name': 'G',
         'ownerUid': 'u1',
+        'memberCount': 1,
       });
 
       await service.joinGroup(groupId: 'g1', uid: 'u2', name: 'User');
@@ -172,42 +171,8 @@ void main() {
           .collection(GroupCollections.members)
           .doc('u2')
           .get();
-      expect(member.exists, isFalse);
-
-      final request = await firestore
-          .collection(GroupCollections.groups)
-          .doc('g1')
-          .collection(GroupCollections.joinRequests)
-          .doc('u2')
-          .get();
-      expect(request.exists, isTrue);
-      expect(request.data()?['uid'], 'u2');
-      expect(request.data()?['name'], 'User');
-      expect(request.data()?['requestedAt'], isA<Timestamp>());
-
-      // Verify owner gets the notification with correct fields
-      final notifSnap = await firestore
-          .collection(NotificationCollections.users)
-          .doc('u1')
-          .collection(NotificationCollections.notifications)
-          .get();
-      expect(notifSnap.docs.length, 1);
-      final data = notifSnap.docs.first.data();
-      expect(data['type'], NotificationType.groupJoinRequest.name);
-      expect(data['fromUid'], 'u2');
-      expect(data['senderUid'], 'u2');
-      expect(data['groupId'], 'g1');
-      expect(data['message'], 'User requested to join your group');
-      expect(data['read'], false);
-      expect(data['timestamp'], isA<Timestamp>());
-
-      // Verify unrelated users do NOT get notified
-      final unrelatedSnap = await firestore
-          .collection(NotificationCollections.users)
-          .doc('u3')
-          .collection(NotificationCollections.notifications)
-          .get();
-      expect(unrelatedSnap.docs, isEmpty);
+      expect(member.exists, isTrue);
+      expect(member.data()?['name'], 'User');
     });
 
     test('joinGroup throws StateError when group does not exist', () async {
@@ -215,78 +180,6 @@ void main() {
         service.joinGroup(groupId: 'missing', uid: 'u1', name: 'User'),
         throwsStateError,
       );
-
-      final requests = await firestore
-          .collection(GroupCollections.groups)
-          .doc('missing')
-          .collection(GroupCollections.joinRequests)
-          .get();
-      expect(requests.docs, isEmpty);
-    });
-
-    test('approveJoinRequest moves member and removes request', () async {
-      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'memberCount': 1});
-      await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
-        'uid': 'u2',
-        'name': 'User',
-        'requestedAt': Timestamp.fromDate(DateTime.utc(2024)),
-      });
-
-      await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
-
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
-      expect(member.exists, isTrue);
-      expect(member.data()?['name'], 'User');
-      final request = await groupRef
-          .collection(GroupCollections.joinRequests)
-          .doc('u2')
-          .get();
-      expect(request.exists, isFalse);
-      final groupDoc = await groupRef.get();
-      expect(groupDoc.data()?['memberCount'], 2);
-    });
-
-    test('approveJoinRequest seeds memberCount when missing', () async {
-      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      await groupRef.collection(GroupCollections.members).doc('u1').set({
-        'uid': 'u1',
-        'role': 'owner',
-        'joinedAt': Timestamp.fromDate(DateTime.utc(2024, 1, 1)),
-      });
-      await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
-        'uid': 'u2',
-        'name': 'User',
-        'requestedAt': Timestamp.fromDate(DateTime.utc(2024, 2, 1)),
-      });
-
-      await service.approveJoinRequest(groupId: 'g1', uid: 'u2');
-
-      final groupDoc = await groupRef.get();
-      expect(groupDoc.data()?['memberCount'], 2);
-    });
-
-    test('denyJoinRequest removes request without adding member', () async {
-      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1', 'memberCount': 2});
-      await groupRef.collection(GroupCollections.joinRequests).doc('u2').set({
-        'uid': 'u2',
-        'name': 'User',
-        'requestedAt': Timestamp.fromDate(DateTime.utc(2024)),
-      });
-
-      await service.denyJoinRequest(groupId: 'g1', uid: 'u2');
-
-      final member =
-          await groupRef.collection(GroupCollections.members).doc('u2').get();
-      expect(member.exists, isFalse);
-      final request = await groupRef
-          .collection(GroupCollections.joinRequests)
-          .doc('u2')
-          .get();
-      expect(request.exists, isFalse);
     });
 
     test('leaveGroup removes membership document', () async {
@@ -417,42 +310,6 @@ void main() {
       );
     });
 
-    test('updateSchedule notifies group members', () async {
-      final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
-      await groupRef.set({'name': 'G', 'ownerUid': 'u1'});
-      await groupRef.collection(GroupCollections.members).doc('u1').set({
-        'uid': 'u1',
-      });
-      await groupRef.collection(GroupCollections.members).doc('u2').set({
-        'uid': 'u2',
-      });
-      final schedule = GroupSchedule(
-        date: DateTime(2024, 1, 1),
-        chapters: const ['Gen 1'],
-      );
-
-      await service.updateSchedule(groupId: 'g1', schedule: schedule);
-
-      final notif1 = await firestore
-          .collection(NotificationCollections.users)
-          .doc('u1')
-          .collection(NotificationCollections.notifications)
-          .get();
-      final notif2 = await firestore
-          .collection(NotificationCollections.users)
-          .doc('u2')
-          .collection(NotificationCollections.notifications)
-          .get();
-
-      expect(
-        notif1.docs.single.data()['type'],
-        NotificationType.groupScheduleUpdate.name,
-      );
-      expect(
-        notif2.docs.single.data()['type'],
-        NotificationType.groupScheduleUpdate.name,
-      );
-    });
 
     test('fetchTodaysChapters returns schedule for today', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');
@@ -1469,33 +1326,13 @@ void main() {
         final mockFs = MockFirebaseFirestore();
         final groups = MockCollectionReference<Map<String, dynamic>>();
         final groupDoc = MockDocumentReference<Map<String, dynamic>>();
-        final members = MockCollectionReference<Map<String, dynamic>>();
-        final memberDoc = MockDocumentReference<Map<String, dynamic>>();
-        final memberSnap = MockDocumentSnapshot<Map<String, dynamic>>();
-        final joinRequests = MockCollectionReference<Map<String, dynamic>>();
-        final joinDoc = MockDocumentReference<Map<String, dynamic>>();
         final err = Exception('fail');
-
-        final groupSnap = MockDocumentSnapshot<Map<String, dynamic>>();
-        when(() => groupSnap.exists).thenReturn(true);
-        when(() => groupSnap.data()).thenReturn({'ownerUid': 'owner'});
 
         when(
           () => mockFs.collection(GroupCollections.groups),
         ).thenReturn(groups);
         when(() => groups.doc('g1')).thenReturn(groupDoc);
-        when(() => groupDoc.get()).thenAnswer((_) async => groupSnap);
-        when(
-          () => groupDoc.collection(GroupCollections.members),
-        ).thenReturn(members);
-        when(() => members.doc('u1')).thenReturn(memberDoc);
-        when(() => memberDoc.get()).thenAnswer((_) async => memberSnap);
-        when(() => memberSnap.exists).thenReturn(false);
-        when(
-          () => groupDoc.collection(GroupCollections.joinRequests),
-        ).thenReturn(joinRequests);
-        when(() => joinRequests.doc('u1')).thenReturn(joinDoc);
-        when(() => joinDoc.set(any())).thenThrow(err);
+        when(() => groupDoc.get()).thenThrow(err);
 
         final crash = MockCrashlytics();
         ErrorLogger.crashlytics = crash;
@@ -1517,8 +1354,6 @@ void main() {
           throwsA(same(err)),
         );
 
-        verify(() => joinRequests.doc('u1')).called(1);
-        verify(() => joinDoc.set(any())).called(1);
         verify(
           () => crash.recordError(
             err,

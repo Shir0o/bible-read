@@ -1,6 +1,6 @@
 import 'package:bible_read/pages/create_plan_page.dart';
-import 'package:bible_read/pages/group_invite_page.dart';
 import 'package:bible_read/pages/group_members_page.dart';
+import 'package:bible_read/pages/share_code_page.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/reading_plan_service.dart';
 import 'package:bible_read/services/vibration_service.dart';
@@ -123,14 +123,13 @@ void main() {
     // A join code was assigned so the group is shareable immediately.
     expect(group.data()['joinCode'], isNotEmpty);
 
-    // The flow offers the group's invite, then lands in the members page.
-    expect(find.byType(GroupInvitePage), findsOneWidget);
-    expect(find.text('Thursday morning group is ready'), findsOneWidget);
+    // The flow offers the group's share code, then lands in the members page.
+    expect(find.byType(ShareCodePage), findsOneWidget);
     expect(
       find.text(group.data()['joinCode'] as String),
       findsOneWidget,
     );
-    await tester.tap(find.byKey(const Key('group_invite_done')));
+    await tester.tap(find.text('Done'));
     await tester.pumpAndSettle(const Duration(milliseconds: 1500));
     expect(find.byType(GroupMembersPage), findsOneWidget);
     expect(find.text('Invite people'), findsOneWidget);

@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../models/app_notification.dart';
-import '../services/notification_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import 'common_styles.dart';
@@ -119,19 +117,9 @@ class AppHeader extends StatelessWidget {
             status!,
           ],
           const SizedBox(width: AppSpacing.gap12),
-          StreamBuilder<List<AppNotification>>(
-            stream: user != null
-                ? NotificationService(firestore: firestore)
-                    .notifications(user.uid)
-                : Stream.value(const <AppNotification>[]),
-            builder: (context, snapshot) {
-              final unread = snapshot.data?.where((n) => !n.read).length ?? 0;
-              return _Avatar(
-                user: user,
-                unread: unread,
-                vibrationService: vibrationService,
-              );
-            },
+          _Avatar(
+            user: user,
+            vibrationService: vibrationService,
           ),
         ],
       ),
@@ -189,12 +177,10 @@ class _ActionPill extends StatelessWidget {
 class _Avatar extends StatelessWidget {
   const _Avatar({
     required this.user,
-    required this.unread,
     required this.vibrationService,
   });
 
   final User? user;
-  final int unread;
   final VibrationService vibrationService;
 
   static const double _size = 44;
@@ -205,79 +191,40 @@ class _Avatar extends StatelessWidget {
     final name = (user?.displayName ?? '').trim();
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final photoUrl = user?.photoURL;
-    final label =
-        unread > 0 ? 'Open menu, $unread unread notifications' : 'Open menu';
 
     return Semantics(
       button: true,
-      label: label,
+      label: 'Open menu',
       excludeSemantics: true,
       child: Tooltip(
         message: 'Open menu',
         child: SizedBox(
           width: _size,
           height: _size,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned.fill(
-                child: Material(
-                  color: colorScheme.primaryContainer,
-                  shape: const CircleBorder(),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () {
-                      vibrationService.lightImpact();
-                      NavigationMenuScope.maybeOf(context)?.showMenu(context);
-                    },
-                    child: photoUrl != null
-                        ? Ink.image(
-                            image: CachedNetworkImageProvider(photoUrl),
-                            fit: BoxFit.cover,
-                          )
-                        : Center(
-                            child: Text(
-                              initial,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(color: colorScheme.primary),
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-              if (unread > 0)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: IgnorePointer(
-                    child: Container(
-                      constraints:
-                          const BoxConstraints(minWidth: 18, minHeight: 18),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.gap4),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: colorScheme.tertiary,
-                        borderRadius: BorderRadius.circular(AppSpacing.rInset),
-                        border: Border.all(
-                          color: colorScheme.surface,
-                          width: 2,
-                        ),
-                      ),
+          child: Material(
+            color: colorScheme.primaryContainer,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () {
+                vibrationService.lightImpact();
+                NavigationMenuScope.maybeOf(context)?.showMenu(context);
+              },
+              child: photoUrl != null
+                  ? Ink.image(
+                      image: CachedNetworkImageProvider(photoUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : Center(
                       child: Text(
-                        unread > 9 ? '9+' : '$unread',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onTertiary,
-                              fontWeight: FontWeight.w700,
-                              height: 1,
-                            ),
+                        initial,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(color: colorScheme.primary),
                       ),
                     ),
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
       ),
