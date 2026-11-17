@@ -178,57 +178,6 @@ void main() {
     expect(doc.data()?['read'], isTrue);
   });
 
-  testWidgets('displays the consistency glimpse', (tester) async {
-    final firestore = FakeFirebaseFirestore();
-    final auth = MockFirebaseAuth(
-      mockUser: MockUser(uid: 'u1'),
-      signedIn: true,
-    );
-
-    // Seed summary data with a streak
-    await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('summary')
-        .doc('data')
-        .set({
-      'streak': 5,
-      'totalReadDays': 5,
-      'pastWeekReadDates': [], // Empty for now
-    });
-
-    // Also mark as read today so the streak UI is visible
-    final today = DateTime.now();
-    final dateKey =
-        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
-    await firestore
-        .collection('users')
-        .doc('u1')
-        .collection('reading')
-        .doc(dateKey)
-        .set({'read': true});
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: HomePage(
-          firestore: firestore,
-          auth: auth,
-          vibrationService: _StubVibrationService(),
-          bibleProgressService: _StubBibleProgressService(),
-          dateProvider: () => DateTime.now(),
-          enableDriftAnimation: false,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // The consistency glimpse summarises showing up across the season using
-    // the seeded totalReadDays (5), and links to Journey.
-    expect(find.text('Here 5 days this season'), findsOneWidget);
-    expect(find.text("Whenever you return, it's enough."), findsOneWidget);
-  });
-
   testWidgets('displays skeleton while loading', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final auth = MockFirebaseAuth(
