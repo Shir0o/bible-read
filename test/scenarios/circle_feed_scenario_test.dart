@@ -523,7 +523,7 @@ void main() {
     expect(find.text('No one here yet'), findsOneWidget);
     expect(
         find.text(
-          'Your Circle is your Friends and everyone you share a group with.',
+          'Your Circle is everyone you share a group with.',
         ),
         findsOneWidget);
     expect(find.text('Have a code?'), findsOneWidget);
