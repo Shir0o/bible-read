@@ -144,19 +144,13 @@ class GroupService {
     required String name,
     String? photoUrl,
     bool? isPublic,
-  }) async {
-    try {
-      await joinGroupDirectly(
+  }) =>
+      joinGroupDirectly(
         groupId: groupId,
         uid: uid,
         name: name,
         photoUrl: photoUrl,
       );
-    } catch (e, st) {
-      await _safeLog(e, st);
-      rethrow;
-    }
-  }
 
   /// Directly add [uid] to the group with [groupId].
   Future<void> joinGroupDirectly({
