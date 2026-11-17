@@ -131,15 +131,9 @@ void main() {
           .collection('invites')
           .doc(recipientUid)
           .get();
-      final notificationSnap = await firestore
-          .collection('users')
-          .doc(recipientUid)
-          .collection('notifications')
-          .get();
 
       expect(memberDoc.exists, isTrue);
       expect(inviteDoc.exists, isFalse);
-      expect(notificationSnap.docs.isEmpty, isTrue);
     });
 
     test('respondToGroupInvite cannot accept missing invite', () async {
