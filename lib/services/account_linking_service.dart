@@ -72,33 +72,6 @@ class MergeDryRunData {
   int get cloudStreak => cloudStatus.streak;
 }
 
-/// Thrown when linking an authentication credential collides with an existing
-/// Firebase account (`credential-already-in-use`).
-class AccountCollisionException implements Exception {
-  /// The credential that collided with an existing account.
-  final AuthCredential targetCredential;
-
-  /// Computed dry run comparison between guest and cloud accounts.
-  final MergeDryRunData dryRunData;
-
-  /// UID of the collided cloud account.
-  final String targetUid;
-
-  /// Human-readable explanation.
-  final String message;
-
-  AccountCollisionException({
-    required this.targetCredential,
-    required this.dryRunData,
-    required this.targetUid,
-    this.message = 'Credential already associated with another account.',
-  });
-
-  @override
-  String toString() =>
-      'AccountCollisionException: $message (targetUid: $targetUid)';
-}
-
 /// Service that manages linking guest readers to persistent credentials,
 /// computing dry-run preview statistics, and committing batch merges.
 class AccountLinkingService {
