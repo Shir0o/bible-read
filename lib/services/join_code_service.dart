@@ -102,6 +102,14 @@ class JoinCodeService {
       final fromUri = codeFromUri(uri);
       if (fromUri != null) return fromUri;
     }
+    final urlMatch = RegExp(r'https?://\S+').firstMatch(trimmed);
+    if (urlMatch != null) {
+      final embeddedUri = Uri.tryParse(urlMatch.group(0)!);
+      if (embeddedUri != null) {
+        final fromEmbedded = codeFromUri(embeddedUri);
+        if (fromEmbedded != null) return fromEmbedded;
+      }
+    }
     final norm = normalize(trimmed);
     if (norm.length == codeLength) return norm;
     return null;
