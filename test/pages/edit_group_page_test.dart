@@ -72,7 +72,6 @@ void main() {
     expect(find.byKey(const Key('group-settings-name')), findsOneWidget);
     expect(find.text('Public Group'), findsOneWidget);
     expect(find.text('Reschedule'), findsOneWidget);
-    expect(find.text('Archive Group'), findsOneWidget);
     expect(find.text('Delete Group'), findsOneWidget);
 
     // The old shared plan editor is retired from this screen.
@@ -89,10 +88,8 @@ void main() {
       MockFirebaseAuth(mockUser: MockUser(uid: 'm2'), signedIn: true),
     );
 
-    expect(find.text('Archive Participation'), findsOneWidget);
     expect(find.text('Leave Group'), findsOneWidget);
     expect(find.text('Reschedule'), findsNothing);
-    expect(find.text('Archive Group'), findsNothing);
     expect(find.text('Delete Group'), findsNothing);
   });
 }

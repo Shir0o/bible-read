@@ -205,6 +205,7 @@ class SettingsPageState extends State<SettingsPage> {
   Future<void> _toggleNotifPref(NotificationType type, bool value) async {
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
+    unawaited(widget.vibrationService.lightImpact());
     final prev = _notifPrefs[type];
     setState(() {
       _notifPrefs = NotificationPreferences(
@@ -229,6 +230,7 @@ class SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _toggleReminder(bool value) async {
+    unawaited(widget.vibrationService.lightImpact());
     setState(() => _reminderEnabled = value);
     await ReminderService().saveSettings(value, _reminderTime);
   }

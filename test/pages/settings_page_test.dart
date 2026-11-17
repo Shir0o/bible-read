@@ -306,7 +306,9 @@ void main() {
     });
   });
 
-  testWidgets('notification settings button vibrates', (tester) async {
+  testWidgets('inline notification toggle vibrates and updates preference', (
+    tester,
+  ) async {
     await mockNetworkImagesFor(() async {
       final vibration = _RecordingVibrationService();
       final firestore = FakeFirebaseFirestore();
@@ -326,7 +328,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Notification settings'));
+      await tester.ensureVisible(find.text('Amens'));
+      await tester.tap(find.text('Amens'));
       await tester.pumpAndSettle();
 
       expect(vibration.lightCount, 1);
