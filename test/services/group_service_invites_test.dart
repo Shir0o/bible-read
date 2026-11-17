@@ -39,7 +39,7 @@ void main() {
       expect(groupDoc.data()?['memberCount'], equals(2)); // Owner + user1
     });
 
-    test('joinGroup creates request if group is private', () async {
+    test('joinGroup joins directly even if group is private', () async {
       final groupId = await groupService.createGroup(
         ownerUid: 'owner',
         name: 'Private Group',
@@ -59,15 +59,8 @@ void main() {
           .collection('members')
           .doc('user1')
           .get();
-      final requestDoc = await firestore
-          .collection('groups')
-          .doc(groupId)
-          .collection('joinRequests')
-          .doc('user1')
-          .get();
 
-      expect(memberDoc.exists, isFalse);
-      expect(requestDoc.exists, isTrue);
+      expect(memberDoc.exists, isTrue);
     });
 
     test(

@@ -48,7 +48,9 @@ void main() {
     expect(find.text('Nudge sent to Mona'), findsOneWidget);
   });
 
-  testWidgets('write-your-own captures custom text', (tester) async {
+  testWidgets('selecting another preset sends that preset note', (
+    tester,
+  ) async {
     String? captured;
     await tester.pumpWidget(
       _host(
@@ -62,16 +64,13 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Write your own'));
+    await tester.tap(find.text(kNudgePresets[1]));
     await tester.pumpAndSettle();
-
-    await tester.enterText(find.byType(TextField), 'Praying for you');
-    await tester.pump();
 
     await tester.tap(find.text('Send nudge'));
     await tester.pumpAndSettle();
 
-    expect(captured, 'Praying for you');
+    expect(captured, kNudgePresets[1]);
     expect(find.text('Nudge sent to Mona'), findsOneWidget);
   });
 

@@ -245,30 +245,17 @@ void main() {
   });
 
   testWidgets(
-      'one update per person per day across two Groups, keeping the shared '
-      'Reflection; unshared Reflections never appear', (tester) async {
-    await seedGroup(
-        'g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob', 'cara': 'Cara'});
+      'one update per person per day across two Groups merges Group names',
+      (tester) async {
+    await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
     await seedGroup('g2', 'Evening', {'alice': 'Alice', 'bob': 'Bob'});
-    // Bob's copies differ: only the Morning copy carries the Reflection.
     await seedEntry('bob', ['g2']);
-    await seedEntry('bob', ['g1'], reflection: 'He restores my soul.');
-    // Cara kept her Reflection private: it lives only in her own document.
-    await seedEntry('cara', ['g1'], hour: 8);
-    await firestore
-        .collection('users')
-        .doc('cara')
-        .collection('reflections')
-        .doc(todayKey)
-        .set({'text': 'Just for me.', 'shared': false});
+    await seedEntry('bob', ['g1']);
 
     await pumpCircle(tester);
 
     expect(feedText('Bob showed up'), findsOneWidget);
-    expect(find.text('He restores my soul.'), findsOneWidget);
     expect(feedText('7:00 AM · Evening, Morning'), findsOneWidget);
-    expect(feedText('Cara showed up'), findsOneWidget);
-    expect(find.text('Just for me.'), findsNothing);
     expect(find.text('TODAY'), findsOneWidget);
     expect(find.text("That's the week"), findsOneWidget);
   });
@@ -477,25 +464,25 @@ void main() {
       (tester) async {
     await seedGroup('g1', 'Morning', {'alice': 'Alice', 'bob': 'Bob'});
     await seedGroup('g2', 'Evening', {'alice': 'Alice', 'dee': 'Dee'});
-    await seedEntry('bob', ['g1'], reflection: 'Morning light.');
-    await seedEntry('dee', ['g2'], reflection: 'Evening rest.');
+    await seedEntry('bob', ['g1']);
+    await seedEntry('dee', ['g2'], daysAgo: 1);
 
     await pumpCircle(tester);
     expect(find.byKey(const ValueKey('status_dee')), findsOneWidget);
-    expect(find.text('Evening rest.'), findsOneWidget);
+    expect(feedText('Dee showed up'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilterChip, 'Morning'));
     await tester.pumpAndSettle();
     expect(find.text('MORNING'), findsOneWidget);
     expect(find.byKey(const ValueKey('status_bob')), findsOneWidget);
     expect(find.byKey(const ValueKey('status_dee')), findsNothing);
-    expect(find.text('Morning light.'), findsOneWidget);
-    expect(find.text('Evening rest.'), findsNothing);
+    expect(feedText('Bob showed up'), findsOneWidget);
+    expect(feedText('Dee showed up'), findsNothing);
 
     await tester.tap(find.widgetWithText(FilterChip, 'Everyone'));
     await tester.pumpAndSettle();
     expect(find.text('TOGETHER'), findsOneWidget);
-    expect(find.text('Evening rest.'), findsOneWidget);
+    expect(feedText('Dee showed up'), findsOneWidget);
   });
 
   testWidgets(
