@@ -25,12 +25,11 @@ abstract class ActiveReadingItem {
   String get pinKey;
   CatchUpStatus get status;
   PlanLifecycle get state;
-  bool get finished;
   bool get isGroup;
 
-  /// Whether this reading has finished early (ADR-0010) or completed all readings.
-  /// Finished or completed readings leave Home and collapse into Path's Finished list.
-  bool get isDone => state == PlanLifecycle.complete || finished;
+  /// Whether all readings in this plan are completed.
+  /// Completed readings leave Home and collapse into Path's Finished list.
+  bool get isDone => state == PlanLifecycle.complete;
 
   /// Number of readings behind schedule.
   int get missedCount => status.missedCount;
@@ -61,9 +60,6 @@ abstract class ActiveReadingItem {
 
   /// The reader's completed dates under schedule (`YYYY-MM-DD`).
   Set<String> get completedDateIds => const {};
-
-  /// Whether the reader follows their own pace overlay (ADR-0007).
-  bool get ownPace => false;
 }
 
 /// A solo personal plan paired with the reader's progress, lifecycle state,
@@ -81,15 +77,11 @@ class ActivePersonalReading extends ActiveReadingItem {
   @override
   final PlanLifecycle state;
 
-  @override
-  final bool finished;
-
   const ActivePersonalReading({
     required this.plan,
     required this.progress,
     required this.status,
     required this.state,
-    this.finished = false,
   });
 
   @override
@@ -105,7 +97,7 @@ class ActivePersonalReading extends ActiveReadingItem {
   bool get isGroup => false;
 
   @override
-  bool get isDone => state == PlanLifecycle.complete || finished;
+  bool get isDone => state == PlanLifecycle.complete;
 
   @override
   int get missedCount => status.missedCount;
@@ -131,23 +123,18 @@ class ActivePersonalReading extends ActiveReadingItem {
     UserPlanProgress? progress,
     CatchUpStatus? status,
     PlanLifecycle? state,
-    bool? finished,
   }) {
     return ActivePersonalReading(
       plan: plan ?? this.plan,
       progress: progress ?? this.progress,
       status: status ?? this.status,
       state: state ?? this.state,
-      finished: finished ?? this.finished,
     );
   }
-
-  ActivePersonalReading withFinished(bool finished) =>
-      copyWith(finished: finished);
 }
 
 /// A shared group schedule paired with the group metadata, member presence,
-/// the reader's personal pace overlay (if any), and computed catch-up status.
+/// and computed catch-up status.
 class ActiveGroupReading extends ActiveReadingItem {
   @override
   final Group group;
@@ -173,13 +160,6 @@ class ActiveGroupReading extends ActiveReadingItem {
   @override
   final PlanLifecycle state;
 
-  @override
-  final bool finished;
-
-  /// Whether the reader follows their own pace overlay instead of the Group's schedule (ADR-0007).
-  @override
-  final bool ownPace;
-
   const ActiveGroupReading({
     required this.group,
     this.schedule = const [],
@@ -188,8 +168,6 @@ class ActiveGroupReading extends ActiveReadingItem {
     this.completedDateIds = const {},
     required this.status,
     required this.state,
-    this.finished = false,
-    this.ownPace = false,
   });
 
   @override
@@ -205,7 +183,7 @@ class ActiveGroupReading extends ActiveReadingItem {
   bool get isGroup => true;
 
   @override
-  bool get isDone => state == PlanLifecycle.complete || finished;
+  bool get isDone => state == PlanLifecycle.complete;
 
   @override
   int get missedCount => status.missedCount;
@@ -242,8 +220,6 @@ class ActiveGroupReading extends ActiveReadingItem {
     Set<String>? completedDateIds,
     CatchUpStatus? status,
     PlanLifecycle? state,
-    bool? finished,
-    bool? ownPace,
   }) {
     return ActiveGroupReading(
       group: group ?? this.group,
@@ -253,13 +229,8 @@ class ActiveGroupReading extends ActiveReadingItem {
       completedDateIds: completedDateIds ?? this.completedDateIds,
       status: status ?? this.status,
       state: state ?? this.state,
-      finished: finished ?? this.finished,
-      ownPace: ownPace ?? this.ownPace,
     );
   }
-
-  ActiveGroupReading withFinished(bool finished) =>
-      copyWith(finished: finished);
 }
 
 /// Snapshot of all active and finished readings for a reader at a point in time.
@@ -364,7 +335,6 @@ class ActiveReadingsSnapshot {
         progress: nextProgress,
         status: status,
         state: status.lifecycleAt(now),
-        finished: nextProgress.finishedAt != null,
       );
     }).toList();
 
@@ -416,33 +386,7 @@ class ActiveReadingsSnapshot {
     );
   }
 
-  /// Optimistically marks a solo plan finished or unfinished.
-  ActiveReadingsSnapshot withPersonalFinished(String planId, bool finished) {
-    final updated = personalPlans.map((p) {
-      if (p.plan.id != planId) return p;
-      return p.withFinished(finished);
-    }).toList();
-    return ActiveReadingsSnapshot(
-      personalPlans: updated,
-      groupReadings: groupReadings,
-      pinnedReadingId: pinnedReadingId,
-    );
-  }
-
-  /// Optimistically marks a group reading finished or unfinished.
-  ActiveReadingsSnapshot withGroupFinished(String groupId, bool finished) {
-    final updated = groupReadings.map((g) {
-      if (g.group.id != groupId) return g;
-      return g.withFinished(finished);
-    }).toList();
-    return ActiveReadingsSnapshot(
-      personalPlans: personalPlans,
-      groupReadings: updated,
-      pinnedReadingId: pinnedReadingId,
-    );
-  }
-
-  /// Optimistically removes a reading by plan or group ID (e.g. when finishing on Home).
+  /// Optimistically removes a reading by plan or group ID (e.g. when removing on Home).
   ActiveReadingsSnapshot withoutReading(String id) {
     return ActiveReadingsSnapshot(
       personalPlans: personalPlans.where((p) => p.id != id).toList(),
@@ -583,44 +527,21 @@ class ActiveReadingAggregator {
           progress: progress,
           status: status,
           state: status.lifecycleAt(now),
-          finished: progress.finishedAt != null,
         ),
       );
     }
     return result;
   }
 
-  /// Convenience helper to fetch and resolve archived personal plans.
-  Future<List<ActivePersonalReading>> fetchArchivedPlans(
-    String uid, {
-    DateTime? today,
-  }) async {
-    try {
-      final archivedProgress = await _firstWithTimeout<List<UserPlanProgress>>(
-        readingPlanService.getArchivedPlans(uid),
-        timeout: const Duration(seconds: 5),
-        fallback: const [],
-      );
-      return await resolvePersonalPlans(
-        archivedProgress,
-        userId: uid,
-        today: today,
-      );
-    } catch (e, st) {
-      await ErrorLogger.log(e, st);
-      return const [];
-    }
-  }
-
   /// Loads all groups for user, their schedules, member completions,
-  /// pace overlays, and evaluates lifecycle states concurrently.
+  /// and evaluates lifecycle states concurrently.
   Future<List<ActiveGroupReading>> resolveGroupReadings(
     String uid, {
     DateTime? today,
   }) async {
     try {
       final groups = await _firstWithTimeout<List<Group>>(
-        groupService.groupsForUser(uid, includeFinished: true),
+        groupService.groupsForUser(uid),
         timeout: const Duration(seconds: 5),
         fallback: const [],
       );
@@ -628,13 +549,6 @@ class ActiveReadingAggregator {
 
       final now = today ?? dateProvider();
       final todayDate = DateTime(now.year, now.month, now.day);
-
-      Set<String> finishedGroupIds = const {};
-      try {
-        finishedGroupIds = await groupService.finishedGroupIdsForUser(uid);
-      } catch (e, st) {
-        await ErrorLogger.log(e, st);
-      }
 
       final items = await Future.wait(
         groups.map((group) async {
@@ -658,15 +572,10 @@ class ActiveReadingAggregator {
               timeout: const Duration(seconds: 3),
               fallback: const {},
             ),
-            paceService.getSharedPlanOverlay(uid, group.id).timeout(
-                  const Duration(seconds: 3),
-                  onTimeout: () => null,
-                ),
           ]);
 
-          final overlay = results[3] as List<GroupSchedule>?;
-          final schedule = overlay ?? results[0] as List<GroupSchedule>;
-          var members = results[1] as List<GroupMemberProgressData>;
+          final schedule = results[0] as List<GroupSchedule>;
+          final members = results[1] as List<GroupMemberProgressData>;
           final progress = results[2] as Map<String, int>;
 
           final completedDateIds = progress.entries
@@ -688,24 +597,6 @@ class ActiveReadingAggregator {
             }
           }
 
-          if (overlay != null) {
-            final todayCount = progress[GroupService.dateId(todayDate)] ?? 0;
-            final readToday = todayEntry != null &&
-                todayCount > 0 &&
-                todayCount >= todayEntry.chapters.length;
-            members = [
-              for (final m in members)
-                m.uid == uid
-                    ? GroupMemberProgressData(
-                        uid: m.uid,
-                        name: m.name,
-                        photoUrl: m.photoUrl,
-                        completion: readToday ? 1.0 : 0.0,
-                      )
-                    : m,
-            ];
-          }
-
           return ActiveGroupReading(
             group: group,
             schedule: schedule,
@@ -714,8 +605,6 @@ class ActiveReadingAggregator {
             completedDateIds: completedDateIds,
             status: status,
             state: status.lifecycleAt(now),
-            finished: finishedGroupIds.contains(group.id),
-            ownPace: overlay != null,
           );
         }),
       );
@@ -855,8 +744,15 @@ class ActiveReadingAggregator {
       );
 
       // Watch groups and sub-resources
+      Stream<List<Group>> groupStream;
+      try {
+        groupStream = groupService.groupsForUser(uid, includeFinished: true);
+      } catch (e, st) {
+        ErrorLogger.log(e, st);
+        groupStream = const Stream.empty();
+      }
       subs.add(
-        groupService.groupsForUser(uid, includeFinished: true).listen(
+        groupStream.listen(
           (groups) {
             for (final s in groupSubs) {
               s.cancel();
@@ -872,9 +768,6 @@ class ActiveReadingAggregator {
                   .listen((_) => scheduleEmit(), onError: (_) {}));
               groupSubs.add(groupService
                   .memberDailyCompletion(g.id, date: dates(), includeUid: uid)
-                  .listen((_) => scheduleEmit(), onError: (_) {}));
-              groupSubs.add(paceService
-                  .sharedPlanOverlay(uid, g.id)
                   .listen((_) => scheduleEmit(), onError: (_) {}));
             }
             scheduleEmit();

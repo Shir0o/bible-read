@@ -18,7 +18,6 @@ import 'package:bible_read/services/error_logger.dart';
 import 'package:bible_read/services/group_service.dart';
 import 'package:bible_read/services/join_code_service.dart';
 
-
 class MockCrashlytics extends Mock implements FirebaseCrashlytics {}
 
 class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
@@ -309,7 +308,6 @@ void main() {
         DateTime.utc(2024, 1, 1).toLocal(),
       );
     });
-
 
     test('fetchTodaysChapters returns schedule for today', () async {
       final groupRef = firestore.collection(GroupCollections.groups).doc('g1');

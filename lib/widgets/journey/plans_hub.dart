@@ -6,9 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 
-import '../../models/group.dart';
 import '../../models/group_member_progress.dart';
-import '../../models/reading_plan_progress.dart';
 import '../../services/active_reading_aggregator.dart';
 import '../../services/catch_up_engine.dart';
 import '../../services/error_logger.dart';
@@ -18,14 +16,12 @@ import '../../services/reading_plan_service.dart';
 import '../../services/user_preferences_service.dart';
 import '../../services/vibration_service.dart';
 import '../catch_up_status_row.dart';
-import '../delete_plan_sheet.dart';
+import '../common_styles.dart';
 import '../member_presence_stack.dart';
 import '../../pages/adjust_pace_page.dart';
-import '../../pages/archived_page.dart';
 import '../../pages/create_plan_page.dart';
 import '../../pages/group_members_page.dart';
 import '../../pages/plan_detail_page.dart';
-import '../../pages/recently_deleted_page.dart';
 import '../../services/plan_pace_service.dart';
 import '../skeleton_loader.dart';
 import '../skeletons/plans_hub_skeleton.dart';
@@ -67,9 +63,6 @@ class PlansHub extends StatefulWidget {
 class PlansHubState extends State<PlansHub> {
   bool _loading = true;
   List<ActivePersonalReading> _personal = [];
-  List<ActivePersonalReading> _archived = [];
-  List<Group> _archivedGroups = [];
-  int _trashedCount = 0;
   List<ActiveGroupReading> _groups = [];
   String? _pinnedReadingId;
 
@@ -129,47 +122,9 @@ class PlansHubState extends State<PlansHub> {
         pinnedReadingId: pinned,
       );
 
-      // Left (archived) personal plans via aggregator
-      final archived = await _aggregator.fetchArchivedPlans(uid, today: today);
-
-      // Archived groups (#776): owned-and-archived, or participation the
-      // reader shelved. Both return via the Archive rows below.
-      List<Group> archivedGroups = const [];
-      try {
-        archivedGroups =
-            await widget.groupService.archivedGroupsForUser(uid).timeout(
-                  const Duration(seconds: 5),
-                  onTimeout: () => const <Group>[],
-                );
-      } catch (e, st) {
-        ErrorLogger.log(e, st);
-      }
-
-      // Count of everything sitting in the Recently Deleted hub, so the
-      // shortcut can hint there is something waiting (#776).
-      int trashedCount = 0;
-      try {
-        final trashedPlans =
-            await widget.readingPlanService.getDeletedPlans(uid).first.timeout(
-                  const Duration(seconds: 5),
-                  onTimeout: () => const <UserPlanProgress>[],
-                );
-        final trashedGroups =
-            await widget.groupService.getDeletedGroups(uid).first.timeout(
-                  const Duration(seconds: 5),
-                  onTimeout: () => const <Group>[],
-                );
-        trashedCount = trashedPlans.length + trashedGroups.length;
-      } catch (e, st) {
-        ErrorLogger.log(e, st);
-      }
-
       if (mounted) {
         setState(() {
           _personal = snapshot.personalPlans;
-          _archived = archived;
-          _archivedGroups = archivedGroups;
-          _trashedCount = trashedCount;
           _groups = snapshot.groupReadings;
           _pinnedReadingId = pinned;
           _loading = false;
@@ -205,24 +160,6 @@ class PlansHubState extends State<PlansHub> {
             onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
           ),
     );
-
-    _listen(widget.readingPlanService.getArchivedPlans(uid));
-    _listen(widget.readingPlanService.getDeletedPlans(uid));
-    _listen(widget.groupService.getDeletedGroups(uid));
-  }
-
-  void _listen(Stream<dynamic> stream) {
-    var first = true;
-    _watchSubs.add(stream.listen(
-      (_) {
-        if (first) {
-          first = false;
-          return;
-        }
-        _scheduleReload();
-      },
-      onError: (Object e, StackTrace st) => ErrorLogger.log(e, st),
-    ));
   }
 
   void _scheduleReload() {
@@ -311,202 +248,117 @@ class PlansHubState extends State<PlansHub> {
     if (applied && mounted) await _load();
   }
 
-  /// Adjust pace on a Shared plan (#810): the arithmetic runs on the Group's
-  /// schedule, but the outcome is stored as the reader's own overlay — the
-  /// Group's schedule and the other members' progress are never written.
+  /// Adjust pace on a Shared plan: owner adjusts the Group schedule for everyone.
   Future<void> _adjustSharedPace(ActiveGroupReading row) async {
     final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
+    if (uid == null || !_isOwner(row)) return;
+    final today = widget.dateProvider();
     final applied = await adjustSharedPace(
       context,
       firestore: widget.firestore,
+      groupService: widget.groupService,
+      groupName: row.group.name,
       uid: uid,
       groupId: row.group.id,
       schedule: row.schedule,
       completedDateIds: row.completedDateIds,
       daysBehind: row.status.missedCount,
-      today: widget.dateProvider(),
+      today: today,
       vibrationService: widget.vibrationService,
     );
     if (applied && mounted) await _load();
   }
 
-  /// Archives a plan straight away — it is fully reversible, so an Undo
-  /// snackbar stands in for a confirmation step.
-  Future<void> _archivePlan(ActivePersonalReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    try {
-      await widget.readingPlanService.setPlanArchived(uid, row.plan.id, true);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Archived "${row.plan.title}"'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () => _restorePlan(row),
-          ),
+  /// Confirms deleting a personal plan.
+  Future<void> _confirmDeletePersonalPlan(ActivePersonalReading row) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierColor: AppColors.of(context).scrim,
+      builder: (context) => AlertDialog(
+        title: Text('Delete “${row.plan.title}”?'),
+        content: const Text(
+          'This removes the plan from your reading list. Chapters you '
+          'already read stay in your history.',
         ),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Failed to archive "${row.plan.title}". Please try again.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
-        );
-      }
-    }
-  }
-
-  void _setPersonalFinished(ActivePersonalReading row, bool finished) {
-    final i = _personal.indexWhere((r) => r.plan.id == row.plan.id);
-    if (i < 0) return;
-    setState(
-      () => _personal = [..._personal]..[i] = row.withFinished(finished),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: AppButtonStyles.destructiveText(context),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
-  }
-
-  void _setGroupFinished(ActiveGroupReading row, bool finished) {
-    final i = _groups.indexWhere((r) => r.group.id == row.group.id);
-    if (i < 0) return;
-    setState(() => _groups = [..._groups]..[i] = row.withFinished(finished));
-  }
-
-  /// Finishes an ended plan straight away (ADR-0010) — it is fully
-  /// reversible, so an Undo snackbar stands in for a confirmation step. The
-  /// plan moves to Finished at once and rolls back if the write fails.
-  Future<void> _finishPlan(ActivePersonalReading row) async {
+    if (confirm != true || !mounted) return;
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
-    _setPersonalFinished(row, true);
     try {
-      await widget.readingPlanService.finishPlan(uid, row.plan.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Finished "${row.plan.title}"'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () => _unfinishPlan(row),
-          ),
+      await widget.readingPlanService.leavePlan(uid, row.plan.id);
+      if (mounted) await _load();
+    } catch (e, st) {
+      ErrorLogger.log(e, st);
+      if (mounted) {
+        _showSnack('Failed to delete "${row.plan.title}". Please try again.');
+      }
+    }
+  }
+
+  /// Confirms deleting (for owner) or leaving (for member) a shared group plan.
+  Future<void> _confirmRemoveGroup(ActiveGroupReading row) async {
+    final owner = _isOwner(row);
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierColor: AppColors.of(context).scrim,
+      builder: (context) => AlertDialog(
+        title: Text(owner
+            ? 'Delete “${row.group.name}”?'
+            : 'Leave “${row.group.name}”?'),
+        content: Text(
+          owner
+              ? 'The plan ends for everyone and is removed from their reading list. '
+                  'Chapters already read stay in everyone’s reading history.'
+              : 'The plan carries on for everyone else.',
         ),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        _setPersonalFinished(row, false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to finish "${row.plan.title}". Please try again.',
-            ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
           ),
-        );
-      }
-    }
-  }
-
-  /// Restores a finished plan to where it was — ended, same readings marked.
-  Future<void> _unfinishPlan(ActivePersonalReading row) async {
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: AppButtonStyles.destructiveText(context),
+            child: Text(owner ? 'Delete' : 'Leave'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
     final uid = widget.auth.currentUser?.uid;
     if (uid == null) return;
     widget.vibrationService.lightImpact();
-    _setPersonalFinished(row, false);
     try {
-      await widget.readingPlanService.unfinishPlan(uid, row.plan.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('"${row.plan.title}" restored')));
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        _setPersonalFinished(row, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to restore "${row.plan.title}". Please try again.',
-            ),
-          ),
+      if (owner) {
+        await widget.groupService.deleteGroup(
+          groupId: row.group.id,
+          ownerUid: uid,
+        );
+      } else {
+        await widget.groupService.leaveGroup(
+          groupId: row.group.id,
+          uid: uid,
         );
       }
-    }
-  }
-
-  /// Finishes the reader's own participation in an ended Shared plan
-  /// (ADR-0010). The Group schedule and the other members carry on.
-  Future<void> _finishGroup(ActiveGroupReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    _setGroupFinished(row, true);
-    try {
-      await widget.groupService.finishMemberParticipation(
-        groupId: row.group.id,
-        uid: uid,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Finished "${row.group.name}"'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () => _unfinishGroup(row),
-          ),
-        ),
-      );
-      await _load();
+      if (mounted) await _load();
     } catch (e, st) {
       ErrorLogger.log(e, st);
       if (mounted) {
-        _setGroupFinished(row, false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to finish "${row.group.name}". Please try again.',
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Restores a finished Shared plan — it returns with the Group's current
-  /// dates, which may have moved since the reader finished.
-  Future<void> _unfinishGroup(ActiveGroupReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    _setGroupFinished(row, false);
-    try {
-      await widget.groupService.unfinishMemberParticipation(
-        groupId: row.group.id,
-        uid: uid,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('"${row.group.name}" restored')));
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        _setGroupFinished(row, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to restore "${row.group.name}". Please try again.',
-            ),
-          ),
-        );
+        _showSnack(
+            'Failed to ${owner ? 'delete' : 'leave'} "${row.group.name}". Please try again.');
       }
     }
   }
@@ -515,239 +367,10 @@ class PlansHubState extends State<PlansHub> {
   bool _isOwner(ActiveGroupReading row) =>
       widget.auth.currentUser?.uid == row.group.ownerUid;
 
-  void _setGroupShown(ActiveGroupReading row, bool shown) {
-    final rest = _groups.where((r) => r.group.id != row.group.id).toList();
-    setState(() => _groups = shown ? [...rest, row] : rest);
-  }
-
-  void _showSnack(String message, {VoidCallback? onUndo}) {
+  void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        action: onUndo == null
-            ? null
-            : SnackBarAction(label: 'Undo', onPressed: onUndo),
-      ),
-    );
-  }
-
-  /// Archives a Shared plan straight away (#776) — the owner shelves it for
-  /// every member, a member shelves only their own participation. Fully
-  /// reversible, so an Undo snackbar stands in for a confirmation step.
-  Future<void> _archiveGroup(ActiveGroupReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    final owner = _isOwner(row);
-    widget.vibrationService.lightImpact();
-    _setGroupShown(row, false);
-    try {
-      if (owner) {
-        await widget.groupService.archiveGroup(
-          groupId: row.group.id,
-          ownerUid: uid,
-        );
-      } else {
-        await widget.groupService.archiveMemberParticipation(
-          groupId: row.group.id,
-          uid: uid,
-        );
-      }
-      if (!mounted) return;
-      _showSnack(
-        'Archived "${row.group.name}"',
-        onUndo: () => _unarchiveGroup(row, owner: owner),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        _setGroupShown(row, true);
-        _showSnack('Failed to archive "${row.group.name}". Please try again.');
-      }
-    }
-  }
-
-  Future<void> _unarchiveGroup(
-    ActiveGroupReading row, {
-    required bool owner,
-  }) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    _setGroupShown(row, true);
-    try {
-      if (owner) {
-        await widget.groupService.unarchiveGroup(
-          groupId: row.group.id,
-          ownerUid: uid,
-        );
-      } else {
-        await widget.groupService.unarchiveMemberParticipation(
-          groupId: row.group.id,
-          uid: uid,
-        );
-      }
-      if (!mounted) return;
-      _showSnack('"${row.group.name}" restored');
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        _setGroupShown(row, false);
-        _showSnack('Failed to restore "${row.group.name}". Please try again.');
-      }
-    }
-  }
-
-  /// The menu's destructive item: the owner deletes the plan for everyone,
-  /// a member leaves it — each confirmed on a sheet that offers archiving
-  /// instead.
-  Future<void> _confirmRemoveGroup(ActiveGroupReading row) async {
-    final owner = _isOwner(row);
-    final choice = await DeletePlanSheet.show(
-      context,
-      planName: row.group.name,
-      isOwner: owner,
-      readerCount: row.group.memberCount,
-    );
-    if (!mounted) return;
-    switch (choice) {
-      case PlanRemovalChoice.remove:
-        await (owner ? _deleteGroup(row) : _leaveGroup(row));
-      case PlanRemovalChoice.archive:
-        await _archiveGroup(row);
-      case null:
-        break;
-    }
-  }
-
-  /// Owner action (#776): soft-deletes the plan — 30 days in Recently
-  /// Deleted, restorable, then purged. The card leaves Path at once and
-  /// returns if the write fails.
-  Future<void> _deleteGroup(ActiveGroupReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    _setGroupShown(row, false);
-    try {
-      await widget.groupService.softDeleteGroup(
-        groupId: row.group.id,
-        ownerUid: uid,
-      );
-      if (!mounted) return;
-      _showSnack(
-        'Moved to Recently Deleted',
-        onUndo: () => _restoreDeletedGroup(row),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        _setGroupShown(row, true);
-        _showSnack('Couldn’t delete “${row.group.name}”. Please try again.');
-      }
-    }
-  }
-
-  Future<void> _restoreDeletedGroup(ActiveGroupReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    _setGroupShown(row, true);
-    try {
-      await widget.groupService.restoreGroup(
-        groupId: row.group.id,
-        ownerUid: uid,
-      );
-      if (!mounted) return;
-      _showSnack('"${row.group.name}" restored');
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        _setGroupShown(row, false);
-        _showSnack('Failed to restore "${row.group.name}". Please try again.');
-      }
-    }
-  }
-
-  /// Member action (#776): leaves the plan; it carries on for everyone else.
-  Future<void> _leaveGroup(ActiveGroupReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    _setGroupShown(row, false);
-    try {
-      await widget.groupService.leaveGroup(groupId: row.group.id, uid: uid);
-      if (!mounted) return;
-      _showSnack('You left “${row.group.name}”');
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        _setGroupShown(row, true);
-        _showSnack('Couldn’t leave “${row.group.name}”. Please try again.');
-      }
-    }
-  }
-
-  /// Restores a left plan to active — it reappears in "On your own".
-  Future<void> _restorePlan(ActivePersonalReading row) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    widget.vibrationService.lightImpact();
-    try {
-      await widget.readingPlanService.setPlanArchived(uid, row.plan.id, false);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${row.plan.title}" restored to active')),
-      );
-      await _load();
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Failed to restore "${row.plan.title}". Please try again.'),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Opens the Archive (#776), reloading on return so the counts and any
-  /// unarchived plans show up straight away.
-  Future<void> _openArchive() async {
-    widget.vibrationService.lightImpact();
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ArchivedPage(
-          auth: widget.auth,
-          groupService: widget.groupService,
-          readingPlanService: widget.readingPlanService,
-          aggregator: _aggregator,
-          vibrationService: widget.vibrationService,
-          dateProvider: widget.dateProvider,
-        ),
-      ),
-    );
-    if (mounted) await _load();
-  }
-
-  /// Opens the Recently Deleted hub (#776).
-  void _openTrash() {
-    widget.vibrationService.lightImpact();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => RecentlyDeletedPage(
-          firestore: widget.firestore,
-          auth: widget.auth,
-          groupService: widget.groupService,
-          readingPlanService: widget.readingPlanService,
-          vibrationService: widget.vibrationService,
-          dateProvider: widget.dateProvider,
-        ),
       ),
     );
   }
@@ -824,26 +447,13 @@ class PlansHubState extends State<PlansHub> {
 
   @override
   Widget build(BuildContext context) {
-    // Finished lists both fully-read plans and ones the reader Finished
-    // early (ADR-0010); `state` alone no longer says which.
-    bool isDone(PlanLifecycle state, bool finished) =>
-        state == PlanLifecycle.complete || finished;
     final personalActive =
-        _personal.where((r) => !isDone(r.state, r.finished)).toList();
-    final personalDone =
-        _personal.where((r) => isDone(r.state, r.finished)).toList();
+        _personal.where((r) => r.state != PlanLifecycle.complete).toList();
     final groupActive =
-        _groups.where((r) => !isDone(r.state, r.finished)).toList();
-    final groupDone =
-        _groups.where((r) => isDone(r.state, r.finished)).toList();
+        _groups.where((r) => r.state != PlanLifecycle.complete).toList();
     final totalActive = personalActive.length + groupActive.length;
-    final hasFinished = personalDone.isNotEmpty || groupDone.isNotEmpty;
-    final nothing = totalActive == 0 &&
-        !hasFinished &&
-        _archived.isEmpty &&
-        _archivedGroups.isEmpty;
 
-    if (!_loading && nothing) return _emptyState(context);
+    if (!_loading && totalActive == 0) return _emptyState(context);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -869,14 +479,10 @@ class PlansHubState extends State<PlansHub> {
                   _sectionHeading(context, title: 'Together'),
                   for (final row in groupActive) _groupCard(context, row),
                 ],
-                if (hasFinished)
-                  _finishedSection(context, personalDone, groupDone),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.gap20),
-          _shelfCard(context),
-          const SizedBox(height: AppSpacing.gap12),
         ],
       ),
     );
@@ -953,18 +559,12 @@ class PlansHubState extends State<PlansHub> {
                     () => _adjustPersonalPace(row),
                   ),
                   (Icons.edit_outlined, 'Edit plan', () => _editPlan(row)),
-                  if (row.state == PlanLifecycle.wrapup)
-                    (
-                      Icons.task_alt_outlined,
-                      'Finish plan',
-                      () => _finishPlan(row),
-                    ),
-                  (
-                    Icons.archive_outlined,
-                    'Archive plan',
-                    () => _archivePlan(row),
-                  ),
                 ],
+                destructive: (
+                  Icons.delete_outline,
+                  'Delete plan',
+                  () => _confirmDeletePersonalPlan(row),
+                ),
               ),
             ],
           ),
@@ -1013,8 +613,7 @@ class PlansHubState extends State<PlansHub> {
           const SizedBox(height: AppSpacing.gap12),
           CatchUpStatusRow(
             status: row.status,
-            onTrackLabel:
-                row.ownPace ? "You're on track" : 'In step with your group',
+            onTrackLabel: 'In step with your group',
             onTap: () => _reviewGroup(row),
           ),
           const SizedBox(height: AppSpacing.gap12),
@@ -1040,26 +639,16 @@ class PlansHubState extends State<PlansHub> {
               _moreMenu(
                 context,
                 items: [
-                  (
-                    Icons.speed_outlined,
-                    'Adjust pace',
-                    () => _adjustSharedPace(row),
-                  ),
-                  if (row.state == PlanLifecycle.wrapup)
+                  if (_isOwner(row))
                     (
-                      Icons.task_alt_outlined,
-                      'Finish plan',
-                      () => _finishGroup(row),
+                      Icons.speed_outlined,
+                      'Adjust pace',
+                      () => _adjustSharedPace(row),
                     ),
                   (
                     Icons.settings_outlined,
                     'Members and invites',
                     () => _manageGroup(row),
-                  ),
-                  (
-                    Icons.archive_outlined,
-                    'Archive',
-                    () => _archiveGroup(row),
                   ),
                 ],
                 destructive: (
@@ -1183,134 +772,6 @@ class PlansHubState extends State<PlansHub> {
     );
   }
 
-  Widget _finishedSection(
-    BuildContext context,
-    List<ActivePersonalReading> personalDone,
-    List<ActiveGroupReading> groupDone,
-  ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 44,
-          margin: const EdgeInsets.only(top: AppSpacing.gap16),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Finished',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Text(
-                'done · progress kept',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // A fully-read plan keeps its look; one the reader Finished early
-        // says how much was read and can be restored (ADR-0010).
-        for (final row in personalDone)
-          _finishedRow(
-            context,
-            icon: Icons.check_circle,
-            title: row.plan.title,
-            subtitle: row.finished && row.state != PlanLifecycle.complete
-                ? 'Finished · ${row.status.doneCount} of ${row.status.total} read'
-                : 'All ${row.status.total} readings complete',
-            onReview: () => _continuePlan(row),
-            onRestore: row.finished ? () => _unfinishPlan(row) : null,
-          ),
-        for (final row in groupDone)
-          _finishedRow(
-            context,
-            icon: Icons.group,
-            title: row.group.name,
-            subtitle: row.finished && row.state != PlanLifecycle.complete
-                ? 'Finished · ${row.status.doneCount} of ${row.status.total} read'
-                : 'Finished together · All ${row.status.total} readings complete',
-            onReview: () => _reviewGroup(row),
-            onRestore: row.finished ? () => _unfinishGroup(row) : null,
-          ),
-      ],
-    );
-  }
-
-  Widget _finishedRow(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onReview,
-    VoidCallback? onRestore,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.gap12),
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppSpacing.rInset),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.of(context).primarySoft,
-              borderRadius: BorderRadius.circular(AppSpacing.rChip),
-            ),
-            child: Icon(icon, size: 20, color: colorScheme.primary),
-          ),
-          const SizedBox(width: AppSpacing.gap12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: AppSpacing.gap2),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(onPressed: onReview, child: const Text('Review')),
-          if (onRestore != null)
-            IconButton(
-              onPressed: onRestore,
-              icon: const Icon(Icons.restore),
-              tooltip: 'Restore plan',
-              color: colorScheme.primary,
-            ),
-        ],
-      ),
-    );
-  }
-
   Widget _enrollButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -1319,115 +780,6 @@ class PlansHubState extends State<PlansHub> {
         onPressed: _enroll,
         icon: const Icon(Icons.add, size: 20),
         label: const Text('Enroll in a new plan'),
-      ),
-    );
-  }
-
-  /// The foot of Path (#776): Archived and Recently Deleted as two rows of
-  /// one card, each opening its own page. The Archived row hides while
-  /// nothing is shelved; Recently Deleted always shows.
-  Widget _shelfCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final archivedCount = _archived.length + _archivedGroups.length;
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppSpacing.rInset),
-        border: Border.all(color: AppColors.of(context).border),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Material(
-        type: MaterialType.transparency,
-        child: Column(
-          children: [
-            if (archivedCount > 0) ...[
-              _shelfRow(
-                context,
-                icon: Icons.archive_outlined,
-                title: 'Archived',
-                subtitle: 'Shelved · progress kept',
-                count: archivedCount,
-                onTap: _openArchive,
-              ),
-              Divider(
-                height: 1,
-                indent: AppSpacing.gap16 + 38 + AppSpacing.gap12,
-                color: AppColors.of(context).border,
-              ),
-            ],
-            _shelfRow(
-              context,
-              icon: Icons.delete_outline,
-              title: 'Recently Deleted',
-              subtitle: 'Kept for 30 days',
-              count: _trashedCount,
-              onTap: _openTrash,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _shelfRow(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required int count,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.gap16, vertical: AppSpacing.gap12),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(AppSpacing.rChip),
-              ),
-              child: Icon(
-                icon,
-                size: AppSpacing.iconMd,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.gap12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleSmall),
-                  const SizedBox(height: AppSpacing.gap2),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (count > 0)
-              Text(
-                '$count',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            const SizedBox(width: AppSpacing.gap4),
-            Icon(Icons.chevron_right, color: colorScheme.outline),
-          ],
-        ),
       ),
     );
   }
@@ -1464,8 +816,6 @@ class PlansHubState extends State<PlansHub> {
           ),
           const SizedBox(height: AppSpacing.gap24),
           _enrollButton(context),
-          const SizedBox(height: AppSpacing.gap24),
-          _shelfCard(context),
         ],
       ),
     );

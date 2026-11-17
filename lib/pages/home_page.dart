@@ -1140,11 +1140,8 @@ class _HomePageState extends State<HomePage>
           const SizedBox(height: AppSpacing.gap12),
           CatchUpStatusRow(
             status: primary.status,
-            // A reader on their own pace overlay is on track with their own
-            // dates, not in step with the Group schedule (ADR-0007).
-            onTrackLabel: primary.isGroup && !primary.ownPace
-                ? 'In step with your group'
-                : "You're on track",
+            onTrackLabel:
+                primary.isGroup ? 'In step with your group' : "You're on track",
             onTap: () => _openPrimarySchedule(primary),
           ),
         ],
@@ -1554,32 +1551,29 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.gap8),
-              Expanded(
-                child: SizedBox(
-                  height: 48,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _adjustPace(item),
-                    icon: const Icon(Icons.speed_outlined,
-                        size: AppSpacing.iconSm),
-                    label: const Text(
-                      'Adjust pace',
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
+              if (!item.isGroup ||
+                  (item.group != null &&
+                      item.group!.ownerUid ==
+                          widget.auth.currentUser?.uid)) ...[
+                const SizedBox(width: AppSpacing.gap8),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _adjustPace(item),
+                      icon: const Icon(Icons.speed_outlined,
+                          size: AppSpacing.iconSm),
+                      label: const Text(
+                        'Adjust pace',
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ),
-          const SizedBox(height: AppSpacing.gap4),
-          Center(
-            child: TextButton(
-              onPressed: () => _finishReading(item),
-              style: AppButtonStyles.mutedText(context),
-              child: const Text('Finish plan'),
-            ),
           ),
         ],
       ),
@@ -1708,16 +1702,19 @@ class _HomePageState extends State<HomePage>
   }
 
   /// Adjust pace on the Plan ended card — the same flow as Path's plan menu.
-  /// A personal plan's schedule is rewritten in place; a Shared plan only
-  /// gets the reader's own pace overlay (ADR-0007). A schedule rewrite
-  /// doesn't touch `plan_progress`, so the plans are reloaded afterwards.
+  /// A personal plan's schedule is rewritten in place; a Group plan can be
+  /// rescheduled by its owner. A schedule rewrite doesn't touch `plan_progress`,
+  /// so the plans are reloaded afterwards.
   Future<void> _adjustPace(ActiveReadingItem item) async {
     final uid = widget.auth.currentUser?.uid;
     final group = item.group;
     if (uid != null && group != null) {
+      if (group.ownerUid != uid) return;
       final applied = await adjustSharedPace(
         context,
         firestore: widget.firestore,
+        groupService: widget.groupService,
+        groupName: group.name,
         uid: uid,
         groupId: group.id,
         schedule: item.schedule,
@@ -1742,77 +1739,6 @@ class _HomePageState extends State<HomePage>
       vibrationService: widget.vibrationService,
     );
     if (applied && !_disposed && mounted) await _loadActiveReadings();
-  }
-
-  /// Finishes the ended plan on the card (ADR-0010) — personal, optimistic
-  /// and undoable. The plan leaves Home at once and returns if the write
-  /// fails; unread readings stay unmarked.
-  Future<void> _finishReading(ActiveReadingItem item) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    unawaited(widget.vibrationService.lightImpact());
-    final group = item.group;
-    final plan = item.plan;
-    final previousSnapshot = _readingsSnapshot;
-    setState(() {
-      _readingsSnapshot = _readingsSnapshot.withoutReading(item.pinKey);
-    });
-    try {
-      if (group != null) {
-        await widget.groupService.finishMemberParticipation(
-          groupId: group.id,
-          uid: uid,
-        );
-      } else {
-        await widget.readingPlanService.finishPlan(uid, plan!.id);
-      }
-      if (_disposed || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Finished "${item.title}"'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () => _unfinishReading(item),
-          ),
-        ),
-      );
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (_disposed || !mounted) return;
-      setState(() {
-        _readingsSnapshot = previousSnapshot;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to finish "${item.title}". Please try again.'),
-        ),
-      );
-    }
-  }
-
-  /// Undoes [_finishReading]; the live plan/group streams bring it back.
-  Future<void> _unfinishReading(ActiveReadingItem item) async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    try {
-      final group = item.group;
-      if (group != null) {
-        await widget.groupService.unfinishMemberParticipation(
-          groupId: group.id,
-          uid: uid,
-        );
-      } else {
-        await widget.readingPlanService.unfinishPlan(uid, item.plan!.id);
-      }
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (_disposed || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to restore "${item.title}". Please try again.'),
-        ),
-      );
-    }
   }
 
   /// Opens the schedule/detail for any reading item (personal plan or group).

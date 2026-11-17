@@ -49,9 +49,9 @@ class ReadThroughCard extends StatelessWidget {
           stream: laps.watch(user.uid),
           builder: (context, lapSnapshot) {
             final counts = countsSnapshot.data ?? ReadThroughCounts.empty;
-            final loading = countsSnapshot.connectionState ==
-                    ConnectionState.waiting ||
-                lapSnapshot.connectionState == ConnectionState.waiting;
+            final loading =
+                countsSnapshot.connectionState == ConnectionState.waiting ||
+                    lapSnapshot.connectionState == ConnectionState.waiting;
             return SkeletonLoader(
               loading: loading,
               minTime: const Duration(milliseconds: 1000),

@@ -840,7 +840,8 @@ class SettingsPageState extends State<SettingsPage> {
                     ),
                     title: const Text('Amens'),
                     value: _notifPrefs[NotificationType.amen],
-                    onChanged: (v) => _toggleNotifPref(NotificationType.amen, v),
+                    onChanged: (v) =>
+                        _toggleNotifPref(NotificationType.amen, v),
                   ),
                   Divider(
                     height: 1,
@@ -854,7 +855,8 @@ class SettingsPageState extends State<SettingsPage> {
                     ),
                     title: const Text('Nudges'),
                     value: _notifPrefs[NotificationType.nudge],
-                    onChanged: (v) => _toggleNotifPref(NotificationType.nudge, v),
+                    onChanged: (v) =>
+                        _toggleNotifPref(NotificationType.nudge, v),
                   ),
                 ],
               ),

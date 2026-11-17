@@ -11,7 +11,6 @@ import '../models/reading_plan.dart';
 import '../models/reading_plan_progress.dart';
 import '../models/schedule_mode.dart';
 import '../services/group_service.dart';
-import '../services/plan_completion_coordinator.dart';
 import '../services/plan_generator.dart';
 import '../services/reading_plan_service.dart';
 import '../services/reference_parser.dart';
@@ -22,7 +21,6 @@ import '../widgets/app_bottom_sheet.dart';
 import '../widgets/book_picker_sheet.dart';
 import '../widgets/common_styles.dart';
 import '../widgets/plan_day_list.dart';
-import '../widgets/start_chapter_sheet.dart';
 import '../widgets/sub_header.dart';
 import '../services/nudge_service.dart';
 import 'group_members_page.dart';
@@ -33,7 +31,7 @@ import 'share_code_page.dart';
 /// (#809), not as a fork before it begins.
 enum PlanAudience { solo, group }
 
-enum _PlanGoalMethod { endDate, versesPerDay, chaptersPerDay }
+enum _PlanGoalMethod { endDate, chaptersPerDay }
 
 class CreatePlanPage extends StatefulWidget {
   final FirebaseFirestore firestore;
@@ -89,21 +87,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   }; // 1 = Mon, 6 = Sat (no Sun default)
   final Set<String> _selectedBooks = Set.from(ReferenceParser.allBooks);
   int? _customChaptersPerDay;
-  int? _firstDayChapters;
-  int? _customVersesPerDay;
   _PlanGoalMethod _goalMethod = _PlanGoalMethod.endDate;
   late PlanAudience _audience = widget.initialAudience;
   bool _isCreating = false;
   bool _isCustomPlanExpanded = false;
-
-  /// The chapter day one begins at, as picked; null for the very beginning.
-  /// Read through [_beginAt], which drops a pick the plan no longer reads.
-  String? _beginAtRef;
-
-  /// Whether the chapters before [_beginAtRef] count as read — the reader's
-  /// Starting point (ADR-0005) when migrating a plan from elsewhere — rather
-  /// than being left out. Read through [_marksEarlierRead].
-  bool _markEarlierRead = false;
 
   bool get _isEditing => widget.editingPlan != null;
 
@@ -133,9 +120,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         orElse: () => _goalMethod,
       );
       _customChaptersPerDay = (config['customChaptersPerDay'] as num?)?.toInt();
-      _firstDayChapters = (config['firstDayChapters'] as num?)?.toInt();
-      _customVersesPerDay = (config['customVersesPerDay'] as num?)?.toInt();
-      _beginAtRef = config['startRef'] as String?;
       final days = (config['readingDays'] as List?)?.cast<num>();
       if (days != null && days.isNotEmpty) {
         _readingDays
@@ -174,11 +158,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         'customChaptersPerDay': _goalMethod == _PlanGoalMethod.chaptersPerDay
             ? _customChaptersPerDay
             : null,
-        'firstDayChapters': _firstDayCount,
-        'customVersesPerDay': _goalMethod == _PlanGoalMethod.versesPerDay
-            ? _customVersesPerDay
-            : null,
-        'startRef': _scheduleStartRef,
         'readingDays': _readingDays.toList()..sort(),
         'selectedBooks':
             _selectedBooks.length == ReferenceParser.allBooks.length
@@ -202,56 +181,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     }
   }
 
-  /// Whether "Begins at" applies. The solo Balanced and 3-in-Old-1-in-New
-  /// schedules interleave both Testaments, so they have no single chapter to
-  /// begin at; as a Shared plan they read in order, and do.
-  bool get _supportsBeginAt =>
-      _audience == PlanAudience.group ||
-      (_selectedType != PlanType.portions &&
-          _selectedType != PlanType.threeOldOneNew);
-
-  /// The chapter day one begins at, or null for the very beginning — also
-  /// when the picked chapter is not in what the plan now reads.
-  String? get _beginAt {
-    final ref = _beginAtRef;
-    if (ref == null || !_supportsBeginAt) return null;
-    final books = _plannedChapters();
-    final book = ReferenceParser.parseBook(ref);
-    if (book == null || !books.contains(book)) return null;
-    return ref == '${books.first} 1' ? null : ref;
-  }
-
-  /// Whether the chapters before [_beginAt] count as read instead of being
-  /// left out. Shared plans always leave them out.
-  bool get _marksEarlierRead =>
-      _markEarlierRead && _audience == PlanAudience.solo && _beginAt != null;
-
-  /// The chapter the generated schedule starts at: [_beginAt] when the
-  /// chapters before it are left out.
-  String? get _scheduleStartRef => _marksEarlierRead ? null : _beginAt;
-
-  /// Whether day one can be set apart from the daily pace: only a
-  /// chapters-a-day pace has a fixed daily count, and with a Starting point
-  /// the plan's own day one is already read.
-  bool get _showsFirstDay =>
-      _goalMethod == _PlanGoalMethod.chaptersPerDay &&
-      (_customChaptersPerDay ?? 1) > 1 &&
-      !_marksEarlierRead;
-
-  /// Chapters on day one when set apart from the daily pace, else null.
-  int? get _firstDayCount => _showsFirstDay ? _firstDayChapters : null;
-
-  /// How many chapters of [books] come before [ref].
-  static int _chaptersBefore(List<String> books, String ref) {
-    final parsed = ReferenceParser.parseChapterRef(ref);
-    var total = 0;
-    for (final book in books) {
-      if (book == parsed?.book) return total + parsed!.chapter - 1;
-      total += ReferenceParser.chapterCount(book) ?? 0;
-    }
-    return 0;
-  }
-
   /// The group-shape draft equivalent of the current solo configuration, used
   /// when the reader chooses "With a group": the group's shared schedule is
   /// generated by [ScheduleGenerator] from a [GroupPlanDraft], so the solo
@@ -259,12 +188,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   GroupPlanDraft _buildGroupDraft() {
     final start = DateTime(_startDate.year, _startDate.month, _startDate.day);
     final books = _plannedChapters();
-    final startRef = _beginAt ?? (books.isEmpty ? '' : '${books.first} 1');
-    // A first-day length is the generator's override for day index 0.
-    final firstDay = _firstDayCount;
-    final dayOverrides = firstDay != null && firstDay < _customChaptersPerDay!
-        ? {0: firstDay.clamp(1, 12)}
-        : const <int, int>{};
+    final startRef = books.isEmpty ? '' : '${books.first} 1';
 
     const weekdaysAll = [1, 2, 3, 4, 5, 6, 7];
     final readingEveryDay = _readingDays.length == 7;
@@ -286,7 +210,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             ),
             weekdays: weekdaysAll,
             bookBoundary: false,
-            dayOverrides: dayOverrides,
+            dayOverrides: const <int, int>{},
           );
         }
         final spanDays = _endDate == null
@@ -310,7 +234,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           endDate: null,
           weekdays: _readingDays.toList()..sort(),
           bookBoundary: false,
-          dayOverrides: dayOverrides,
+          dayOverrides: const <int, int>{},
         );
       case _PlanGoalMethod.chaptersPerDay:
         return GroupPlanDraft(
@@ -322,21 +246,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           endDate: null,
           weekdays: _readingDays.toList()..sort(),
           bookBoundary: false,
-          dayOverrides: dayOverrides,
-        );
-      case _PlanGoalMethod.versesPerDay:
-        // ~26 verses per chapter, matching PlanGenerator's approximation.
-        final chapters = ((_customVersesPerDay ?? 52) / 26).ceil().clamp(1, 12);
-        return GroupPlanDraft(
-          books: books,
-          startRef: startRef,
-          mode: ScheduleMode.chaptersPerDay,
-          chaptersPerDay: chapters,
-          startDate: start,
-          endDate: null,
-          weekdays: _readingDays.toList()..sort(),
-          bookBoundary: false,
-          dayOverrides: dayOverrides,
+          dayOverrides: const <int, int>{},
         );
     }
   }
@@ -396,37 +306,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
 
   /// Asks where day one begins, reusing the shared plan's chapter picker. A
   /// solo plan may instead count the chapters before it as read (ADR-0005).
-  Future<void> _pickBeginAt() async {
-    final books = _plannedChapters();
-    if (books.isEmpty) return;
-    unawaited(widget.vibrationService.lightImpact());
-    final picked = await showStartChapterSheet(
-      context,
-      books: books,
-      currentRef: _beginAt ?? '${books.first} 1',
-      allowMarkAsRead: _audience == PlanAudience.solo,
-      markEarlierRead: _marksEarlierRead,
-      vibrationService: widget.vibrationService,
-    );
-    if (picked != null && mounted) {
-      setState(() {
-        _beginAtRef = picked.ref;
-        _markEarlierRead = picked.markEarlierRead;
-      });
-    }
-  }
-
-  /// Replaces the picked books. Dropping the book day one began in moves day
-  /// one back to the start of what is left.
+  /// Replaces the picked books.
   void _applyBooks(List<String> books) {
     _selectedBooks
       ..clear()
       ..addAll(books);
-    final ref = _beginAtRef;
-    if (ref != null && !books.contains(ReferenceParser.parseBook(ref))) {
-      _beginAtRef = null;
-      _markEarlierRead = false;
-    }
   }
 
   Future<void> _changeBooks() async {
@@ -476,34 +360,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       final plan = _buildPlan(id: '');
       final planId = await planService.saveCustomPlan(user.uid, plan);
 
-      // Auto-start the plan. With "I've read them" (a Starting point,
-      // ADR-0005) the day that begins at the chapter lands on today, the days
-      // before it are marked, and they are credited to coverage silently —
-      // never announced.
-      final readDays = _readDaysBefore(plan);
-      if (readDays > 0) {
-        // The last read day lands on yesterday, so the day the reader picks
-        // up at is today.
-        final now = DateTime.now();
-        final shifted = await planService.startPlanWithStartingPoint(
-          user.uid,
-          planId,
-          plan,
-          dayNumber: readDays,
-          today: DateTime(now.year, now.month, now.day - 1),
-        );
-        if (shifted != null) {
-          await PlanCompletionCoordinator(
-            firestore: widget.firestore,
-          ).creditPlanDaysSilently(
-            uid: user.uid,
-            planId: planId,
-            days: List<int>.generate(readDays, (i) => i + 1),
-          );
-        }
-      } else {
-        await planService.startPlan(user.uid, planId, startDate: _startDate);
-      }
+      // Auto-start the plan.
+      await planService.startPlan(user.uid, planId, startDate: _startDate);
 
       if (!mounted) return;
 
@@ -712,11 +570,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       customChaptersPerDay: _goalMethod == _PlanGoalMethod.chaptersPerDay
           ? _customChaptersPerDay
           : null,
-      firstDayChapters: _firstDayCount,
-      customVersesPerDay: _goalMethod == _PlanGoalMethod.versesPerDay
-          ? _customVersesPerDay
-          : null,
-      startRef: _scheduleStartRef,
     );
     return plan.copyWith(config: _buildConfig());
   }
@@ -754,39 +607,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         return 'Complete the New Testament.';
     }
   }
-
-  /// The plan day whose readings include [book] [chapter], or null when the
-  /// chapter is not scheduled in [plan].
-  int? _dayNumberForChapter(ReadingPlan plan, String book, int chapter) {
-    for (final day in plan.schedule) {
-      for (final ref in day.readings) {
-        final parsed = ReferenceParser.parseChapterRef(ref);
-        if (parsed != null &&
-            parsed.book == book &&
-            parsed.chapter == chapter) {
-          return day.day;
-        }
-      }
-    }
-    return null;
-  }
-
-  /// How many of [plan]'s days come before the one [_beginAt] falls in —
-  /// the days a Starting point marks as read. 0 unless the chapters before it
-  /// count as read, or when the chapter is not scheduled.
-  int _readDaysBefore(ReadingPlan plan) {
-    if (!_marksEarlierRead) return 0;
-    final parsed = ReferenceParser.parseChapterRef(_beginAt!);
-    final day = parsed == null
-        ? null
-        : _dayNumberForChapter(plan, parsed.book, parsed.chapter);
-    return day == null ? 0 : day - 1;
-  }
-
-  /// The date the reader's first unread day falls on: today with a Starting
-  /// point, else the start date.
-  DateTime _pickUpDate(int readDays) =>
-      readDays > 0 ? DateTime.now() : _startDate;
 
   final _months = [
     'Jan',
@@ -1227,12 +1047,7 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
       0,
       (acc, book) => acc + (ReferenceParser.chapterCount(book) ?? 0),
     );
-    final startRef = _scheduleStartRef;
-    final start =
-        startRef == null ? null : ReferenceParser.parseChapterRef(startRef);
-    final startIndex = start == null ? 0 : books.indexOf(start.book);
-    final scheduled =
-        total - (startRef == null ? 0 : _chaptersBefore(books, startRef));
+    final scheduled = total;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -1257,38 +1072,24 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             spacing: AppSpacing.gap6,
             runSpacing: AppSpacing.gap6,
             children: [
-              for (var i = 0; i < books.length; i++)
+              for (final book in books)
                 Container(
-                  key: Key('create_plan_book_chip_${books[i]}'),
+                  key: Key('create_plan_book_chip_$book'),
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.gap12,
                     vertical: AppSpacing.gap6,
                   ),
                   decoration: BoxDecoration(
-                    color: i < startIndex
-                        ? colorScheme.surfaceContainer
-                        : appColors.primarySoft,
+                    color: appColors.primarySoft,
                     borderRadius: BorderRadius.circular(AppSpacing.rChip),
                     border: Border.all(
-                      color: i < startIndex
-                          ? appColors.border
-                          : appColors.primaryLine,
+                      color: appColors.primaryLine,
                     ),
                   ),
-                  child: Text.rich(
-                    TextSpan(
-                      text: books[i],
-                      children: [
-                        if (i < startIndex)
-                          const TextSpan(text: ' · left out')
-                        else if (i == startIndex && (start?.chapter ?? 1) > 1)
-                          TextSpan(text: ' · from ${start!.chapter}'),
-                      ],
-                    ),
+                  child: Text(
+                    book,
                     style: theme.textTheme.labelMedium?.copyWith(
-                      color: i < startIndex
-                          ? colorScheme.outline
-                          : appColors.primaryPress,
+                      color: appColors.primaryPress,
                     ),
                   ),
                 ),
@@ -1313,7 +1114,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   Widget _buildPaceBy(BuildContext context) {
     final theme = Theme.of(context);
     final perDay = _customChaptersPerDay ?? 1;
-    final firstDay = _firstDayCount;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -1331,8 +1131,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
           _buildGoalOption(
             _PlanGoalMethod.chaptersPerDay,
             'Chapters a day',
-            subtitle:
-                firstDay != null && firstDay < perDay ? 'After day one' : null,
             stepper: _RoundStepper(
               value: '$perDay',
               decrementLabel: 'One chapter fewer',
@@ -1340,44 +1138,10 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
               decrementKey: const Key('create_plan_chapters_dec'),
               incrementKey: const Key('create_plan_chapters_inc'),
               onDecrement: perDay > 1
-                  ? () => setState(
-                        () {
-                          final next = perDay - 1;
-                          _customChaptersPerDay = next;
-                          if (_firstDayChapters != null &&
-                              _firstDayChapters! > next) {
-                            _firstDayChapters = next;
-                          }
-                        },
-                      )
+                  ? () => setState(() => _customChaptersPerDay = perDay - 1)
                   : null,
               onIncrement: perDay < _maxChaptersPerDay
                   ? () => setState(() => _customChaptersPerDay = perDay + 1)
-                  : null,
-              vibrationService: widget.vibrationService,
-            ),
-          ),
-          _buildGoalOption(
-            _PlanGoalMethod.versesPerDay,
-            'Verses a day',
-            stepper: _RoundStepper(
-              value: '${_customVersesPerDay ?? _verseStep}',
-              decrementLabel: '$_verseStep verses fewer',
-              incrementLabel: '$_verseStep verses more',
-              decrementKey: const Key('create_plan_verses_dec'),
-              incrementKey: const Key('create_plan_verses_inc'),
-              onDecrement: (_customVersesPerDay ?? _verseStep) > _verseStep
-                  ? () => setState(
-                        () => _customVersesPerDay =
-                            _customVersesPerDay! - _verseStep,
-                      )
-                  : null,
-              onIncrement: (_customVersesPerDay ?? _verseStep) <
-                      _maxVersesPerDay
-                  ? () => setState(
-                        () => _customVersesPerDay =
-                            (_customVersesPerDay ?? _verseStep) + _verseStep,
-                      )
                   : null,
               vibrationService: widget.vibrationService,
             ),
@@ -1388,57 +1152,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
   }
 
   static const _maxChaptersPerDay = 20;
-  static const _verseStep = 5;
-  static const _maxVersesPerDay = 200;
-
-  /// "Day one reads": the chapters on day one, set apart from the pace.
-  Widget _buildFirstDayRow(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final max = _customChaptersPerDay ?? 1;
-    final current = (_firstDayChapters ?? max).clamp(1, max);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.cardPadding,
-        vertical: AppSpacing.gap12,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Day one reads', style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.gap2),
-                Text(
-                  'Then $max a day',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _RoundStepper(
-            value: '$current',
-            valueKey: const Key('create_plan_first_day'),
-            decrementLabel: 'One chapter fewer on day one',
-            incrementLabel: 'One chapter more on day one',
-            decrementKey: const Key('create_plan_first_day_dec'),
-            incrementKey: const Key('create_plan_first_day_inc'),
-            onDecrement: current > 1
-                ? () => setState(() => _firstDayChapters = current - 1)
-                : null,
-            onIncrement: current < max
-                ? () => setState(() => _firstDayChapters = current + 1)
-                : null,
-            vibrationService: widget.vibrationService,
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildGoalOption(
     _PlanGoalMethod method,
@@ -1464,8 +1177,6 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
             // A daily amount starts from a sensible value instead of empty.
             if (method == _PlanGoalMethod.chaptersPerDay) {
               _customChaptersPerDay ??= 3;
-            } else if (method == _PlanGoalMethod.versesPerDay) {
-              _customVersesPerDay ??= 25;
             }
           });
         },
@@ -1682,13 +1393,11 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     );
   }
 
-  /// Start date, where day one begins, how much it reads, and a look at the
-  /// first few days. The date and the beginning are fixed while editing: the
-  /// schedule is anchored to the plan's existing progress, so it must not
-  /// drift out from under recorded readings.
+  /// Start date and a look at the first few days. The date is fixed while
+  /// editing: the schedule is anchored to the plan's existing progress, so it
+  /// must not drift out from under recorded readings.
   Widget _buildDayOneCard(BuildContext context) {
     final plan = _previewPlan();
-    final books = _plannedChapters();
 
     return _card(context, [
       _valueRow(
@@ -1698,55 +1407,16 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
         value: _startDateLabel,
         onTap: _isEditing ? null : () => _selectDate(context, true),
       ),
-      if (_supportsBeginAt && books.isNotEmpty) ...[
-        const Divider(height: 1),
-        _valueRow(
-          context,
-          key: const Key('create_plan_begins_at'),
-          label: 'Begins at',
-          value: _beginAt ?? '${books.first} 1',
-          subtitle: _beginAtSubtitle(books),
-          onTap: _isEditing ? null : _pickBeginAt,
-        ),
-      ],
-      if (_showsFirstDay) ...[
-        const Divider(height: 1),
-        _buildFirstDayRow(context),
-      ],
       if (plan != null) _buildFirstDays(context, plan),
     ]);
-  }
-
-  /// What [_beginAt] leaves out — "Isaiah 1–39 left out" — or with a
-  /// Starting point, what counts as read. Null at the very beginning.
-  String? _beginAtSubtitle(List<String> books) {
-    final ref = _beginAt;
-    final parsed = ref == null ? null : ReferenceParser.parseChapterRef(ref);
-    if (parsed == null) return null;
-    // The last chapter before day one: earlier in its book, or the end of the
-    // book before it.
-    final lastBook = parsed.chapter > 1
-        ? parsed.book
-        : books[books.indexOf(parsed.book) - 1];
-    final lastChapter = parsed.chapter > 1
-        ? parsed.chapter - 1
-        : ReferenceParser.chapterCount(lastBook) ?? 1;
-    final first = books.first;
-    final range = first != lastBook
-        ? '$first 1–$lastBook $lastChapter'
-        : lastChapter == 1
-            ? '$first 1'
-            : '$first 1–$lastChapter';
-    return _marksEarlierRead ? '$range count as read' : '$range left out';
   }
 
   /// The first three days the reader will read, inset in the Day one card.
   Widget _buildFirstDays(BuildContext context, ReadingPlan plan) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final readDays = _readDaysBefore(plan);
-    final days = plan.schedule.skip(readDays).take(3).toList();
-    final dates = _scheduleDates(days.length, from: _pickUpDate(readDays));
+    final days = plan.schedule.take(3).toList();
+    final dates = _scheduleDates(days.length, from: _startDate);
 
     return Container(
       key: const Key('create_plan_first_days'),
@@ -1871,9 +1541,8 @@ class _CreatePlanPageState extends State<CreatePlanPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final readDays = _readDaysBefore(plan);
-    final days = plan.schedule.length - readDays;
-    final dates = _scheduleDates(days, from: _pickUpDate(readDays));
+    final days = plan.schedule.length;
+    final dates = _scheduleDates(days, from: _startDate);
 
     return Semantics(
       button: true,

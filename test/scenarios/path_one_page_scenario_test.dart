@@ -84,7 +84,8 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 1200));
   });
 
-  testWidgets('streak and month figures head the consistency card', (tester) async {
+  testWidgets('streak and month figures head the consistency card',
+      (tester) async {
     await firestore
         .collection('users')
         .doc('u1')
@@ -93,7 +94,10 @@ void main() {
         .set({'streak': 6});
     final now = DateTime.now();
     final monthStr = now.month.toString().padLeft(2, '0');
-    for (final key in ['${now.year}-$monthStr-01', '${now.year}-$monthStr-02']) {
+    for (final key in [
+      '${now.year}-$monthStr-01',
+      '${now.year}-$monthStr-02'
+    ]) {
       await firestore
           .collection('users')
           .doc('u1')

@@ -150,28 +150,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(previewText(tester), startsWith('23 reading days'));
 
-    // Beginning mid-book trims the books it reads.
-    await tester.tap(find.byKey(const Key('create_plan_begins_at')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Matthew').last);
-    await tester.tap(find.text('5').last);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Begin at Matthew 5'));
-    await tester.pumpAndSettle();
-    expect(find.text('4 books · 85 chapters scheduled'), findsOneWidget);
-    expect(find.text('Matthew 1–4 left out'), findsOneWidget);
-    expect(find.text('Matthew · from 5', findRichText: true), findsOneWidget);
-
-    // Removing that book moves day one back to the start of what is left.
-    await tester.tap(find.text('Change books'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(BookPickerKeys.tile('Matthew')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(BookPickerKeys.done));
-    await tester.pumpAndSettle();
-    expect(find.text('3 books · 61 chapters scheduled'), findsOneWidget);
-    expect(find.text('Mark 1'), findsOneWidget);
-
     // Leaving Choose books goes back to the whole Bible paced by length.
     await tester.tap(find.text('In order'));
     await tester.pumpAndSettle();

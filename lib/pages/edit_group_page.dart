@@ -11,11 +11,10 @@ import '../models/group_schedule.dart';
 import '../services/catch_up_engine.dart';
 import '../services/error_logger.dart';
 import '../services/group_service.dart';
-import '../services/plan_pace_service.dart';
 import '../services/vibration_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/sub_header.dart';
-import 'reschedule_page.dart';
+import 'adjust_pace_page.dart';
 
 /// Group settings: name, visibility, Reschedule, and lifecycle actions.
 ///
@@ -155,74 +154,22 @@ class _EditGroupPageState extends State<EditGroupPage> {
     if (_isOwner == false) return;
     unawaited(widget.vibrationService.lightImpact());
     final today = widget.dateProvider?.call() ?? DateTime.now();
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => ReschedulePage(
-          group: widget.group,
-          groupService: widget.groupService,
-          paceService:
-              PlanPaceService(firestore: widget.groupService.firestore),
-          auth: widget.auth,
-          schedule: _schedule,
-          completedDateIds: _completedDateIds,
-          daysBehind: _daysBehind,
-          today: today,
-          vibrationService: widget.vibrationService,
-        ),
-      ),
+    await adjustSharedPace(
+      context,
+      firestore: widget.groupService.firestore,
+      groupService: widget.groupService,
+      uid: widget.auth.currentUser!.uid,
+      groupId: widget.group.id,
+      groupName: widget.group.name,
+      schedule: _schedule,
+      completedDateIds: _completedDateIds,
+      daysBehind: _daysBehind,
+      today: today,
+      vibrationService: widget.vibrationService,
     );
   }
 
-  /// Owner action (#776): archives the group - shelved for every member,
-  /// schedule and history intact, restorable from the hub's Archive rows.
-  Future<void> _archiveGroup() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      barrierColor: AppColors.of(context).scrim,
-      builder: (context) => AlertDialog(
-        title: const Text('Archive Group'),
-        content: const Text(
-          'The group is shelved for every member. Its schedule and history '
-          'stay intact, and you can unarchive it any time.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Archive'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        await widget.groupService.archiveGroup(
-          groupId: widget.group.id,
-          ownerUid: widget.auth.currentUser!.uid,
-        );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Group archived')),
-          );
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
-      } catch (e, st) {
-        ErrorLogger.log(e, st);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to archive group')),
-          );
-        }
-      }
-    }
-  }
-
-  /// Owner action (#776): soft-deletes the group - 30 days in the Recently
-  /// Deleted hub, restorable, then purged.
+  /// Owner action: deletes the group for all members.
   Future<void> _deleteGroup() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -230,8 +177,8 @@ class _EditGroupPageState extends State<EditGroupPage> {
       builder: (context) => AlertDialog(
         title: const Text('Delete Group'),
         content: const Text(
-          'The group moves to Recently Deleted for 30 days. Members lose '
-          'access until you restore it or the 30 days run out.',
+          'The group ends for every member and is removed. '
+          'Chapters already read stay in everyone’s reading history.',
         ),
         actions: [
           TextButton(
@@ -249,13 +196,13 @@ class _EditGroupPageState extends State<EditGroupPage> {
 
     if (confirm == true) {
       try {
-        await widget.groupService.softDeleteGroup(
+        await widget.groupService.deleteGroup(
           groupId: widget.group.id,
           ownerUid: widget.auth.currentUser!.uid,
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Group moved to Recently Deleted')),
+            const SnackBar(content: Text('Group deleted')),
           );
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
@@ -266,34 +213,6 @@ class _EditGroupPageState extends State<EditGroupPage> {
             const SnackBar(content: Text('Failed to delete group')),
           );
         }
-      }
-    }
-  }
-
-  /// Member action (#776): archives this member's participation only - the
-  /// group keeps running for everyone else.
-  Future<void> _archiveParticipation() async {
-    final uid = widget.auth.currentUser?.uid;
-    if (uid == null) return;
-    try {
-      await widget.groupService.archiveMemberParticipation(
-        groupId: widget.group.id,
-        uid: uid,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Participation archived - find it in your Archive'),
-          ),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    } catch (e, st) {
-      ErrorLogger.log(e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to archive participation')),
-        );
       }
     }
   }
@@ -399,26 +318,12 @@ class _EditGroupPageState extends State<EditGroupPage> {
                       if (_isOwner) ...[
                         _lifecycleButton(
                           context,
-                          icon: Icons.inventory_2,
-                          label: 'Archive Group',
-                          onPressed: _archiveGroup,
-                        ),
-                        const SizedBox(height: AppSpacing.gap12),
-                        _lifecycleButton(
-                          context,
                           icon: Icons.delete_outline,
                           label: 'Delete Group',
                           onPressed: _deleteGroup,
                           destructive: true,
                         ),
                       ] else ...[
-                        _lifecycleButton(
-                          context,
-                          icon: Icons.inventory_2,
-                          label: 'Archive Participation',
-                          onPressed: _archiveParticipation,
-                        ),
-                        const SizedBox(height: AppSpacing.gap12),
                         _lifecycleButton(
                           context,
                           icon: Icons.logout,

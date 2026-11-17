@@ -18,22 +18,11 @@ _Avoid_: Completed, logged, done for the day
 The full-screen "Did you read today?" moment that opens on launch when today is unmarked. Its sky shifts with the time of day (dawn, day, dusk, night).
 _Avoid_: Prompt, daily modal, nudge
 
-**Reflection**:
-A short optional note the reader writes about a day's reading, one per day, offered after checking in. Never required, never scored.
-_Avoid_: Journal entry, note, comment
-
 ### Progress
 
 **Streak**:
 Consecutive days a reader has shown up. Breaks on a missed day.
 _Avoid_: Chain, run
-
-**Days this season**:
-Currently the reader's all-time total of days shown up (`totalReadDays`), despite the wording. **Not** a streak, and not scoped to a Season — see the note below.
-_Avoid_: Using this interchangeably with Streak
-
-**Season**:
-A bounded period that owns Seasonal Challenges (`SeasonalChallenge.seasonId`). Unrelated to the all-time "days this season" figure on the Home consistency glimpse.
 
 **Behind**:
 Having one or more readings whose date has passed and that are still unmarked. Counted as `missedCount`, surfaced as "N readings behind".
@@ -50,99 +39,35 @@ _Avoid_: Caught up, current
 ### People and plans
 
 **Plan**:
-A dated sequence of readings, either solo ("On your own") or shared — a Shared
-plan is a Plan whose schedule a Group follows; nothing else differs. One list
-(the Path tab) owns the whole plan lifecycle: enroll, adjust pace, archive,
-restore, delete.
-_Avoid_: Group plan (a Group has a Shared plan; it is not a different kind of
-Plan), program, course, track
+A dated sequence of readings, either solo ("On your own") or shared — a Shared plan is a Plan whose schedule a Group follows; nothing else differs. One list (the Path tab) owns the plan lifecycle: enroll, adjust pace, and delete (or leave for group members).
+_Avoid_: Group plan (a Group has a Shared plan; it is not a different kind of Plan), program, course, track
 
-**Archive**:
-Taking a solo Plan off the active list with all its progress kept. Fully
-reversible — an archived Plan is restored and picks up where it left off.
-Distinct from delete, which sends it to Recently Deleted.
-_Avoid_: Leave (reserved for leaving a Group), shelve
-
-**Finish**:
-A reader closing a Plan as done once its dates have ended, whether or not every
-reading is marked. Unmarked readings stay unmarked, so Coverage and Read-Throughs
-are untouched. Always personal — on a Shared plan it closes only the reader's own
-participation; the Group schedule carries on for everyone else, and the reader
-stays a full member (Circle and feed unchanged). Only the reader undoes it — an
-owner's Reschedule never reopens it. Reversible: a finished Plan is restored to
-where it was. Distinct from Archive (shelving, not
-done) and from a Plan that is complete because every reading is marked. Lives
-on Path with the rest of the lifecycle; Home's ended-plan card carries the one
-shortcut to it. See [ADR-0010](docs/adr/0010-finish-leaves-readings-unmarked.md).
-_Avoid_: Close, complete (reserved for every reading marked), mark the rest read,
-leave (reserved for leaving a Group)
-
-**Group schedule**:
-A group's own dated sequence of readings, separate from any member's personal
-plan overlay. A reader can be on track in one and behind in the other.
-_Avoid_: Group plan
-
-**Adjust pace**:
-A reader re-dating their own schedule after falling behind or changing their daily
-reading pace (e.g. from 2 to 3 chapters a day). Keeps all previously completed
-readings and their dates intact while re-slicing unread chapters starting from today.
-Always offers a dry-run preview before committing. Applies to solo and Shared
-plans alike; on a Shared plan it writes the reader's own overlay and never touches
-the Group schedule or another member's progress. Always personal — see
-[ADR-0007](docs/adr/0007-shared-plan-schedule-is-fixed.md).
-_Avoid_: Edit plan, reschedule
-
-**Reschedule**:
-An owner re-dating the Group schedule itself, for every member at once. Distinct
-from Adjust pace, which is always personal, and owner-only because it changes
-dates for people who are not in the room.
-_Avoid_: Edit plan, adjust pace, edit group plan
+**Adjust pace / Reschedule**:
+Re-dating a schedule after falling behind or changing the daily reading pace (e.g. from 2 to 3 chapters a day). Keeps all previously completed readings and their dates intact while re-slicing unread chapters starting from today. For solo plans, the reader adjusts their own pace. For a Group plan, the owner reschedules the group for everyone.
+_Avoid_: Edit plan
 
 **Guest reader**:
-A reader who uses the app without signing in. Has full access to personal plans,
-daily check-in, streaks, reflections, and Bible progress. Upgrades to a full account
-via Account linking when joining a Group or connecting with Friends.
+A reader who uses the app without signing in. Has full access to personal plans, daily check-in, streaks, and Bible progress. Upgrades to a full account via Account linking when joining a Group.
 _Avoid_: Anonymous user, unauthenticated user, temporary account
 
 **Account linking**:
-Connecting a Guest reader's progress to a permanent Google, Apple, or email account.
-Preserves their existing reading history, streaks, and personal plans. If the account
-already exists, presents a Merge dry-run before completing.
+Connecting a Guest reader's progress to a permanent Google, Apple, or email account. Preserves their existing reading history, streaks, and personal plans.
 _Avoid_: Conversion, account upgrade, account migration
 
-**Merge dry-run**:
-A transparent side-by-side preview shown when a Guest reader links to an account that
-already has prior reading history, displaying the combined reading days, streak, and
-plan choices before committing any changes.
-_Avoid_: Sync preview, collision resolution screen
-
 **Group**:
-A named set of readers reading a shared schedule together, with an owner and members.
-_Avoid_: Team, cohort, and "circle" *as a name for a Group* — a Circle is a different
-thing (below)
-
-**Friend**:
-A reader connected to another one-to-one, without a Group. The connection is mutual
-and made only by direct invite: one reader shares their friend code (typed, scanned,
-or sent as a link) and the other uses it. There is no searching for people and no
-friend request. Either side can end it.
-_Avoid_: Contact, follower, connection, Pair
+A named set of readers reading a single shared schedule together, with an owner and members.
+_Avoid_: Team, cohort, and "circle" *as a name for a Group* — a Circle is a different thing (below)
 
 **Circle**:
-Everyone a reader shares at least one Group with, plus their Friends. A reader in
-two Groups who is also someone's Friend appears in their Circle once.
+Everyone a reader shares at least one Group with. A reader in two Groups appears in their Circle once.
 _Avoid_: Contact, follower
 
 **Nudge**:
-A gentle prompt one reader sends another in their Circle who has not Shown up today.
-It invites them to read; it never refers to a schedule they are Behind on, and it is
-not tied to any one Group.
+A gentle prompt one reader sends another in their Circle who has not Shown up today. It invites them to read; it never refers to a schedule they are Behind on, and it is not tied to any one Group.
 _Avoid_: Poke, reminder, ping
 
 **Feed**:
-The stream of updates from a reader's Circle: each person's day (Shown up, with
-their Reflection when they chose to share it), Milestones, and Badges earned.
-Read only by the author's Circle: people who share a Group with them, and their Friends.
+The stream of updates from a reader's Circle: each person's daily check-in (Shown up) and Milestones. Read only by the author's Circle.
 _Avoid_: Timeline, activity, wall
 
 **Amen**:
@@ -152,11 +77,7 @@ _Avoid_: Like, heart, encouragement (as a noun for the reaction)
 ### Read-throughs
 
 **Coverage**:
-The set of Bible chapters a reader has marked in the current Lap, unioned across
-group schedules and personal reading plans. Coverage is the signal a
-Read-Through is detected from. Each reader's coverage only ever changes through
-their own marking — a Group schedule is a shared assignment, never shared
-marking.
+The set of Bible chapters a reader has marked in the current Lap, unioned across group schedules and personal reading plans. Coverage is the signal a Read-Through is detected from. Each reader's coverage only ever changes through their own marking — a Group schedule is a shared assignment, never shared marking.
 _Avoid_: Progress (already overloaded with plan-day and group-member progress)
 
 **Scope**:
@@ -164,122 +85,43 @@ The extent a Read-Through covers: Old Testament, New Testament, or whole Bible.
 _Avoid_: Testament (excludes the whole-Bible case), section, portion
 
 **Read-Through**:
-A record that a reader finished a Scope end to end, carrying when it happened
-and optionally where. Read-Throughs accumulate indefinitely; the count per Scope
-answers "how many times have I read this?"
+A record that a reader finished a Scope end to end, carrying when it happened. Read-Throughs accumulate indefinitely; the count per Scope answers "how many times have I read this?"
 _Avoid_: Completion, finish, cycle
 
 **Lap**:
-One pass through a Scope. Only the Old and New Testaments have Laps of their
-own, and each resets independently on finishing. The whole Bible has no Lap of
-its own — it is derived.
+One pass through a Scope. Only the Old and New Testaments have Laps of their own, and each resets independently on finishing. The whole Bible has no Lap of its own — it is derived.
 _Avoid_: Cycle, round, iteration
 
 **Derived Read-Through**:
-A whole-Bible Read-Through, which is never recorded directly. A reader has read
-the whole Bible as many times as they have read the lesser of the two
-testaments — three New Testaments and two Old Testaments is two whole Bibles,
-with a New Testament left over waiting for its pair.
+A whole-Bible Read-Through, which is never recorded directly. A reader has read the whole Bible as many times as they have read the lesser of the two testaments — three New Testaments and two Old Testaments is two whole Bibles, with a New Testament left over waiting for its pair.
 
 **Detected Read-Through**:
-A Read-Through inferred from Coverage covering the whole of a Scope at the
-moment the reader marked the last chapter. The only kind announced socially.
-
-**Backfilled Read-Through**:
-A Read-Through the reader entered by hand for a pass finished before or outside
-the app. Never announced socially, because it is a claim about the past rather
-than an event that just happened. Distinct from Catch-up, which is about
-marking a *reading* late and never uses this word.
-_Avoid_: Using "backfill" for Catch-up
+A Read-Through inferred from Coverage covering the whole of a Scope at the moment the reader marked the last chapter. The only kind announced socially.
 
 **Migrated Read-Through**:
-A Read-Through granted to an existing reader when Read-Throughs shipped, for
-reading they had already finished. Silent, like a Backfilled one.
-
-**Location**:
-Free text a reader optionally attaches to a Read-Through saying where it
-happened. Deliberately unstructured — "Taipei", "my grandmother's house" and
-"the Navy" are all valid.
-_Avoid_: Place, venue, geo
+A Read-Through granted to an existing reader when Read-Throughs shipped, for reading they had already finished.
 
 **Milestone**:
-The public announcement of a Detected Read-Through in the feed. Distinct from
-the Read-Through itself, which is private to the reader — one is an event
-everyone sees, the other a permanent private record.
+The public announcement of a Detected Read-Through in the feed. Distinct from the Read-Through itself, which is private to the reader — one is an event everyone sees, the other a permanent private record.
 
 **Celebration**:
-The full-screen moment shown when a Read-Through is detected. One per marking,
-however many Read-Throughs that marking completed.
-
-**Badge**:
-A durable award for reaching a Read-Through landmark. Earned once and never
-lost, unlike a Lap, which resets.
-_Avoid_: Achievement (the Firestore collection keeps that name; the reader-facing
-word is Badge), trophy, reward (reserved for Seasonal Challenges)
+The full-screen moment shown when a Read-Through is detected. One per marking, however many Read-Throughs that marking completed.
 
 ### Account and settings
 
 **Account deletion**:
-A reader-initiated, permanent purge of their Firebase Auth identity and personal data (summary, reflections, plan progress, and group memberships). Required by App Store Guideline 5.1.1(v) and Google Play policy.
+A reader-initiated, permanent purge of their Firebase Auth identity and personal data (summary, plan progress, and group memberships). Required by App Store Guideline 5.1.1(v) and Google Play policy.
 _Avoid_: Deactivation, account wipe, unsubscribe
 
 **Pre-submission assessment**:
 An end-to-end verification pass and compliance audit of all app features, states, and store policies performed before submitting a release for review.
 _Avoid_: Smoke test, release pass
 
-
-## Known conflict
-
-Settled (#780): the check-in payoff labels the all-time `totalReadDays` figure "days shown up". The Home consistency glimpse still reads "Here N days this season" for that same all-time number — do not describe it as a streak or as season-scoped.
-
 ## Pending the Community/Journey redesign
 
-These are decided but not yet built. Until the work lands, the entries above describe
-the app as it is. See `docs/community_journey_ia.md`,
-[ADR-0003](docs/adr/0003-circle-derived-from-groups.md) and
-[ADR-0004](docs/adr/0004-per-group-reading-feed.md).
+These are decided but not yet built. Until the work lands, the entries above describe the app as it is. See `docs/community_journey_ia.md`, [ADR-0003](docs/adr/0003-circle-derived-from-groups.md) and [ADR-0004](docs/adr/0004-per-group-reading-feed.md).
 
-- **Reading plan and Group schedule are one term now.** They merged into
-  **Plan** — solo or shared, differing only in who else follows the same
-  schedule (#837, #838, #811). The single creation flow asks who is reading as
-  a field, not a fork; the duplicate "My Reading Plans" page and the
-  new-plan picker sheet are gone. "Group plan" remains a term to avoid.
-- **Badge is confirmed as the reader-facing word.** The redesign's specs and tickets
-  were drafted saying "achievement" reader-facing; they defer to Badge, as recorded
-  under Read-throughs above. The Firestore collection keeps the `achievements` name.
-- **Second pass (2026-09-10).** The first pass added the new surfaces without
-  deleting the old ones, so a Group schedule had seven entrances. Path's plan
-  card now owns the plan lifecycle outright; Circle is people only; the legacy
-  Groups surface, the group detail page and the duplicate schedule and
-  catch-up pages are deleted. See the "Second pass" section of
-  `docs/community_journey_ia.md`.
-- **Third pass (2026-10-16).** Circle becomes the Feed (ADR-0011); Path is one
-  page; the avatar menu shrinks to notifications and Settings. Until built, the
-  Circle tab is still the roster. See the "Third pass" section of
-  `docs/community_journey_ia.md`.
-- **The three tabs are Today / Circle / Path** (#813). The bar, the wide-layout
-  rail and every user-facing string use the new names; internal class names
-  (`CommunityPage`, `JourneyPage`, the `journey/` widgets directory) may lag.
-  Nothing the reader sees still says "Community" or "Journey".
-- **Starting point**: The position a Plan begins from when the reader has
-  already read ahead of the plan's start — entered once at creation when
-  migrating an existing plan from elsewhere. Chosen as "I've read them" in the
-  Begin-at sheet, solo plans only. The day holding that chapter lands on
-  today, unmarked; every earlier day is marked as Shown up without touching
-  the habit or streak, and any
-  Read-Through it completes is silent, like a Backfilled Read-Through. The
-  relation to Catch-up is the same as Backfilled Read-Through to Detected:
-  a claim about reading done before the app, entered by hand, never announced.
-  _Avoid_: Head start, "read up to", backfill (reserved for Read-Throughs)
-- **Begin at**: The chapter a Plan's day one starts with ("Leave them out" in
-  the Begin-at sheet, the default). Chapters before it are never scheduled
-  and nothing is marked. Solo plans store it as `startRef` in the plan
-  config; shared plans as the group draft's `startRef`. Not offered for
-  Balanced or 3 in Old, 1 in New solo plans, which have no single reading
-  order.
-  _Avoid_: Starting point (that claims reading already done)
-- **First-day pace**: An intentional custom chapter count allocated to day one
-  of a Plan (e.g. 1 chapter on day one when reading 2 chapters a day). Unlike
-  a Starting point, day one's reading remains unread and presence-driven; only
-  the schedule slice is asymmetric.
-  _Avoid_: Starting point (reserved for pre-app reading claims)
+- **Reading plan and Group schedule are one term now.** They merged into **Plan** — solo or shared, differing only in who else follows the same schedule (#837, #838, #811). The single creation flow asks who is reading as a field, not a fork; the duplicate "My Reading Plans" page and the new-plan picker sheet are gone. "Group plan" remains a term to avoid.
+- **Second pass (2026-09-10).** The first pass added the new surfaces without deleting the old ones, so a Group schedule had seven entrances. Path's plan card now owns the plan lifecycle outright; Circle is people only; the legacy Groups surface, the group detail page and the duplicate schedule and catch-up pages are deleted. See the "Second pass" section of `docs/community_journey_ia.md`.
+- **Third pass (2026-10-16).** Circle becomes the Feed (ADR-0011); Path is one page; the avatar menu shrinks to notifications and Settings. Until built, the Circle tab is still the roster. See the "Third pass" section of `docs/community_journey_ia.md`.
+- **The three tabs are Today / Circle / Path** (#813). The bar, the wide-layout rail and every user-facing string use the new names; internal class names (`CommunityPage`, `JourneyPage`, the `journey/` widgets directory) may lag. Nothing the reader sees still says "Community" or "Journey".
