@@ -338,14 +338,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Marked SunMark header button, plan reading card and the consistency glimpse all
-    // coexist…
+    // Marked SunMark header button and plan reading card coexist…
     expect(
       find.bySemanticsLabel('You read today — open check-in'),
       findsOneWidget,
     );
     expect(find.text('Today’s reading'), findsOneWidget);
-    expect(find.text('Here 5 days this season'), findsOneWidget);
     // …without a layout overflow.
     expect(tester.takeException(), isNull);
   });

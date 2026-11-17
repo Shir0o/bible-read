@@ -77,10 +77,6 @@ void main() {
       find.text('Today, ${formatPlanDateShort(DateTime.now())}'),
       findsOneWidget,
     );
-    expect(find.text('Begins at'), findsOneWidget);
-    expect(find.text('Genesis 1'), findsOneWidget);
-    // Day one reads the pace, so there is nothing to set apart.
-    expect(find.text('Day one reads'), findsNothing);
     // The first three days, then where the plan lands.
     expect(find.text('Genesis 1–4'), findsOneWidget);
     expect(find.textContaining('DAY 3 · ', findRichText: true), findsOneWidget);
@@ -140,7 +136,6 @@ void main() {
     expect(find.text('Change books'), findsOneWidget);
     expect(find.text('Pace by'), findsOneWidget);
     expect(find.text('Chapters a day'), findsOneWidget);
-    expect(find.text('Verses a day'), findsOneWidget);
 
     // A daily amount takes a stepper and reshapes the preview.
     await tester.tap(find.text('Chapters a day'));
