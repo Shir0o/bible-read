@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.43.0](https://github.com/Shir0o/bible-read/compare/v1.42.4...v1.43.0) (2026-11-18)
+
+
+### Features
+
+* strip peripheral features down to the 16-page irreducible core ([#1083](https://github.com/Shir0o/bible-read/issues/1083)) ([d965b10](https://github.com/Shir0o/bible-read/commit/d965b10d3ce1ed65229d425a7d013c2f33517717))
+
 ## [1.42.4](https://github.com/Shir0o/bible-read/compare/v1.42.3...v1.42.4) (2026-11-14)
 
 
