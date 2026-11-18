@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.43.1](https://github.com/Shir0o/bible-read/compare/v1.43.0...v1.43.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **rules:** restore legacy paths required by shipped clients ([#1087](https://github.com/Shir0o/bible-read/issues/1087)) ([3c9c419](https://github.com/Shir0o/bible-read/commit/3c9c419d3ba311018f2a1def0aeda58796c7a106))
+
 ## [1.43.0](https://github.com/Shir0o/bible-read/compare/v1.42.4...v1.43.0) (2026-11-18)
 
 
