@@ -22,7 +22,9 @@ permissions:
 jobs:
   build-and-publish-ios:
     name: Build IPA, attach, and upload to TestFlight
-    runs-on: macos-26
+    # Apple requires the iOS 27 SDK (Xcode 27) for App Store uploads from
+    # April 2027 (ITMS-90725). The xcode-27 image is arm64 and ships it.
+    runs-on: xcode-27
     timeout-minutes: 60
     env:
       TAG: ${{ github.event.inputs.tag || github.ref_name }}
@@ -32,6 +34,17 @@ jobs:
         with:
           ref: ${{ env.TAG }}
           fetch-depth: 0
+
+      - name: Verify Xcode 27 is selected
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          major=$(xcodebuild -version | awk 'NR==1 {split($2, v, "."); print v[1]}')
+          if [ "$major" -lt 27 ]; then
+            echo "::error::Expected Xcode 27 or later, found Xcode $major."
+            exit 1
+          fi
 
       - name: Verify all iOS release secrets are present
         id: check-secrets
@@ -206,7 +219,7 @@ jobs:
         env:
           VERSION_CODE: ${{ steps.version.outputs.code }}
           # ci_post_clone.sh is invoked by the [CI] Bootstrap Flutter Xcode build
-          # phase. On macos-26 the system Flutter (pre-installed, older Dart) is
+          # phase. On the macOS runner the system Flutter (pre-installed, older Dart) is
           # found first by command -v flutter inside xcodebuild's environment,
           # causing `flutter pub get` to fail. We already ran pub get above with
           # the correct SDK, so skip the in-build bootstrap entirely.
