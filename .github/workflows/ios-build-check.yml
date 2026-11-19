@@ -1,0 +1,53 @@
+name: iOS build check
+
+# Builds the iOS app unsigned on the same Xcode image the release uses, so a
+# toolchain bump (or an iOS change) is proven to compile before it ships.
+# Nothing is signed or uploaded.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/release-ios.yml'
+      - '.github/workflows/ios-build-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Build iOS (unsigned, Xcode 27)
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Verify Xcode 27 is selected
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          major=$(xcodebuild -version | awk 'NR==1 {split($2, v, "."); print v[1]}')
+          if [ "$major" -lt 27 ]; then
+            echo "::error::Expected Xcode 27 or later, found Xcode $major."
+            exit 1
+          fi
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build iOS app without signing
+        env:
+          # Same reason as release-ios.yml: pub get already ran with this SDK.
+          SKIP_CI_BOOTSTRAP: "1"
+        run: flutter build ios --release --no-codesign
