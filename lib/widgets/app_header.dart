@@ -147,7 +147,7 @@ class _ActionPill extends StatelessWidget {
           action.onPressed();
         },
         child: Container(
-          height: 44,
+          constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.gap12),
           alignment: Alignment.center,
           child: Row(
@@ -183,7 +183,7 @@ class _Avatar extends StatelessWidget {
   final User? user;
   final VibrationService vibrationService;
 
-  static const double _size = 44;
+  static const double _size = 48;
 
   @override
   Widget build(BuildContext context) {
@@ -192,12 +192,16 @@ class _Avatar extends StatelessWidget {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final photoUrl = user?.photoURL;
 
+    // The outer node owns the label, so TalkBack and VoiceOver announce one
+    // clean "Open menu" button. The InkWell inside keeps its tap action and
+    // focus flags, which merge into this node.
     return Semantics(
+      container: true,
       button: true,
       label: 'Open menu',
-      excludeSemantics: true,
       child: Tooltip(
         message: 'Open menu',
+        excludeFromSemantics: true,
         child: SizedBox(
           width: _size,
           height: _size,
@@ -210,20 +214,22 @@ class _Avatar extends StatelessWidget {
                 vibrationService.lightImpact();
                 NavigationMenuScope.maybeOf(context)?.showMenu(context);
               },
-              child: photoUrl != null
-                  ? Ink.image(
-                      image: CachedNetworkImageProvider(photoUrl),
-                      fit: BoxFit.cover,
-                    )
-                  : Center(
-                      child: Text(
-                        initial,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(color: colorScheme.primary),
+              child: ExcludeSemantics(
+                child: photoUrl != null
+                    ? Ink.image(
+                        image: CachedNetworkImageProvider(photoUrl),
+                        fit: BoxFit.cover,
+                      )
+                    : Center(
+                        child: Text(
+                          initial,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(color: colorScheme.primary),
+                        ),
                       ),
-                    ),
+              ),
             ),
           ),
         ),
