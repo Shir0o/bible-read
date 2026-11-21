@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.43.2](https://github.com/Shir0o/bible-read/compare/v1.43.1...v1.43.2) (2026-11-21)
+
+
+### Bug Fixes
+
+* **ui:** restore Open menu button semantics and 48dp header tap targets ([#1090](https://github.com/Shir0o/bible-read/issues/1090)) ([8ecd7d1](https://github.com/Shir0o/bible-read/commit/8ecd7d162e9aeab1f1512a35bf6fd3bcecfe77e2))
+
 ## [1.43.1](https://github.com/Shir0o/bible-read/compare/v1.43.0...v1.43.1) (2026-11-18)
 
 
