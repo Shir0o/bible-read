@@ -26,6 +26,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/src/pigeon/mocks.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
@@ -267,6 +268,37 @@ Future<void> _checkGuidelines(WidgetTester tester, String label) async {
   }
 }
 
+/// Asserts the header avatar is a single "Open menu" button that assistive tech
+/// can activate and focus, on a target at least 48x48dp.
+void _expectOpenMenuButton(WidgetTester tester, String label) {
+  final reason = 'UI/UX audit [$label] "Open menu"';
+  final finder = find.bySemanticsLabel('Open menu');
+  expect(
+    finder,
+    findsOneWidget,
+    reason: '$reason should be a single semantics node',
+  );
+
+  final node = tester.getSemantics(finder);
+  final data = node.getSemanticsData();
+  // ignore: deprecated_member_use
+  expect(data.hasFlag(SemanticsFlag.isButton), isTrue, reason: reason);
+  // ignore: deprecated_member_use
+  expect(data.hasFlag(SemanticsFlag.isFocusable), isTrue, reason: reason);
+  expect(data.hasAction(SemanticsAction.tap), isTrue, reason: reason);
+
+  expect(
+    node.rect.width,
+    greaterThanOrEqualTo(48.0),
+    reason: '$reason width below the 48dp minimum tap target',
+  );
+  expect(
+    node.rect.height,
+    greaterThanOrEqualTo(48.0),
+    reason: '$reason height below the 48dp minimum tap target',
+  );
+}
+
 /// Captures [name] under test/goldens when goldens are being updated.
 ///
 /// Screenshots are platform-dependent (macOS and Linux rasterise fonts
@@ -331,6 +363,9 @@ void main() {
           // Advisory accessibility guidelines.
           await _checkGuidelines(tester, variant.name);
 
+          // The header avatar is a real, labelled 48dp button.
+          _expectOpenMenuButton(tester, variant.name);
+
           // Reference screenshot for the settled primary screen.
           await _capture(tester, 'bible_read_${variant.name}');
         });
@@ -346,12 +381,16 @@ void main() {
     try {
       await mockNetworkImagesFor(() async {
         await _pumpApp(tester, _phoneLight);
+        _expectOpenMenuButton(tester, 'step1 Today');
         await _capture(tester, 'bible_read_step1_today');
 
         // Bottom navigation: Circle.
         await _tapTab(tester, 'Circle');
         expect(find.text('No one here yet'), findsOneWidget);
         _expectNoOverflow(tester, 'step2 Circle');
+        // Guidelines are not asserted here: the Circle page's "Create a group"
+        // row is a pre-existing 300x44 target that fails
+        // androidTapTargetGuideline, outside AppHeader.
         await _capture(tester, 'bible_read_step2_circle_tab');
 
         // Bottom navigation: Path.
