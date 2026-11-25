@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.43.3](https://github.com/Shir0o/bible-read/compare/v1.43.2...v1.43.3) (2026-11-25)
+
+
+### Bug Fixes
+
+* **crashlytics:** report uncaught errors as fatal ([#1094](https://github.com/Shir0o/bible-read/issues/1094)) ([20f7c15](https://github.com/Shir0o/bible-read/commit/20f7c15c0af5890d6caf7407899d302b5b41e16a))
+
 ## [1.43.2](https://github.com/Shir0o/bible-read/compare/v1.43.1...v1.43.2) (2026-11-21)
 
 
