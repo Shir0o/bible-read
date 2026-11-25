@@ -21,8 +21,20 @@ class ErrorLogger {
   static FirebaseCrashlytics _ensureCrashlytics() =>
       crashlytics ??= FirebaseCrashlytics.instance;
 
-  /// Records [error] and optional [stack] to Crashlytics.
-  static Future<void> log(Object error, [StackTrace? stack]) async {
+  /// Records [error] and optional [stack] to Crashlytics as a non-fatal.
+  static Future<void> log(Object error, [StackTrace? stack]) =>
+      _record(error, stack, fatal: false);
+
+  /// Records an uncaught [error] as fatal, so it shows under Crashes in the
+  /// Crashlytics dashboard and triggers the default new-issue alerts.
+  static Future<void> logFatal(Object error, [StackTrace? stack]) =>
+      _record(error, stack, fatal: true);
+
+  static Future<void> _record(
+    Object error,
+    StackTrace? stack, {
+    required bool fatal,
+  }) async {
     if (muteForTest) return;
 
     final errorString = error.toString();
@@ -47,7 +59,7 @@ class ErrorLogger {
       if (Firebase.apps.isEmpty && crashlytics == null) return;
 
       final instance = _ensureCrashlytics();
-      await instance.recordError(error, stack, fatal: false);
+      await instance.recordError(error, stack, fatal: fatal);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('ErrorLogger failed to record error: $e');

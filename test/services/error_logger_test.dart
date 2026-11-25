@@ -70,6 +70,35 @@ void main() {
     ).called(1);
   });
 
+  test('logFatal records the error as fatal', () async {
+    final error = Exception('uncaught');
+    final stack = StackTrace.current;
+
+    when(
+      () => mock.recordError(
+        error,
+        stack,
+        reason: null,
+        information: const [],
+        printDetails: null,
+        fatal: true,
+      ),
+    ).thenAnswer((_) async {});
+
+    await ErrorLogger.logFatal(error, stack);
+
+    verify(
+      () => mock.recordError(
+        error,
+        stack,
+        reason: null,
+        information: const [],
+        printDetails: null,
+        fatal: true,
+      ),
+    ).called(1);
+  });
+
   test('log does not call Crashlytics when Firebase is uninitialized',
       () async {
     final original = Firebase.delegatePackingProperty;

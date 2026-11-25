@@ -105,10 +105,10 @@ void main() async {
     if (kDebugMode) {
       FlutterError.dumpErrorToConsole(details);
     }
-    ErrorLogger.log(details.exception, details.stack);
+    ErrorLogger.logFatal(details.exception, details.stack);
   };
   PlatformDispatcher.instance.onError = (error, stack) {
-    ErrorLogger.log(error, stack);
+    ErrorLogger.logFatal(error, stack);
     return true;
   };
 
